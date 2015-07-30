@@ -44,7 +44,7 @@
 
 #elif JUCE_WINDOWS
  #if JUCE_MINGW && JUCE_USE_DIRECTWRITE
-  #warning "DirectWrite not currently implemented with mingw..."
+//#warning "DirectWrite not currently implemented with mingw..."
   #undef JUCE_USE_DIRECTWRITE
  #endif
 

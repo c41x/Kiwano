@@ -376,21 +376,21 @@ inline bool juce_isfinite (NumericType) noexcept
 template <>
 inline bool juce_isfinite (float value) noexcept
 {
-   #if JUCE_WINDOWS
-    return _finite (value) != 0;
-   #else
+	//#if JUCE_WINDOWS
+    //return _finite (value) != 0;
+	//#else
     return std::isfinite (value);
-   #endif
+	//#endif
 }
 
 template <>
 inline bool juce_isfinite (double value) noexcept
 {
-   #if JUCE_WINDOWS
-    return _finite (value) != 0;
-   #else
+	//#if JUCE_WINDOWS
+    //return _finite (value) != 0;
+	//#else
     return std::isfinite (value);
-   #endif
+	//#endif
 }
 
 //==============================================================================

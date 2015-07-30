@@ -97,6 +97,7 @@
  #endif
 
  #include <windows.h>
+ #include <winsock2.h>
  #include <shellapi.h>
  #include <tchar.h>
  #include <stddef.h>

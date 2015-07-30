@@ -66,7 +66,7 @@ namespace TimeHelpers
 
            #if JUCE_WINDOWS
             if (now >= 0 && now <= 0x793406fff)
-                localtime_s (&result, &now);
+                result = *localtime (&now);
             else
                 zerostruct (result);
            #else
@@ -192,7 +192,7 @@ int64 Time::currentTimeMillis() noexcept
 {
    #if JUCE_WINDOWS
     struct _timeb t;
-    _ftime_s (&t);
+    _ftime (&t);
     return ((int64) t.time) * 1000 + t.millitm;
    #else
     struct timeval tv;
@@ -364,7 +364,7 @@ String Time::getTimeZone() const noexcept
     }
   #else
    #if JUCE_MINGW
-    #warning "Can't find a replacement for tzset on mingw - ideas welcome!"
+    //#warning "Can't find a replacement for tzset on mingw - ideas welcome!"
    #else
     tzset();
    #endif
