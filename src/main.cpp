@@ -21,8 +21,92 @@ namespace ProjectInfo
     const int          versionNumber  = 0x10000;
 }
 
-class KiwanoApplication  : public JUCEApplication
-{
+class playlist : public Component, public FileDragAndDropTarget {
+    struct playlistModel : public ListBoxModel {
+		StringArray entries;
+        int getNumRows() override {
+            return entries.size();
+        }
+
+        void paintListBoxItem(int rowNumber, Graphics& g,
+							  int width, int height, bool rowIsSelected) override {
+            if (rowIsSelected)
+                g.fillAll(Colours::lightblue);
+
+            g.setColour(Colours::black);
+            g.setFont(height * 0.7f);
+			g.drawText(entries[rowNumber], 5, 0, width, height, Justification::centredLeft, true);
+        }
+    };
+
+    ListBox box;
+    playlistModel model;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
+
+public:
+    playlist() : box("playlist-box", nullptr) {
+		setName("playlist");
+		box.setModel(&model);
+		box.setMultipleSelectionEnabled(true);
+		addAndMakeVisible(box);
+	}
+
+    void resized() override {
+		box.setBounds(getLocalBounds().reduced(8));
+	}
+
+	bool isInterestedInFileDrag(const StringArray& /*files*/) override {
+		return true;
+	}
+
+	void fileDragEnter(const StringArray& /*files*/, int /*x*/, int /*y*/) override {
+		repaint();
+	}
+
+	void fileDragMove (const StringArray& /*files*/, int /*x*/, int /*y*/) override {}
+
+	void fileDragExit (const StringArray& /*files*/) override {
+		repaint();
+	}
+
+	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
+		model.entries.addArray(files);
+		box.updateContent();
+		repaint();
+	}
+};
+
+class tabs : public TabbedComponent {
+public:
+    tabs() : TabbedComponent(TabbedButtonBar::TabsAtTop) {
+        addTab("Menus", getRandomTabBackgroundColour(), new playlist(), true);
+        addTab("Buttons", getRandomTabBackgroundColour(), new playlist(), true);
+		setSize(600, 400);
+    }
+
+    static Colour getRandomTabBackgroundColour() {
+        return Colour(Random::getSystemRandom().nextFloat(), 0.1f, 0.97f, 1.0f);
+    }
+};
+
+class KiwanoApplication : public JUCEApplication {
+    class MainWindow : public DocumentWindow {
+		tabs ctabs;
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
+
+    public:
+        MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons) {
+			setContentOwned(&ctabs, true);
+            setVisible(true);
+        }
+
+        void closeButtonPressed() override {
+            JUCEApplication::getInstance()->systemRequestedQuit();
+        }
+    };
+
+    ScopedPointer<MainWindow> mainWindow;
+
 public:
     KiwanoApplication() {}
 
@@ -44,24 +128,6 @@ public:
 
     void anotherInstanceStarted (const String& commandLine) override {
     }
-
-    class MainWindow : public DocumentWindow {
-    public:
-        MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons) {
-            centreWithSize(300, 200);
-            setVisible(true);
-        }
-
-        void closeButtonPressed() override {
-            JUCEApplication::getInstance()->systemRequestedQuit();
-        }
-
-    private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
-    };
-
-private:
-    ScopedPointer<MainWindow> mainWindow;
 };
 
 START_JUCE_APPLICATION(KiwanoApplication)
