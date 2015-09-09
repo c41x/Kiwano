@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 
 project(kiwano)
 
-find_package(Freetype REQUIRED)
-find_package(OpenGL REQUIRED)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+find_package(Granite REQUIRED)
+#find_package(Freetype REQUIRED)
+#find_package(OpenGL REQUIRED)
 find_package(Threads)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -12,17 +15,19 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/JUCE/")
-include_directories(${FREETYPE_INCLUDE_DIRS})
-include_directories(${OPENGL_INCLUDE_DIRS})
+#include_directories(${FREETYPE_INCLUDE_DIRS})
+#include_directories(${OPENGL_INCLUDE_DIRS})
+include_directories(${GRANITE_INCLUDE_DIRS})
 
 if(MINGW)
   link_libraries(uuid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm opengl32)
 else()
   link_libraries(rt dl)
 endif()
-link_libraries(${FREETYPE_LIBRARIES})
-link_libraries(${OPENGL_LIBRARIES})
+#link_libraries(${FREETYPE_LIBRARIES})
+#link_libraries(${OPENGL_LIBRARIES})
 link_libraries(${CMAKE_THREAD_LIBS_INIT})
+link_libraries(${GRANITE_LIBRARIES})
 
 add_executable(kiwano
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
