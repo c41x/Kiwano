@@ -84,7 +84,6 @@ public:
     tabs() : TabbedComponent(TabbedButtonBar::TabsAtTop) {
         addTab("Menus", getRandomTabBackgroundColour(), new playlist(), true);
         addTab("Buttons", getRandomTabBackgroundColour(), new playlist(), true);
-		setSize(600, 400);
     }
 
     static Colour getRandomTabBackgroundColour() {
@@ -92,15 +91,42 @@ public:
     }
 };
 
+class layout : public Component {
+	StretchableLayoutManager l;
+	StretchableLayoutResizerBar rb;
+	std::vector<Component *> components;
+
+public:
+	layout(Component *c1, Component *c2) : rb(&l, 1, false) {
+		setOpaque(true);
+		addAndMakeVisible(rb);
+		components.push_back(c1);
+		components.push_back(c2);
+		components.push_back(nullptr);
+		l.setItemLayout(0, -0.1, -0.9, -0.5);
+		l.setItemLayout(1, -0.1, -0.9, -0.5);
+	}
+
+	void resized() {
+        Rectangle<int> r(getLocalBounds().reduced(4));
+		l.layOutComponents(components.data(), 2, r.getX(), r.getY(), r.getWidth(), r.getHeight(), true, true);
+	}
+};
+
 class KiwanoApplication : public JUCEApplication {
     class MainWindow : public DocumentWindow {
-		tabs ctabs;
+		layout l;
+		tabs c1, c2;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
 
     public:
-        MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons) {
-			setContentOwned(&ctabs, true);
+        MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
+			l(&c1, &c2) {
+			addAndMakeVisible(&l);
+			setContentOwned(&l, true);
             setVisible(true);
+			setSize(600, 400);
+			l.setSize(500, 300);
         }
 
         void closeButtonPressed() override {
