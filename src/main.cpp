@@ -55,7 +55,7 @@ public:
 	}
 
     void resized() override {
-		box.setBounds(getLocalBounds().reduced(8));
+		box.setBounds(getLocalBounds().reduced(0));
 	}
 
 	bool isInterestedInFileDrag(const StringArray& /*files*/) override {
@@ -100,33 +100,41 @@ public:
 	layout(Component *c1, Component *c2) : rb(&l, 1, false) {
 		setOpaque(true);
 		addAndMakeVisible(rb);
+		addAndMakeVisible(c1);
+		addAndMakeVisible(c2);
 		components.push_back(c1);
+		components.push_back(&rb);
 		components.push_back(c2);
 		components.push_back(nullptr);
 		l.setItemLayout(0, -0.1, -0.9, -0.5);
-		l.setItemLayout(1, -0.1, -0.9, -0.5);
+		l.setItemLayout(1, 5, 5, 5);
+		l.setItemLayout(2, -0.1, -0.9, -0.5);
+	}
+
+	void paint(Graphics &g) override {
+		g.setColour(Colour::greyLevel(0.2f));
+		g.fillAll();
 	}
 
 	void resized() {
         Rectangle<int> r(getLocalBounds().reduced(4));
-		l.layOutComponents(components.data(), 2, r.getX(), r.getY(), r.getWidth(), r.getHeight(), true, true);
+		l.layOutComponents(components.data(), 3, r.getX(), r.getY(), r.getWidth(), r.getHeight(), true, true);
 	}
 };
 
 class KiwanoApplication : public JUCEApplication {
     class MainWindow : public DocumentWindow {
 		layout l;
-		tabs c1, c2;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
 
     public:
         MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
-			l(&c1, &c2) {
-			addAndMakeVisible(&l);
-			setContentOwned(&l, true);
+			l(new tabs(), new tabs()) {
+			setContentOwned(&l, false);
+			setSize(800, 600);
             setVisible(true);
-			setSize(600, 400);
-			l.setSize(500, 300);
+			setUsingNativeTitleBar(true);
+			setResizable(true, true);
         }
 
         void closeButtonPressed() override {
