@@ -13,6 +13,7 @@
 // #include <modules/juce_opengl/juce_opengl.h>
 // #include <modules/juce_video/juce_video.h>
 #include <base/base.hpp>
+#include <memory>
 
 using namespace juce;
 using namespace granite;
@@ -93,22 +94,13 @@ public:
 
 class layout : public Component {
 	StretchableLayoutManager l;
-	StretchableLayoutResizerBar rb;
-	std::vector<Component *> components;
+	std::vector<std::unique_ptr<Component>> components;
+	std::vector<Component*> lc;
+	bool horizontal;
 
 public:
-	layout(Component *c1, Component *c2) : rb(&l, 1, false) {
+	layout(bool _horizontal) : horizontal(_horizontal){
 		setOpaque(true);
-		addAndMakeVisible(rb);
-		addAndMakeVisible(c1);
-		addAndMakeVisible(c2);
-		components.push_back(c1);
-		components.push_back(&rb);
-		components.push_back(c2);
-		components.push_back(nullptr);
-		l.setItemLayout(0, -0.1, -0.9, -0.5);
-		l.setItemLayout(1, 5, 5, 5);
-		l.setItemLayout(2, -0.1, -0.9, -0.5);
 	}
 
 	void paint(Graphics &g) override {
@@ -116,28 +108,201 @@ public:
 		g.fillAll();
 	}
 
-	void resized() {
-        Rectangle<int> r(getLocalBounds().reduced(4));
-		l.layOutComponents(components.data(), 3, r.getX(), r.getY(), r.getWidth(), r.getHeight(), true, true);
+	void resized() override {
+		juce::Rectangle<int> r(getLocalBounds());
+		l.layOutComponents(lc.data(), lc.size(), r.getX(), r.getY(), r.getWidth(), r.getHeight(), !horizontal, true);
+	}
+
+	void addSplitter() {
+		if (lc.size() > 0) {
+			l.setItemLayout(lc.size(), 5, 5, 5);
+			components.push_back(std::make_unique<StretchableLayoutResizerBar>(&l, lc.size(), horizontal));
+			lc.push_back(components.back().get());
+			addAndMakeVisible(components.back().get());
+		}
+	}
+
+	void addComponent(Component *c, double minimum, double maximum, double preferred) {
+		l.setItemLayout(lc.size(), minimum, maximum, preferred);
+		lc.push_back(c);
+		addAndMakeVisible(c);
+	}
+};
+
+class interpreter : public Component,
+					public TextEditor::Listener {
+	base::lisp &gl;
+	TextEditor te;
+
+public:
+	interpreter(base::lisp &glisp) : gl(glisp) {
+		te.setMultiLine(true);
+		te.setReturnKeyStartsNewLine(false);
+		te.setTabKeyUsedAsCharacter(false);
+		te.setReadOnly(false);
+		te.setCaretVisible(true);
+		te.addListener(this);
+		addAndMakeVisible(te);
+	}
+	~interpreter() {}
+
+	void resized() override {
+		te.setBounds(getLocalBounds());
+	}
+
+    void textEditorTextChanged(TextEditor&) override {}
+    void textEditorEscapeKeyPressed(TextEditor&) override {}
+    void textEditorFocusLost(TextEditor&) override {}
+
+    void textEditorReturnKeyPressed(TextEditor&) override {
+		// get line
+		te.moveCaretToStartOfLine(false);
+		int begin = te.getCaretPosition();
+		te.moveCaretToEndOfLine(false);
+		String t = te.getTextInRange(Range<int>(begin, te.getCaretPosition()));
+
+		// execute code and print result
+		std::string r = gl.eval(t.toStdString());
+		te.insertTextAtCaret("\n > ");
+		te.insertTextAtCaret(r);
+		te.insertTextAtCaret("\n");
+    }
+};
+
+class user_interface : public Component {
+	std::map<std::string, std::unique_ptr<Component>> components;
+	Component *mainComponent;
+	base::lisp &gl;
+
+public:
+	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) {}
+	~user_interface() {}
+
+	void resized() override {
+		if (mainComponent)
+			mainComponent->setBounds(getLocalBounds());
+	}
+
+	// (set-main-component name)
+	base::cell_t set_main_component(base::cell_t c, base::cells_t &ret) {
+		const auto &name = c + 1;
+		auto cc = components.find(name->s);
+		if (cc != components.end()) {
+			mainComponent = cc->second.get();
+			addAndMakeVisible(mainComponent);
+			mainComponent->setBounds(getLocalBounds());
+		}
+		return c;
+	}
+
+	// (refresh-interface)
+	base::cell_t refresh_interface(base::cell_t c, base::cells_t &ret) {
+		if (mainComponent)
+			mainComponent->resized();
+		return c;
+	}
+
+	// (create-playlist name)
+	base::cell_t create_playlist(base::cell_t c, base::cells_t &ret) {
+		// TODO: error reporting
+		const auto &name = c + 1;
+		if (components.find(name->s) == components.end()) {
+			components.insert(std::make_pair(name->s, std::make_unique<playlist>()));
+		}
+		return c;
+	}
+
+	// (create-layout name (bool)horizontal (bool)splitter)
+	base::cell_t create_layout(base::cell_t c, base::cells_t &ret) {
+		const auto &name = c + 1;
+		const auto &horizontal = c + 2;
+		if (components.find(name->s) == components.end()) {
+			components.insert(std::make_pair(name->s, std::make_unique<layout>(horizontal->s != "nil")));
+		}
+		return c;
+		// TODO: returning quoted ID
+	}
+
+	// (create-interpreter name)
+	base::cell_t create_interpreter(base::cell_t c, base::cells_t &ret) {
+		const auto &name = c + 1;
+		if (components.find(name->s) == components.end()) {
+			components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl)));
+		}
+		return c;
+	}
+
+	// (layout-add-component layout-id component-id (float)min (float)max (float)preffered)
+	base::cell_t layout_add_component(base::cell_t c, base::cells_t &ret) {
+		// TODO: expected format: list of 5, id, id, float, float, float
+		const auto &lname = c + 1;
+		const auto &cname = c + 2;
+		auto l = components.find(lname->s);
+		auto com = components.find(cname->s);
+		if (l != components.end() && com != components.end()) {
+			const auto &minimum = c + 3;
+			const auto &maximum = c + 4;
+			const auto &preferred = c + 5;
+			layout *lay = reinterpret_cast<layout*>(l->second.get());
+			lay->addComponent(com->second.get(), (double)minimum->f, (double)maximum->f, (double)preferred->f);
+		}
+		return c;
+	}
+
+	// (layout-add-splitter layout-id)
+	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
+		const auto &lname = c + 1;
+		auto l = components.find(lname->s);
+		if (l != components.end()) {
+			layout *lay = reinterpret_cast<layout*>(l->second.get());
+			lay->addSplitter();
+		}
+		return c;
 	}
 };
 
 class KiwanoApplication : public JUCEApplication {
     class MainWindow : public DocumentWindow {
-		layout l;
+		user_interface itf;
+		base::lisp gl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
 
-    public:
-        MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
-			l(new tabs(), new tabs()) {
-			setContentOwned(&l, false);
+		public:
+		MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
+			itf(gl) {
+			setContentOwned(&itf, false);
 			setSize(800, 600);
+			setTopLeftPosition(200, 200);
             setVisible(true);
 			setUsingNativeTitleBar(true);
 			setResizable(true, true);
+
+			// initialize GLISP
+			using namespace std::placeholders;
+			gl.init();
+			gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
+			gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
+			gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
+			gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
+			gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
+			gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
+			gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
+			gl.eval("(create-playlist 'p1)");
+			gl.eval("(create-playlist 'p2)");
+			gl.eval("(create-layout 'l1 t)");
+			gl.eval("(layout-add-component 'l1 'p1 -0.1 -0.9 -0.5)");
+			gl.eval("(layout-add-splitter 'l1)");
+			gl.eval("(layout-add-component 'l1 'p2 -0.1 -0.9 -0.5)");
+			gl.eval("(create-layout 'l2 nil)");
+			gl.eval("(create-interpreter 'int1)");
+			gl.eval("(layout-add-component 'l2 'int1 50.0 100.0 50.0)");
+			gl.eval("(layout-add-splitter 'l2)");
+			gl.eval("(layout-add-component 'l2 'l1 -0.1 -1.0 -0.9)");
+			gl.eval("(set-main-component 'l2)");
         }
 
         void closeButtonPressed() override {
+			gl.close();
             JUCEApplication::getInstance()->systemRequestedQuit();
         }
     };
