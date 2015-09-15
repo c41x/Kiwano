@@ -27,10 +27,11 @@ class MainWindow : public DocumentWindow {
 		gl.init();
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
 		gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
+		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
+		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
 		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
 		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
-		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 		gl.eval("(create-playlist 'p1)");
 		gl.eval("(create-playlist 'p2)");

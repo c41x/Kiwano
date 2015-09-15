@@ -47,6 +47,15 @@ public:
 		return c;
 	}
 
+	// (create-tabs name)
+	base::cell_t create_tabs(base::cell_t c, base::cells_t &ret) {
+		const auto &name = c + 1;
+		if (components.find(name->s) == components.end()) {
+			components.insert(std::make_pair(name->s, std::make_unique<tabs>()));
+		}
+		return c;
+	}
+
 	// (create-layout name (bool)horizontal (bool)splitter)
 	base::cell_t create_layout(base::cell_t c, base::cells_t &ret) {
 		const auto &name = c + 1;
