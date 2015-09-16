@@ -47,11 +47,38 @@ public:
 		return c;
 	}
 
-	// (create-tabs name)
+	// (create-tabs name 'orientation{top, bottom, left, right})
 	base::cell_t create_tabs(base::cell_t c, base::cells_t &ret) {
 		const auto &name = c + 1;
 		if (components.find(name->s) == components.end()) {
-			components.insert(std::make_pair(name->s, std::make_unique<tabs>()));
+			const auto &orientation = c + 2;
+			TabbedButtonBar::Orientation o = TabbedButtonBar::TabsAtTop;
+			if (orientation->s == "bottom")
+				o = TabbedButtonBar::TabsAtBottom;
+			else if (orientation->s == "left")
+				o = TabbedButtonBar::TabsAtLeft;
+			else if (orientation->s == "right")
+				o = TabbedButtonBar::TabsAtRight;
+			components.insert(std::make_pair(name->s, std::make_unique<tabs>(o)));
+		}
+		return c;
+	}
+
+	// (tabs-add-component tabs-name component-name caption |color|)
+	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &ret) {
+		const auto &name = c + 1;
+		const auto &cname = c + 2;
+		auto t = components.find(name->s);
+		auto com = components.find(cname->s);
+		if (t != components.end() && com != components.end()) {
+			const auto &caption = c + 3;
+			const auto &color = c + 4;
+			tabs *ptabs = reinterpret_cast<tabs*>(t->second.get());
+			ptabs->addTab(caption->s, Colour::fromFloatRGBA(color->v4[0],
+															color->v4[1],
+															color->v4[2],
+															color->v4[3]), com->second.get(), false);
+			ptabs->addAndMakeVisible(com->second.get());
 		}
 		return c;
 	}

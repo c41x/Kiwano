@@ -4,12 +4,5 @@
 
 class tabs : public TabbedComponent {
 public:
-    tabs() : TabbedComponent(TabbedButtonBar::TabsAtTop) {
-        addTab("Menus", getRandomTabBackgroundColour(), new playlist(), true);
-        addTab("Buttons", getRandomTabBackgroundColour(), new playlist(), true);
-    }
-
-    static Colour getRandomTabBackgroundColour() {
-        return Colour(Random::getSystemRandom().nextFloat(), 0.1f, 0.97f, 1.0f);
-    }
+    tabs(TabbedButtonBar::Orientation o) : TabbedComponent(o) {}
 };

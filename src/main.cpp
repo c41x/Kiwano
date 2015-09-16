@@ -31,6 +31,7 @@ class MainWindow : public DocumentWindow {
 		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
 		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
 		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
+		gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 		gl.eval("(create-playlist 'p1)");
@@ -45,6 +46,12 @@ class MainWindow : public DocumentWindow {
 		gl.eval("(layout-add-splitter 'l2)");
 		gl.eval("(layout-add-component 'l2 'l1 -0.1 -1.0 -0.9)");
 		gl.eval("(set-main-component 'l2)");
+		gl.eval("(create-tabs 'tab 'bottom)");
+		gl.eval("(create-playlist 'plpl)");
+		gl.eval("(layout-add-component 'l2 'tab 300.0 300.0 300.0)");
+		gl.eval("(defvar cl-red |1.0 0.0 0.0 1.0|)");
+		gl.eval("(tabs-add-component 'tab 'plpl \"First tab\" cl-red)");
+		gl.eval("(refresh-interface)");
 	}
 
 	void closeButtonPressed() override {
