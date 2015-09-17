@@ -10,11 +10,11 @@ const int versionNumber = 0x10000;
 class MainWindow : public DocumentWindow {
 	user_interface itf;
 	base::lisp gl;
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow);
 
-	public:
+public:
 	MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
-		itf(gl) {
+							  itf(gl) {
 		//setUsingNativeTitleBar(true); // TODO: fix blink on startup
 		setContentOwned(&itf, false);
 		setSize(800, 600);
