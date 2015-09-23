@@ -88,7 +88,7 @@ public:
 		const auto &name = c + 1;
 		const auto &horizontal = c + 2;
 		if (components.find(name->s) == components.end()) {
-			components.insert(std::make_pair(name->s, std::make_unique<layout>(horizontal->s != "nil")));
+			components.insert(std::make_pair(name->s, std::make_unique<layout>(!horizontal->isNil())));
 		}
 		return c;
 		// TODO: returning quoted ID
