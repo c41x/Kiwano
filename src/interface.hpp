@@ -120,6 +120,19 @@ public:
 		return c;
 	}
 
+	// (layout-remove-component layout-id component-id)
+	base::cell_t layout_remove_component(base::cell_t c, base::cells_t &ret) {
+		const auto &lname = c + 1;
+		const auto &cname = c + 2;
+		auto l = components.find(lname->s);
+		auto com = components.find(cname->s);
+		if (l != components.end() && com != components.end()) {
+			layout *lay = reinterpret_cast<layout*>(l->second.get());
+			lay->removeComponent(com->second.get());
+		}
+		return c;
+	}
+
 	// (layout-add-splitter layout-id)
 	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
 		const auto &lname = c + 1;

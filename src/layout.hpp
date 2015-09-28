@@ -36,4 +36,10 @@ public:
 		lc.push_back(c);
 		addAndMakeVisible(c);
 	}
+
+	void removeComponent(Component *c) {
+		c->setVisible(false);
+		removeChildComponent(c);
+		lc.erase(std::remove(lc.begin(), lc.end(), c), lc.end());
+	}
 };
