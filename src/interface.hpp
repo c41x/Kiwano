@@ -105,19 +105,26 @@ public:
 
 	// (layout-add-component layout-id component-id (float)min (float)max (float)preffered)
 	base::cell_t layout_add_component(base::cell_t c, base::cells_t &ret) {
-		// TODO: expected format: list of 5, id, id, float, float, float
-		const auto &lname = c + 1;
-		const auto &cname = c + 2;
-		auto l = components.find(lname->s);
-		auto com = components.find(cname->s);
-		if (l != components.end() && com != components.end()) {
-			const auto &minimum = c + 3;
-			const auto &maximum = c + 4;
-			const auto &preferred = c + 5;
-			layout *lay = reinterpret_cast<layout*>(l->second.get());
-			lay->addComponent(com->second.get(), (double)minimum->f, (double)maximum->f, (double)preferred->f);
+		using namespace base;
+		if (lisp::validate(c, cell::list(5),
+						   cell::typeIdentifier, cell::typeIdentifier,
+						   cell::typeFloat, cell::typeFloat, cell::typeFloat)) {
+			const auto &lname = c + 1;
+			const auto &cname = c + 2;
+			auto l = components.find(lname->s);
+			auto com = components.find(cname->s);
+			if (l != components.end() && com != components.end()) {
+				const auto &minimum = c + 3;
+				const auto &maximum = c + 4;
+				const auto &preferred = c + 5;
+				layout *lay = reinterpret_cast<layout*>(l->second.get());
+				lay->addComponent(com->second.get(), (double)minimum->f, (double)maximum->f, (double)preferred->f);
+				// TODO: return t
+			}
+			return c; // TODO: nil, signal error?
 		}
-		return c;
+		gl.signalError("invalid arguments, expected (id, id, float, float, float)");
+		return c; // TODO: nil
 	}
 
 	// (layout-remove-component layout-id component-id)
