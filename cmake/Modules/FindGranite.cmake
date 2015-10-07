@@ -9,7 +9,7 @@ find_path(GRANITE_INCLUDE_DIR base/base.hpp
   $ENV{PROGRAMFILES}/granite/include)
 
 find_library(GRANITE_LIBRARY NAMES libbase libsystem base system PATHS
-  $ENV{PROGRAMFILES}/granite/bin)
+  $ENV{PROGRAMFILES}/granite/lib)
 
 set(GRANITE_LIBRARIES ${GRANITE_LIBRARY})
 set(GRANITE_INCLUDE_DIRS ${GRANITE_INCLUDE_DIR})

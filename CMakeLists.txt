@@ -5,8 +5,10 @@ project(kiwano)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(Granite REQUIRED)
-find_package(Freetype REQUIRED)
-find_package(OpenGL REQUIRED)
+if(NOT WIN32)
+  find_package(Freetype REQUIRED)
+  find_package(OpenGL REQUIRED)
+endif()
 find_package(Threads)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -15,8 +17,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/JUCE/")
-include_directories(${FREETYPE_INCLUDE_DIRS})
-include_directories(${OPENGL_INCLUDE_DIRS})
+if(NOT WIN32)
+  include_directories(${FREETYPE_INCLUDE_DIRS})
+  include_directories(${OPENGL_INCLUDE_DIRS})
+endif()
 include_directories(${GRANITE_INCLUDE_DIRS})
 
 if(MINGW)
@@ -24,12 +28,14 @@ if(MINGW)
 else()
   link_libraries(rt dl)
 endif()
-link_libraries(${FREETYPE_LIBRARIES})
-link_libraries(${OPENGL_LIBRARIES})
+if(NOT WIN32)
+  link_libraries(${FREETYPE_LIBRARIES})
+  link_libraries(${OPENGL_LIBRARIES})
+endif()
 link_libraries(${CMAKE_THREAD_LIBS_INIT})
 link_libraries(${GRANITE_LIBRARIES})
 
-add_executable(kiwano
+add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_core/juce_core.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_gui_basics/juce_gui_basics.cpp"
