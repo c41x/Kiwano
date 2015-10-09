@@ -185,7 +185,7 @@ public:
 		return gl.nil();
 	}
 
-	// (layout-add-splitter layout-id)
+	// (layout-add-splitter layout-id) // TODO: remove, validate
 	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
 		const auto &lname = c + 1;
 		auto l = components.find(lname->s);
@@ -194,5 +194,24 @@ public:
 			lay->addSplitter();
 		}
 		return c;
+	}
+
+	// (layout-get-splitters-count layout-id)
+	base::cell_t layout_get_splitters_count(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+			const auto &lname = c + 1;
+			auto l = components.find(lname->s);
+			if (l != components.end()) {
+				layout *lay = reinterpret_cast<layout*>(l->second.get());
+				ret.push_back(base::cell(lay->getSplittersCount()));
+				return ret.end() - 1;
+				// TODO: better return
+			}
+			gl.signalError("layout not found");
+			return gl.nil();
+		}
+		gl.signalError("layout-get-splitters-count: invalid arguments, expected (id)");
+		return gl.nil();
 	}
 };

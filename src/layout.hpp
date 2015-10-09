@@ -3,7 +3,7 @@
 
 class layout : public Component {
 	StretchableLayoutManager l;
-	std::vector<std::unique_ptr<Component>> components;
+	std::vector<std::unique_ptr<Component>> splitters;
 	std::vector<Component*> lc;
 	bool horizontal;
 
@@ -25,11 +25,13 @@ public:
 	void addSplitter() {
 		if (lc.size() > 0) {
 			l.setItemLayout(lc.size(), 5, 5, 5);
-			components.push_back(std::make_unique<StretchableLayoutResizerBar>(&l, lc.size(), horizontal));
-			lc.push_back(components.back().get());
-			addAndMakeVisible(components.back().get());
+			splitters.push_back(std::make_unique<StretchableLayoutResizerBar>(&l, lc.size(), horizontal));
+			lc.push_back(splitters.back().get());
+			addAndMakeVisible(splitters.back().get());
 		}
 	}
+
+	int32 getSplittersCount() const { return splitters.size(); }
 
 	void addComponent(Component *c, double minimum, double maximum, double preferred) {
 		l.setItemLayout(lc.size(), minimum, maximum, preferred);
