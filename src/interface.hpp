@@ -185,15 +185,22 @@ public:
 		return gl.nil();
 	}
 
-	// (layout-add-splitter layout-id) // TODO: remove, validate
+	// TODO: remove
+	// (layout-add-splitter layout-id)
 	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
-		const auto &lname = c + 1;
-		auto l = components.find(lname->s);
-		if (l != components.end()) {
-			layout *lay = reinterpret_cast<layout*>(l->second.get());
-			lay->addSplitter();
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &lname = c + 1;
+			auto l = components.find(lname->s);
+			if (l != components.end()) {
+				layout *lay = reinterpret_cast<layout*>(l->second.get());
+				lay->addSplitter();
+				return gl.t();
+			}
+			gl.signalError("layout not found");
+			return gl.nil();
 		}
-		return c;
+		gl.signalError("layout-add-splitter: invalid arguments, expected (id)");
+		return gl.nil();
 	}
 
 	// (layout-get-splitters-count layout-id)
