@@ -33,6 +33,15 @@ public:
 
 	int32 getSplittersCount() const { return splitters.size(); }
 
+	bool removeSplitter(int32 i) {
+		if (i < (int32)splitters.size()) {
+			removeComponent(splitters[i].get());
+			splitters.erase(splitters.begin() + i);
+			return true;
+		}
+		return false;
+	}
+
 	void addComponent(Component *c, double minimum, double maximum, double preferred) {
 		l.setItemLayout(lc.size(), minimum, maximum, preferred);
 		lc.push_back(c);
