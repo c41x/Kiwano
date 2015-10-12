@@ -38,8 +38,9 @@ public:
 
 	// (refresh-interface)
 	base::cell_t refresh_interface(base::cell_t c, base::cells_t &ret) {
-		if (mainComponent)
-			mainComponent->resized();
+		// signal to all components resized event (to refresh UI)
+		for (auto &c : components)
+			c.second->resized();
 		return gl.t();
 	}
 
@@ -185,7 +186,25 @@ public:
 		return gl.nil();
 	}
 
-	// TODO: remove
+	// (layout-remove-splitter layout-id (int)splitter-index)
+	base::cell_t layout_remove_splitter(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeInt)) {
+			const auto &lname = c + 1;
+			auto l = components.find(lname->s);
+			if (l != components.end()) {
+				const auto sIndex = c + 2;
+				layout *lay = reinterpret_cast<layout*>(l->second.get());
+				lay->removeSplitter(sIndex->i);
+				return gl.t();
+			}
+			gl.signalError("layout not found");
+			return gl.nil();
+		}
+		gl.signalError("layout-remove-splitter: invalid arguments, expected (id int)");
+		return gl.nil();
+	}
+
 	// (layout-add-splitter layout-id)
 	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
