@@ -52,7 +52,7 @@ public:
 				components.insert(std::make_pair(name->s, std::make_unique<playlist>()));
 				return name;
 			}
-			gl.signalError(base::strs("playlist named ", name->s, " already exists"));
+			gl.signalError(base::strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
 		gl.signalError("create-playlist: invalid arguments, expected (id)");
@@ -76,10 +76,29 @@ public:
 				components.insert(std::make_pair(name->s, std::make_unique<tabs>(o)));
 				return name;
 			}
-			gl.signalError(base::strs("tabs named ", name->s, " already exists"));
+			gl.signalError(base::strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
 		gl.signalError("create-tabs: invalid arguments, expected (id 'id)");
+		return gl.nil();
+	}
+
+	AudioDeviceManager dm;
+
+	// (create-audio-settings name)
+	base::cell_t create_audio_settings(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			if (components.find(name->s) == components.end()) {
+				components.insert(std::make_pair(name->s, std::make_unique<AudioDeviceSelectorComponent>(
+													 dm, 0, 256, 0, 256, false, false, true, false)));
+				return gl.t();
+			}
+			gl.signalError(strs("components named ", name->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-audio-settings: invalid arguments, expected (id)");
 		return gl.nil();
 	}
 
@@ -99,7 +118,6 @@ public:
 																color->v4[1],
 																color->v4[2],
 																color->v4[3]), com->second.get(), false);
-				ptabs->addAndMakeVisible(com->second.get());
 				return gl.t();
 			}
 			gl.signalError("tabs or component not found");
@@ -119,7 +137,7 @@ public:
 				components.insert(std::make_pair(name->s, std::make_unique<layout>(!horizontal->isNil())));
 				return name;
 			}
-			gl.signalError(strs("layout named ", name->s, " already exists"));
+			gl.signalError(strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
 		gl.signalError("create-layout: invalid arguments, expected (id bool)");
@@ -134,7 +152,7 @@ public:
 				components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl)));
 				return name;
 			}
-			gl.signalError(base::strs("interpreter named ", name->s, " already exists"));
+			gl.signalError(base::strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
 		gl.signalError("create-interpreter: invalid arguments, expected (id)");

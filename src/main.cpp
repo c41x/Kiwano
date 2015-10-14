@@ -29,6 +29,7 @@ public:
 		gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
 		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
 		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
+		gl.addProcedure("create-audio-settings", std::bind(&user_interface::create_audio_settings, &itf, _1, _2));
 		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
 		gl.addProcedure("layout-remove-component", std::bind(&user_interface::layout_remove_component, &itf, _1, _2));
 		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
@@ -54,6 +55,8 @@ public:
 		gl.eval("(layout-add-component 'l2 'tab 300.0 300.0 300.0)");
 		gl.eval("(defvar cl-red |1.0 0.0 0.0 1.0|)");
 		gl.eval("(tabs-add-component 'tab 'plpl \"First tab\" cl-red)");
+		gl.eval("(create-audio-settings 'sss)");
+		gl.eval("(tabs-add-component 'tab 'sss \"Audio Settings\" |0.0 0.8 0.0 1.0|)");
 		gl.eval("(refresh-interface)");
 	}
 

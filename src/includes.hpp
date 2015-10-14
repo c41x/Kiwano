@@ -1,7 +1,7 @@
 #pragma once
 #include <AppConfig.h>
-// #include <modules/juce_audio_basics/juce_audio_basics.h>
-// #include <modules/juce_audio_devices/juce_audio_devices.h>
+#include <modules/juce_audio_basics/juce_audio_basics.h>
+#include <modules/juce_audio_devices/juce_audio_devices.h>
 // #include <modules/juce_audio_formats/juce_audio_formats.h>
 // #include <modules/juce_audio_processors/juce_audio_processors.h>
 #include <modules/juce_core/juce_core.h>
@@ -13,6 +13,7 @@
 // #include <modules/juce_gui_extra/juce_gui_extra.h>
 // #include <modules/juce_opengl/juce_opengl.h>
 // #include <modules/juce_video/juce_video.h>
+#include <modules/juce_audio_utils/juce_audio_utils.h>
 #include <base/base.hpp>
 #include <memory>
 
