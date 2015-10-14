@@ -24,7 +24,7 @@ endif()
 include_directories(${GRANITE_INCLUDE_DIRS})
 
 if(MINGW)
-  link_libraries(uuid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm opengl32)
+  link_libraries(ks ksuser ksguid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm opengl32 uuid)
 else()
   link_libraries(rt dl)
 endif()
@@ -42,4 +42,9 @@ add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_events/juce_events.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_opengl/juce_opengl.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_graphics/juce_graphics.cpp"
-  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_data_structures/juce_data_structures.cpp")
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_data_structures/juce_data_structures.cpp"
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_devices/juce_audio_devices.cpp"
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_basics/juce_audio_basics.cpp"
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_utils/juce_audio_utils.cpp"
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_formats/juce_audio_formats.cpp"
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp")
