@@ -56,7 +56,7 @@ public:
 		gl.eval("(defvar cl-red |1.0 0.0 0.0 1.0|)");
 		gl.eval("(tabs-add-component 'tab 'plpl \"First tab\" cl-red)");
 		gl.eval("(create-audio-settings 'sss)");
-		gl.eval("(tabs-add-component 'tab 'sss \"Audio Settings\" |0.0 0.8 0.0 1.0|)");
+		gl.eval("(tabs-add-component 'tab 'sss \"Audio Settings\" |0.0 0.8 0.0 0.5|)");
 		gl.eval("(refresh-interface)");
 	}
 
