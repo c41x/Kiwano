@@ -22,6 +22,9 @@ public:
 		setResizable(true, true);
 		setVisible(true);
 
+		// initialize playback
+		playback::init();
+
 		// initialize GLISP
 		using namespace std::placeholders;
 		gl.init();
@@ -38,6 +41,18 @@ public:
 		gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
+
+		// playback API
+		gl.addProcedure("playback-set-file", std::bind(&playback::set_file, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-unload-file", std::bind(&playback::unload_file, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-start", std::bind(&playback::start, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-stop", std::bind(&playback::stop, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-seek", std::bind(&playback::seek, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-length", std::bind(&playback::length, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-get-pos", std::bind(&playback::get_pos, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-is-playing", std::bind(&playback::is_playing, std::ref(gl), _1, _2));
+
+		// test
 		gl.eval("(create-playlist 'p1)");
 		gl.eval("(create-playlist 'p2)");
 		gl.eval("(create-layout 'l1 t)");
@@ -62,6 +77,7 @@ public:
 
 	void closeButtonPressed() override {
 		gl.close();
+		playback::shutdown();
 		JUCEApplication::getInstance()->systemRequestedQuit();
 	}
 };
@@ -93,17 +109,5 @@ public:
 };
 
 START_JUCE_APPLICATION(KiwanoApplication);
-
-// TODO: .
-// playback API:
-// playback-set-file (string)fileName -> t/nil
-// playback-unload-file
-// playback-play -> t/nil
-// playback-pause -> t/nil
-// playback-stop -> t/nil
-// playback-seek (int)pos
-// playback-get-pos -> int
-// playback-is-playing -> t/nil
-// playback-is-paused -> t/nil
 
 // TODO: load config from file

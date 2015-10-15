@@ -3,6 +3,7 @@
 #include "tabs.hpp"
 #include "interpreter.hpp"
 #include "layout.hpp"
+#include "playback.hpp"
 
 class user_interface : public Component {
 	std::map<std::string, std::unique_ptr<Component>> components;
@@ -83,8 +84,6 @@ public:
 		return gl.nil();
 	}
 
-	AudioDeviceManager dm;
-
 	// (create-audio-settings name)
 	base::cell_t create_audio_settings(base::cell_t c, base::cells_t &) {
 		using namespace base;
@@ -92,7 +91,7 @@ public:
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
 				components.insert(std::make_pair(name->s, std::make_unique<AudioDeviceSelectorComponent>(
-													 dm, 0, 256, 0, 256, false, false, true, false)));
+													 playback::dm, 0, 256, 0, 256, false, false, true, false)));
 				return gl.t();
 			}
 			gl.signalError(strs("components named ", name->s, " already exists"));
