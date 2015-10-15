@@ -33,9 +33,9 @@ base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
 	if (r) {
 		frs = new AudioFormatReaderSource(r, true);
 		ts.setSource(frs, 32768, &thread, r->sampleRate);
-		gl.signalError(base::strs("file not found or file format not supported: ", fname->s));
 		return gl.t();
 	}
+	gl.signalError(base::strs("file not found or file format not supported: ", fname->s));
 	return gl.nil();
 }
 
