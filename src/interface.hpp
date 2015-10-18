@@ -20,7 +20,7 @@ public:
 	}
 
 	// (set-main-component name) -> bool
-	base::cell_t set_main_component(base::cell_t c, base::cells_t &ret) {
+	base::cell_t set_main_component(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			auto cc = components.find(name->s);
@@ -38,7 +38,7 @@ public:
 	}
 
 	// (refresh-interface)
-	base::cell_t refresh_interface(base::cell_t c, base::cells_t &ret) {
+	base::cell_t refresh_interface(base::cell_t, base::cells_t &) {
 		// signal to all components resized event (to refresh UI)
 		for (auto &c : components)
 			c.second->resized();
@@ -46,7 +46,7 @@ public:
 	}
 
 	// (create-playlist name) -> bool/id
-	base::cell_t create_playlist(base::cell_t c, base::cells_t &ret) {
+	base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
@@ -61,7 +61,7 @@ public:
 	}
 
 	// (create-tabs name 'orientation{top, bottom, left, right}) -> bool/id
-	base::cell_t create_tabs(base::cell_t c, base::cells_t &ret) {
+	base::cell_t create_tabs(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -102,7 +102,7 @@ public:
 	}
 
 	// (tabs-add-component tabs-name component-name "caption" |color|) -> bool
-	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &ret) {
+	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector)) {
 			const auto &name = c + 1;
@@ -127,7 +127,7 @@ public:
 	}
 
 	// (create-layout name (bool)horizontal) -> bool/id
-	base::cell_t create_layout(base::cell_t c, base::cells_t &ret) {
+	base::cell_t create_layout(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -144,7 +144,7 @@ public:
 	}
 
 	// (create-interpreter name) -> bool/id
-	base::cell_t create_interpreter(base::cell_t c, base::cells_t &ret) {
+	base::cell_t create_interpreter(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
@@ -159,7 +159,7 @@ public:
 	}
 
 	// (layout-add-component layout-id component-id (float)min (float)max (float)preffered) -> bool
-	base::cell_t layout_add_component(base::cell_t c, base::cells_t &ret) {
+	base::cell_t layout_add_component(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(5),
 						   cell::typeIdentifier, cell::typeIdentifier,
@@ -184,7 +184,7 @@ public:
 	}
 
 	// (layout-remove-component layout-id component-id) -> bool
-	base::cell_t layout_remove_component(base::cell_t c, base::cells_t &ret) {
+	base::cell_t layout_remove_component(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
 			const auto &lname = c + 1;
@@ -204,7 +204,7 @@ public:
 	}
 
 	// (layout-remove-splitter layout-id (int)splitter-index)
-	base::cell_t layout_remove_splitter(base::cell_t c, base::cells_t &ret) {
+	base::cell_t layout_remove_splitter(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeInt)) {
 			const auto &lname = c + 1;
@@ -223,7 +223,7 @@ public:
 	}
 
 	// (layout-add-splitter layout-id)
-	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &ret) {
+	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &lname = c + 1;
 			auto l = components.find(lname->s);
