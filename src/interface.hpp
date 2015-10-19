@@ -5,8 +5,17 @@
 #include "layout.hpp"
 #include "playback.hpp"
 
+class listener : public Button::Listener {
+	base::string functionId;
+	base::lisp &gl;
+public:
+	listener(base::lisp &interp, base::string fxId) : functionId(fxId), gl(interp) {}
+	void buttonClicked(Button *) override { gl.eval(base::strs("(", functionId, ")")); }
+};
+
 class user_interface : public Component {
 	std::map<std::string, std::unique_ptr<Component>> components;
+	std::vector<listener> listeners;
 	Component *mainComponent;
 	base::lisp &gl;
 
@@ -45,7 +54,7 @@ public:
 		return gl.t();
 	}
 
-	// (create-playlist name) -> bool/id
+	// (create-playlist name) -> nil/id
 	base::cell_t create_playlist(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -57,6 +66,27 @@ public:
 			return gl.nil();
 		}
 		gl.signalError("create-playlist: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	// (create-text-button name (string)caption (string)tooltip) -> nil/id
+	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeString, cell::typeString, cell::typeIdentifier)) { // TODO: separate fx to bind callback
+			const auto &name = c + 1;
+			const auto &label = c + 2;
+			const auto &tip = c + 3;
+			const auto &callback = c + 4;
+			if (components.find(name->s) == components.end()) {
+				components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s)));
+				listeners.push_back(listener(gl, callback->s));
+				reinterpret_cast<TextButton*>(components[name->s].get())->addListener(&listeners.back());
+				return name;
+			}
+			gl.signalError(strs("component named ", name->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-text-button: invalid arguments, expected (id string string id)");
 		return gl.nil();
 	}
 
