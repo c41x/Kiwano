@@ -5,6 +5,8 @@
 #include "layout.hpp"
 #include "playback.hpp"
 
+// TODO: change to MouseListener? all Component instances have mouse listener
+// example: (component-bind-callback 'some-component 'callback-fx)
 class listener : public Button::Listener {
 	base::string functionId;
 	base::lisp &gl;
@@ -13,14 +15,24 @@ public:
 	void buttonClicked(Button *) override { gl.eval(base::strs("(", functionId, ")")); }
 };
 
+class playlistItemClickListener : public MouseListener {
+	base::string functionId;
+	base::lisp &gl;
+	playlist *p;
+public:
+	playlistItemClickListener(base::lisp &interp, base::string fxId, playlist *pl) : functionId(fxId), gl(interp), p(pl) {}
+	void mouseDoubleClick(const MouseEvent &) { gl.eval(base::strs("(", functionId, " \"", p->getSelectedRowString(),"\"", ")")); }
+};
+
 class user_interface : public Component {
 	std::map<std::string, std::unique_ptr<Component>> components;
-	std::vector<listener> listeners;
+	std::vector<listener> listeners; // TODO: invalidated
+	std::vector<playlistItemClickListener> playlistListeners;
 	Component *mainComponent;
 	base::lisp &gl;
 
 public:
-	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) {}
+	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) { TODO: playlistListeners.reserve(100); }
 	~user_interface() {}
 
 	void resized() override {
@@ -60,6 +72,10 @@ public:
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
 				components.insert(std::make_pair(name->s, std::make_unique<playlist>()));
+
+				playlistListeners.push_back(playlistItemClickListener(gl, "on-playlist-click", reinterpret_cast<playlist*>(components[name->s].get())));
+				reinterpret_cast<playlist*>(components[name->s].get())->addMouseListener(&playlistListeners.back(), true);
+
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -69,6 +85,21 @@ public:
 		return gl.nil();
 	}
 
+	// TODO: validation
+	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowString()));
+				return ret.end() - 1;
+			}
+		}
+		return gl.nil();
+	}
+
+	// TODO: removing callbacks
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {
 		using namespace base;

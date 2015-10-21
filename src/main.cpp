@@ -45,6 +45,8 @@ public:
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
+		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
+
 		// playback API
 		gl.addProcedure("playback-set-file", std::bind(&playback::set_file, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-unload-file", std::bind(&playback::unload_file, std::ref(gl), _1, _2));
@@ -56,6 +58,8 @@ public:
 		gl.addProcedure("playback-is-playing", std::bind(&playback::is_playing, std::ref(gl), _1, _2));
 
 		// test
+		gl.eval("(defun on-playlist-click (item-str) (playback-set-file item-str) (playback-start) )");
+
 		gl.eval("(create-playlist 'p1)");
 		gl.eval("(create-playlist 'p2)");
 		gl.eval("(create-layout 'l1 t)");
