@@ -95,7 +95,10 @@ public:
 				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowString()));
 				return ret.end() - 1;
 			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
 		}
+		gl.signalError("playlist-get-selected: invalid arguments, expected (id)");
 		return gl.nil();
 	}
 
