@@ -85,7 +85,6 @@ public:
 		return gl.nil();
 	}
 
-	// TODO: validation
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -93,7 +92,7 @@ public:
 			if (e != components.end()) {
 				auto p = reinterpret_cast<playlist*>(e->second.get());
 				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowString()));
-				return ret.end() - 1;
+				return ret.end();
 			}
 			gl.signalError(base::strs("component named: ", name->s, " not found"));
 			return gl.nil();
@@ -312,8 +311,7 @@ public:
 			if (l != components.end()) {
 				layout *lay = reinterpret_cast<layout*>(l->second.get());
 				ret.push_back(base::cell(lay->getSplittersCount()));
-				return ret.end() - 1;
-				// TODO: better return
+				return ret.end();
 			}
 			gl.signalError("layout not found");
 			return gl.nil();

@@ -77,13 +77,13 @@ base::cell_t seek(base::lisp &gl, base::cell_t c, base::cells_t &) {
 // playback-length -> (float)/total time in seconds/
 base::cell_t length(base::lisp &gl, base::cell_t, base::cells_t &ret) {
 	ret.push_back(base::cell(float(ts.getLengthInSeconds())));
-	return ret.end() - 1; // TODO: better return
+	return ret.end();
 }
 
 // playback-get-pos -> (float)/playback position in seconds/
 base::cell_t get_pos(base::lisp &gl, base::cell_t, base::cells_t &ret) {
 	ret.push_back(base::cell(float(ts.getCurrentPosition())));
-	return ret.end() - 1; // TODO: better return
+	return ret.end();
 }
 
 // playback-is-playing -> t/nil
