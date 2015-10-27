@@ -7,32 +7,64 @@
 
 // TODO: change to MouseListener? all Component instances have mouse listener
 // example: (component-bind-callback 'some-component 'callback-fx)
-class listener : public Button::Listener {
+// class listener : public Button::Listener {
+// 	base::string functionId;
+// 	base::lisp &gl;
+// public:
+// 	listener(base::lisp &interp, base::string fxId) : functionId(fxId), gl(interp) {}
+// 	void buttonClicked(Button *) override { gl.eval(base::strs("(", functionId, ")")); }
+// };
+
+// class playlistItemClickListener : public MouseListener {
+// 	base::string functionId;
+// 	base::lisp &gl;
+// 	playlist *p;
+// public:
+// 	playlistItemClickListener(base::lisp &interp, base::string fxId, playlist *pl) : functionId(fxId), gl(interp), p(pl) {}
+// 	void mouseDoubleClick(const MouseEvent &) { gl.eval(base::strs("(", functionId, " \"", p->getSelectedRowString(),"\"", ")")); }
+// };
+
+//- new callback system
+// TODO: change name from callback to listener
+class mouseCallback : public MouseListener {
+protected:
+	void call() {
+		base::string lispArgs = "";
+		for (auto &e : args)
+			lispArgs += base::strs(" \"", e(), "\"");
+		gl.eval(base::strs("(", functionId, lispArgs, ")"));
+	}
+public:
+	mouseCallback(base::lisp &interp, base::string fxId, Component *com) :
+			functionId(fxId), gl(interp), c(com) {}
 	base::string functionId;
 	base::lisp &gl;
-public:
-	listener(base::lisp &interp, base::string fxId) : functionId(fxId), gl(interp) {}
-	void buttonClicked(Button *) override { gl.eval(base::strs("(", functionId, ")")); }
+	Component *c;
+	std::vector<std::function<base::string()>> args;
 };
 
-class playlistItemClickListener : public MouseListener {
-	base::string functionId;
-	base::lisp &gl;
-	playlist *p;
+// TODO: consider alternative naming: mouseUp?
+class mouseClickCallback : public mouseCallback {
 public:
-	playlistItemClickListener(base::lisp &interp, base::string fxId, playlist *pl) : functionId(fxId), gl(interp), p(pl) {}
-	void mouseDoubleClick(const MouseEvent &) { gl.eval(base::strs("(", functionId, " \"", p->getSelectedRowString(),"\"", ")")); }
+	mouseClickCallback(base::lisp &interp, base::string fxId, Component *com) : mouseCallback(interp, fxId, com) {}
+	void mouseUp(const MouseEvent &e) { call(); }
 };
+
+class mouseDoubleClickCallback : public mouseCallback {
+public:
+	mouseDoubleClickCallback(base::lisp &interp, base::string fxId, Component *com) : mouseCallback(interp, fxId, com) {}
+	void mouseDoubleClick(const MouseEvent &e) { call(); }
+};
+//- ~new callback system
 
 class user_interface : public Component {
 	std::map<std::string, std::unique_ptr<Component>> components;
-	std::vector<listener> listeners; // TODO: invalidated
-	std::vector<playlistItemClickListener> playlistListeners;
+	std::vector<std::unique_ptr<mouseCallback>> callbacks;
 	Component *mainComponent;
 	base::lisp &gl;
 
 public:
-	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) { TODO: playlistListeners.reserve(100); }
+	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) { }
 	~user_interface() {}
 
 	void resized() override {
@@ -71,10 +103,12 @@ public:
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<playlist>()));
+				Component *com = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second.get();
 
-				playlistListeners.push_back(playlistItemClickListener(gl, "on-playlist-click", reinterpret_cast<playlist*>(components[name->s].get())));
-				reinterpret_cast<playlist*>(components[name->s].get())->addMouseListener(&playlistListeners.back(), true);
+				// TODO: test - remove
+				callbacks.push_back(std::make_unique<mouseDoubleClickCallback>(gl, "on-playlist-click", com));
+				callbacks.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
+				com->addMouseListener(callbacks.back().get(), true);
 
 				return name;
 			}
@@ -111,9 +145,10 @@ public:
 			const auto &tip = c + 3;
 			const auto &callback = c + 4;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s)));
-				listeners.push_back(listener(gl, callback->s));
-				reinterpret_cast<TextButton*>(components[name->s].get())->addListener(&listeners.back());
+				Component *com = components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s)))
+					.first->second.get();
+				callbacks.push_back(std::make_unique<mouseClickCallback>(gl, callback->s, com));
+				com->addMouseListener(callbacks.back().get(), true);
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
