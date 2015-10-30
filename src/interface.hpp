@@ -68,6 +68,26 @@ public:
 		return gl.nil();
 	}
 
+	// TODO: removing callbacks
+	// TODO: other callbacks
+	// (bind-mouse-click (id)component (id)function) -> bool
+	base::cell_t bind_mouse_click(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &cname = c + 1;
+			const auto &bname = c + 2;
+			auto e = components.find(cname->s);
+			if (e != components.end()) {
+				Component *com = e->second.get();
+				listeners.push_back(std::make_unique<mouseUpListener>(gl, bname->s, com));
+				com->addMouseListener(listeners.back().get(), true);
+				return gl.t();
+			}
+		}
+		// TODO: better error reporting
+		return gl.nil();
+	}
+
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -84,26 +104,21 @@ public:
 		return gl.nil();
 	}
 
-	// TODO: removing callbacks
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeString, cell::typeString, cell::typeIdentifier)) { // TODO: separate fx to bind callback
+		if (lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeString, cell::typeString)) {
 			const auto &name = c + 1;
 			const auto &label = c + 2;
 			const auto &tip = c + 3;
-			const auto &callback = c + 4;
 			if (components.find(name->s) == components.end()) {
-				Component *com = components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s)))
-					.first->second.get();
-				listeners.push_back(std::make_unique<mouseUpListener>(gl, callback->s, com));
-				com->addMouseListener(listeners.back().get(), true);
+				components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s)));
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
-		gl.signalError("create-text-button: invalid arguments, expected (id string string id)");
+		gl.signalError("create-text-button: invalid arguments, expected (id string string)");
 		return gl.nil();
 	}
 
