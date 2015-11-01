@@ -54,4 +54,8 @@ public:
 		box.updateContent();
 		repaint();
 	}
+
+	base::string getSelectedRowString() {
+		return model.entries[box.getSelectedRow()].toStdString();
+	}
 };
