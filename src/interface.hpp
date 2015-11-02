@@ -70,8 +70,9 @@ public:
 
 	// TODO: removing callbacks
 	// TODO: other callbacks
-	// (bind-mouse-click (id)component (id)function) -> bool
-	base::cell_t bind_mouse_click(base::cell_t c, base::cells_t &ret) {
+	// (bind-mouse-* (id)component (id)function) -> bool
+	template <typename T>
+	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
 								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
@@ -79,7 +80,7 @@ public:
 			auto e = components.find(cname->s);
 			if (e != components.end()) {
 				Component *com = e->second.get();
-				listeners.push_back(std::make_unique<mouseUpListener>(gl, bname->s, com));
+				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
 				com->addMouseListener(listeners.back().get(), true);
 				return gl.t();
 			}
