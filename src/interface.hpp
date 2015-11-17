@@ -55,6 +55,7 @@ public:
 				Component *com = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second.get();
 
 				// TODO: test - remove
+				// TODO: listeners with arguments binding
 				listeners.push_back(std::make_unique<mouseDoubleClickListener>(gl, "on-playlist-click", com));
 				listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
 				com->addMouseListener(listeners.back().get(), true);
@@ -85,7 +86,7 @@ public:
 				return gl.t();
 			}
 		}
-		// TODO: better error reporting
+		gl.signalError("bind-mouse-*: invalid arguments, expected (id id)");
 		return gl.nil();
 	}
 
