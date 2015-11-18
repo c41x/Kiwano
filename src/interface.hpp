@@ -73,7 +73,7 @@ public:
 	// TODO: other callbacks
 	// (bind-mouse-* (id)component (id)function) -> bool
 	template <typename T>
-	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &ret) {
+	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
 								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
@@ -87,6 +87,30 @@ public:
 			}
 		}
 		gl.signalError("bind-mouse-*: invalid arguments, expected (id id)");
+		return gl.nil();
+	}
+
+	// (unbind-mouse (id)component (id)function)
+	base::cell_t unbind_mouse_listener(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &cname = c + 1;
+			const auto &bname = c + 2;
+			auto e = components.find(cname->s);
+			if (e != components.end()) {
+				Component *com = e->second.get();
+				auto l = std::find_if(listeners.begin(), listeners.end(), [&com, &bname](const auto &a) {
+						return a->c == com && a->functionId == bname->s;
+					});
+				if (l != listeners.end()) {
+					com->removeMouseListener((*l).get());
+					listeners.erase(l);
+					return gl.t();
+				}
+				return gl.nil();
+			}
+		}
+		gl.signalError("unbind-mouse-*: invalid arguments, expected (id id)");
 		return gl.nil();
 	}
 
