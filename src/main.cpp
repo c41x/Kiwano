@@ -65,32 +65,17 @@ public:
 		// test
 		gl.eval("(defun on-playlist-click (item-str) (playback-set-file item-str) (playback-start) )");
 
-		gl.eval("(create-playlist 'p1)");
-		gl.eval("(create-playlist 'p2)");
-		gl.eval("(create-layout 'l1 t)");
-		gl.eval("(layout-add-component 'l1 'p1 -0.1 -0.9 -0.5)");
-		gl.eval("(layout-add-splitter 'l1)");
-		gl.eval("(layout-add-component 'l1 'p2 -0.1 -0.9 -0.5)");
-		gl.eval("(create-layout 'l2 nil)");
-		gl.eval("(create-interpreter 'int1)");
-		gl.eval("(layout-add-component 'l2 'int1 50.0 100.0 50.0)");
-		gl.eval("(layout-add-splitter 'l2)");
-		gl.eval("(layout-add-component 'l2 'l1 -0.1 -1.0 -0.9)");
-		gl.eval("(set-main-component 'l2)");
-		gl.eval("(create-tabs 'tab 'bottom)");
-		gl.eval("(create-playlist 'plpl)");
-		gl.eval("(layout-add-component 'l2 'tab 300.0 300.0 300.0)");
-		gl.eval("(defvar cl-red |1.0 0.0 0.0 1.0|)");
-		gl.eval("(tabs-add-component 'tab 'plpl \"First tab\" cl-red)");
-		gl.eval("(create-audio-settings 'sss)");
-		gl.eval("(tabs-add-component 'tab 'sss \"Audio Settings\" |0.0 0.8 0.0 0.5|)");
-		gl.eval("(defun on-play-clicked () (layout-remove-splitter 'l1 0) (refresh-interface))");
-		gl.eval("(tabs-add-component 'tab (create-text-button 'playb \"Play\" \"Plays selected track\") \"Playback API\" |0.0 0.1 0.5 0.9|)");
-		gl.eval("(bind-mouse-click 'playb 'on-play-clicked)");
-		gl.eval("(refresh-interface)");
+		// prepare settings folder
+		base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
+		base::fs::createFolderTree(appPath);
+		base::fs::open(appPath);
+
+		// load ELISP config file
+		gl.eval(base::toStr(base::fs::load("init.lisp")));
 	}
 
 	void closeButtonPressed() override {
+		base::fs::close();
 		gl.close();
 		playback::shutdown();
 		JUCEApplication::getInstance()->systemRequestedQuit();
