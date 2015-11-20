@@ -110,4 +110,4 @@ public:
 
 START_JUCE_APPLICATION(KiwanoApplication);
 
-// TODO: load config from file
+// TODO: load default config
