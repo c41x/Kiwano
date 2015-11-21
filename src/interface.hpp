@@ -69,8 +69,6 @@ public:
 		return gl.nil();
 	}
 
-	// TODO: removing callbacks
-	// TODO: other callbacks
 	// (bind-mouse-* (id)component (id)function) -> bool
 	template <typename T>
 	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &) {
