@@ -47,7 +47,9 @@ public:
 
 		// GUI event binding
 		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_mouse_listener<mouseUpListener>, &itf, _1, _2));
+		gl.addProcedure("bind-mouse-up", std::bind(&user_interface::bind_mouse_listener<mouseUpListener>, &itf, _1, _2));
 		gl.addProcedure("bind-mouse-double-click", std::bind(&user_interface::bind_mouse_listener<mouseDoubleClickListener>, &itf, _1, _2));
+		gl.addProcedure("bind-mouse-down", std::bind(&user_interface::bind_mouse_listener<mouseDownListener>, &itf, _1, _2));
 		gl.addProcedure("unbind-mouse", std::bind(&user_interface::unbind_mouse_listener, &itf, _1, _2));
 
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
