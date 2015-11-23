@@ -53,13 +53,6 @@ public:
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
 				Component *com = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second.get();
-
-				// TODO: test - remove
-				// TODO: listeners with arguments binding
-				listeners.push_back(std::make_unique<mouseDoubleClickListener>(gl, "on-playlist-click", com));
-				listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
-				com->addMouseListener(listeners.back().get(), true);
-
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -73,7 +66,7 @@ public:
 	template <typename T>
 	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
+								 base::cell::typeIdentifier) || true) { // TODO: validation
 			const auto &cname = c + 1;
 			const auto &bname = c + 2;
 			auto e = components.find(cname->s);
@@ -81,6 +74,13 @@ public:
 				Component *com = e->second.get();
 				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
 				com->addMouseListener(listeners.back().get(), true);
+
+				// iterate event properties
+				if (c->i == 3)
+					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
+							if (c->s == "selected-row")
+								listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
+						});
 				return gl.t();
 			}
 		}

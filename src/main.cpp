@@ -64,9 +64,6 @@ public:
 		gl.addProcedure("playback-get-pos", std::bind(&playback::get_pos, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-is-playing", std::bind(&playback::is_playing, std::ref(gl), _1, _2));
 
-		// test
-		gl.eval("(defun on-playlist-click (item-str) (playback-set-file item-str) (playback-start) )");
-
 		// prepare settings folder
 		base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
 		base::fs::createFolderTree(appPath);
