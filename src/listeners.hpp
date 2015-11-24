@@ -1,24 +1,6 @@
 #pragma once
 #include "includes.hpp"
 
-// example: (component-bind-callback 'some-component 'callback-fx)
-// class listener : public Button::Listener {
-// 	base::string functionId;
-// 	base::lisp &gl;
-// public:
-// 	listener(base::lisp &interp, base::string fxId) : functionId(fxId), gl(interp) {}
-// 	void buttonClicked(Button *) override { gl.eval(base::strs("(", functionId, ")")); }
-// };
-
-// class playlistItemClickListener : public MouseListener {
-// 	base::string functionId;
-// 	base::lisp &gl;
-// 	playlist *p;
-// public:
-// 	playlistItemClickListener(base::lisp &interp, base::string fxId, playlist *pl) : functionId(fxId), gl(interp), p(pl) {}
-// 	void mouseDoubleClick(const MouseEvent &) { gl.eval(base::strs("(", functionId, " \"", p->getSelectedRowString(),"\"", ")")); }
-// };
-
 class mouseListener : public MouseListener {
 protected:
 	void call() {
