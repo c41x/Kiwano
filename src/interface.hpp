@@ -52,7 +52,7 @@ public:
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				Component *com = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second.get();
+				components.insert(std::make_pair(name->s, std::make_unique<playlist>()));
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -65,8 +65,8 @@ public:
 	// (bind-mouse-* (id)component (id)function) -> bool
 	template <typename T>
 	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier) || true) { // TODO: validation
+		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
 			const auto &bname = c + 2;
 			auto e = components.find(cname->s);
@@ -76,7 +76,7 @@ public:
 				com->addMouseListener(listeners.back().get(), true);
 
 				// iterate event properties
-				if (c->i == 3)
+				if (c->i == 3) // TODO: fx? c->listSize()
 					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
 							if (c->s == "selected-row")
 								listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
