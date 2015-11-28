@@ -76,7 +76,7 @@ public:
 				com->addMouseListener(listeners.back().get(), true);
 
 				// iterate event properties
-				if (c->i == 3) // TODO: fx? c->listSize()
+				if (c->listSize() == 3)
 					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
 							if (c->s == "selected-row")
 								listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
