@@ -36,6 +36,7 @@ public:
 		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
 		gl.addProcedure("create-audio-settings", std::bind(&user_interface::create_audio_settings, &itf, _1, _2));
 		gl.addProcedure("create-text-button", std::bind(&user_interface::create_text_button, &itf, _1, _2));
+		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
 		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
 		gl.addProcedure("layout-remove-component", std::bind(&user_interface::layout_remove_component, &itf, _1, _2));
 		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));

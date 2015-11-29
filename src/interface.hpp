@@ -146,6 +146,22 @@ public:
 		return gl.nil();
 	}
 
+	// (create-slider name) -> nil/id
+	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			if (components.find(name->s) == components.end()) {
+				components.insert(std::make_pair(name->s, std::make_unique<Slider>()));
+				return name;
+			}
+			gl.signalError(strs("component named ", name->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-slider: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
 	// (create-tabs name 'orientation{top, bottom, left, right}) -> bool/id
 	base::cell_t create_tabs(base::cell_t c, base::cells_t &) {
 		using namespace base;
