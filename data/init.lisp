@@ -24,6 +24,7 @@
   (refresh-interface))
 
 (tabs-add-component 'tab (create-text-button 'playb "Play" "Plays selected track") "Playback API" |0.0 0.1 0.5 0.9|)
+(tabs-add-component 'tab (create-slider 'slider) "Slider" |0.0 0.5 0.5 0.9|)
 (bind-mouse-click 'playb 'on-play-clicked)
 
 (refresh-interface)
