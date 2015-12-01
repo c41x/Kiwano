@@ -8,7 +8,7 @@
 
 class user_interface : public Component {
 	std::map<std::string, std::unique_ptr<Component>> components;
-	std::vector<std::unique_ptr<mouseListener>> listeners;
+	std::vector<std::unique_ptr<listener>> listeners;
 	Component *mainComponent;
 	base::lisp &gl;
 
