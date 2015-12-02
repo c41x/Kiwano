@@ -62,9 +62,14 @@ public:
 		return gl.nil();
 	}
 
-	// (bind-mouse-* (id)component (id)function) -> bool
-	template <typename T>
-	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &) {
+	// custom add listener functors
+	static void add_mouse_listener_fn(Component *com, listener *l) {
+		com->addMouseListener(l, true);
+	}
+
+	// (bind-mouse-* (id)component (id)function (list|optional)bindings) -> bool
+	template <typename T, typename ADD_FUNCTOR>
+	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &, ADD_FUNCTOR addFx) {
 		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
 								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
@@ -73,7 +78,7 @@ public:
 			if (e != components.end()) {
 				Component *com = e->second.get();
 				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
-				com->addMouseListener(listeners.back().get(), true);
+				addFx(com, listeners.back().get());
 
 				// iterate event properties
 				if (c->listSize() == 3)

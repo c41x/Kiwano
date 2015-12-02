@@ -47,10 +47,10 @@ public:
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
 		// GUI event binding
-		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_mouse_listener<mouseUpListener>, &itf, _1, _2));
-		gl.addProcedure("bind-mouse-up", std::bind(&user_interface::bind_mouse_listener<mouseUpListener>, &itf, _1, _2));
-		gl.addProcedure("bind-mouse-double-click", std::bind(&user_interface::bind_mouse_listener<mouseDoubleClickListener>, &itf, _1, _2));
-		gl.addProcedure("bind-mouse-down", std::bind(&user_interface::bind_mouse_listener<mouseDownListener>, &itf, _1, _2));
+		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_mouse_listener<mouseUpListener, void(*)(Component*, listener*)>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
+		gl.addProcedure("bind-mouse-up", std::bind(&user_interface::bind_mouse_listener<mouseUpListener, void(*)(Component*, listener*)>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
+		gl.addProcedure("bind-mouse-double-click", std::bind(&user_interface::bind_mouse_listener<mouseDoubleClickListener, void(*)(Component*, listener*)>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
+		gl.addProcedure("bind-mouse-down", std::bind(&user_interface::bind_mouse_listener<mouseDownListener, void(*)(Component*, listener*)>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
 		gl.addProcedure("unbind-mouse", std::bind(&user_interface::unbind_mouse_listener, &itf, _1, _2));
 
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
