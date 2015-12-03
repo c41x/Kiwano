@@ -67,9 +67,13 @@ public:
 		com->addMouseListener(l, true);
 	}
 
-	// (bind-mouse-* (id)component (id)function (list|optional)bindings) -> bool
-	template <typename T, typename ADD_FUNCTOR>
-	base::cell_t bind_mouse_listener(base::cell_t c, base::cells_t &, ADD_FUNCTOR addFx) {
+	static void add_slider_listener_fn(Component *com, listener *l) {
+		((Slider*)com)->addListener(l);
+	}
+
+	// (bind-* (id)component (id)function (list|optional)bindings) -> bool
+	template <typename T>
+	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
 		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
 								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
@@ -93,8 +97,17 @@ public:
 		return gl.nil();
 	}
 
-	// (unbind-mouse (id)component (id)function)
-	base::cell_t unbind_mouse_listener(base::cell_t c, base::cells_t &) {
+	// custom listener removers
+	static void remove_mouse_listener_fx(Component *com, listener *l) {
+		com->removeMouseListener(l);
+	}
+
+	static void remove_slider_listener_fx(Component *com, listener *l) {
+		((Slider*)com)->removeListener(l);
+	}
+
+	// (unbind-* (id)component (id)function)
+	base::cell_t unbind_listener(base::cell_t c, base::cells_t &, void(*removeFx)(Component *, listener *)) {
 		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
 								 base::cell::typeIdentifier)) {
 			const auto &cname = c + 1;
@@ -106,7 +119,7 @@ public:
 						return a->c == com && a->functionId == bname->s;
 					});
 				if (l != listeners.end()) {
-					com->removeMouseListener((*l).get());
+					removeFx(com, (*l).get());
 					listeners.erase(l);
 					return gl.t();
 				}
