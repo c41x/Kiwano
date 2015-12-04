@@ -62,74 +62,6 @@ public:
 		return gl.nil();
 	}
 
-	// custom add listener functors
-	static void add_mouse_listener_fn(Component *com, listener *l) {
-		com->addMouseListener(l, true);
-	}
-
-	static void add_slider_listener_fn(Component *com, listener *l) {
-		((Slider*)com)->addListener(l);
-	}
-
-	// (bind-* (id)component (id)function (list|optional)bindings) -> bool
-	template <typename T>
-	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
-		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
-			const auto &cname = c + 1;
-			const auto &bname = c + 2;
-			auto e = components.find(cname->s);
-			if (e != components.end()) {
-				Component *com = e->second.get();
-				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
-				addFx(com, listeners.back().get());
-
-				// iterate event properties
-				if (c->listSize() == 3)
-					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
-							if (c->s == "selected-row")
-								listeners.back()->args.push_back(std::bind(&playlist::getSelectedRowString, reinterpret_cast<playlist*>(com)));
-						});
-				return gl.t();
-			}
-		}
-		gl.signalError("bind-mouse-*: invalid arguments, expected (id id)");
-		return gl.nil();
-	}
-
-	// custom listener removers
-	static void remove_mouse_listener_fx(Component *com, listener *l) {
-		com->removeMouseListener(l);
-	}
-
-	static void remove_slider_listener_fx(Component *com, listener *l) {
-		((Slider*)com)->removeListener(l);
-	}
-
-	// (unbind-* (id)component (id)function)
-	base::cell_t unbind_listener(base::cell_t c, base::cells_t &, void(*removeFx)(Component *, listener *)) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
-			const auto &cname = c + 1;
-			const auto &bname = c + 2;
-			auto e = components.find(cname->s);
-			if (e != components.end()) {
-				Component *com = e->second.get();
-				auto l = std::find_if(listeners.begin(), listeners.end(), [&com, &bname](const auto &a) {
-						return a->c == com && a->functionId == bname->s;
-					});
-				if (l != listeners.end()) {
-					removeFx(com, (*l).get());
-					listeners.erase(l);
-					return gl.t();
-				}
-				return gl.nil();
-			}
-		}
-		gl.signalError("unbind-mouse-*: invalid arguments, expected (id id)");
-		return gl.nil();
-	}
-
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
@@ -161,22 +93,6 @@ public:
 			return gl.nil();
 		}
 		gl.signalError("create-text-button: invalid arguments, expected (id string string)");
-		return gl.nil();
-	}
-
-	// (create-slider name) -> nil/id
-	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<Slider>()));
-				return name;
-			}
-			gl.signalError(strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-slider: invalid arguments, expected (id)");
 		return gl.nil();
 	}
 
@@ -374,6 +290,138 @@ public:
 			return gl.nil();
 		}
 		gl.signalError("layout-get-splitters-count: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	//- slider
+	// (create-slider name) -> nil/id
+	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			if (components.find(name->s) == components.end()) {
+				components.insert(std::make_pair(name->s, std::make_unique<Slider>()));
+				return name;
+			}
+			gl.signalError(strs("component named ", name->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-slider: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	// TODO: make get/set property version
+	// (slider-set-range (id)slider-id (float)range-min (float)range-max)
+	base::cell_t slider_set_range(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeFloat, cell::typeFloat)) {
+			const auto &lname = c + 1;
+			auto l = components.find(lname->s);
+			if (l != components.end()) {
+				reinterpret_cast<Slider*>(l->second.get())->setRange((double)(c + 2)->f,
+																	 (double)(c + 3)->f);
+				return gl.t();
+			}
+			gl.signalError("slider not found");
+			return gl.nil();
+		}
+		gl.signalError("slider-set-range: invalid arguments, expected (id float float)");
+		return gl.nil();
+	}
+
+	// (slider-value (id)slider-id (float|optional)value) -> nil/t | value
+	base::cell_t slider_value(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::listRange(1, 2), cell::typeIdentifier, cell::typeFloat)) {
+			const auto &lname = c + 1;
+			auto l = components.find(lname->s);
+			if (l != components.end()) {
+				Slider *slider = reinterpret_cast<Slider*>(l->second.get());
+				// changes value
+				if (c->listSize() == 2) {
+					slider->setValue((double)(c + 2)->f);
+					return gl.t();
+				}
+
+				// returns value
+				ret.push_back(base::cell((float)slider->getValue()));
+				return ret.end();
+			}
+			gl.signalError("slider not found");
+			return gl.nil();
+		}
+		gl.signalError("slider-set-value: invalid arguments, expected (id float)");
+		return gl.nil();
+	}
+
+	//- bindings
+	// custom add listener functors
+	static void add_mouse_listener_fn(Component *com, listener *l) {
+		com->addMouseListener(l, true);
+	}
+
+	static void add_slider_listener_fn(Component *com, listener *l) {
+		((Slider*)com)->addListener(l);
+	}
+
+	// (bind-* (id)component (id)function (list|optional)bindings) -> bool
+	template <typename T>
+	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
+		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &cname = c + 1;
+			const auto &bname = c + 2;
+			auto e = components.find(cname->s);
+			if (e != components.end()) {
+				Component *com = e->second.get();
+				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
+				addFx(com, listeners.back().get());
+
+				// iterate event properties
+				if (c->listSize() == 3)
+					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
+							if (c->s == "selected-row")
+								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowString(), "\""); });
+							else if (c->s == "slider-value")
+								listeners.back()->args.push_back([com](){ return base::toStr(reinterpret_cast<Slider*>(com)->getValue()); });
+						});
+				return gl.t();
+			}
+		}
+		gl.signalError("bind-mouse-*: invalid arguments, expected (id id)");
+		return gl.nil();
+	}
+
+	// custom listener removers
+	static void remove_mouse_listener_fx(Component *com, listener *l) {
+		com->removeMouseListener(l);
+	}
+
+	static void remove_slider_listener_fx(Component *com, listener *l) {
+		((Slider*)com)->removeListener(l);
+	}
+
+	// (unbind-* (id)component (id)function)
+	base::cell_t unbind_listener(base::cell_t c, base::cells_t &, void(*removeFx)(Component *, listener *)) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &cname = c + 1;
+			const auto &bname = c + 2;
+			auto e = components.find(cname->s);
+			if (e != components.end()) {
+				Component *com = e->second.get();
+				auto l = std::find_if(listeners.begin(), listeners.end(), [&com, &bname](const auto &a) {
+						return a->c == com && a->functionId == bname->s;
+					});
+				if (l != listeners.end()) {
+					removeFx(com, (*l).get());
+					listeners.erase(l);
+					return gl.t();
+				}
+				return gl.nil();
+			}
+		}
+		gl.signalError("unbind-mouse-*: invalid arguments, expected (id id)");
 		return gl.nil();
 	}
 };

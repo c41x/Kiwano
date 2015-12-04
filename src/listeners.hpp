@@ -7,8 +7,8 @@ protected:
 	void call() {
 		base::string lispArgs = "";
 		for (auto &e : args)
-			lispArgs += base::strs(" \"", e(), "\"");
-		gl.eval(base::strs("(", functionId, lispArgs, ")"));
+			lispArgs += e();
+		gl.eval(base::strs("(", functionId, " ", lispArgs, ")"));
 	}
 public:
 	listener(base::lisp &interp, base::string fxId, Component *com) :
