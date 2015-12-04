@@ -14,6 +14,17 @@
 
 (create-tabs 'tab 'bottom)
 (create-playlist 'plpl)
+
+(defun on-playlist-click (item-str)
+  (playback-set-file item-str)
+  (slider-set-range 'slider 0.0 (playback-length))
+  (playback-start) )
+
+(defun on-slider-up (time)
+  (playback-seek time))
+
+(bind-mouse-double-click 'plpl 'on-playlist-click '(selected-row))
+
 (layout-add-component 'l2 'tab 300.0 300.0 300.0)
 (defvar cl-red |1.0 0.0 0.0 1.0|)
 (tabs-add-component 'tab 'plpl "First tab" cl-red)
@@ -26,5 +37,6 @@
 (tabs-add-component 'tab (create-text-button 'playb "Play" "Plays selected track") "Playback API" |0.0 0.1 0.5 0.9|)
 (tabs-add-component 'tab (create-slider 'slider) "Slider" |0.0 0.5 0.5 0.9|)
 (bind-mouse-click 'playb 'on-play-clicked)
+(bind-slider-drag-end 'slider 'on-slider-up '(slider-value))
 
 (refresh-interface)
