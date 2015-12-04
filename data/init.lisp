@@ -17,7 +17,7 @@
 
 (defun on-playlist-click (item-str)
   (playback-set-file item-str)
-  (slider-set-range 'slider 0.0 (playback-length))
+  (slider-range 'slider 0.0 (playback-length))
   (playback-start) )
 
 (defun on-slider-up (time)

@@ -58,7 +58,7 @@ public:
 		gl.addProcedure("unbind-slider", std::bind(&user_interface::unbind_listener, &itf, _1, _2, &user_interface::remove_slider_listener_fx));
 
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
-		gl.addProcedure("slider-set-range", std::bind(&user_interface::slider_set_range, &itf, _1, _2));
+		gl.addProcedure("slider-range", std::bind(&user_interface::slider_range, &itf, _1, _2));
 		gl.addProcedure("slider-value", std::bind(&user_interface::slider_value, &itf, _1, _2));
 
 		// playback API

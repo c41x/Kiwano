@@ -310,17 +310,27 @@ public:
 		return gl.nil();
 	}
 
-	// TODO: make get/set property version
-	// (slider-set-range (id)slider-id (float)range-min (float)range-max)
-	base::cell_t slider_set_range(base::cell_t c, base::cells_t &) {
+	// (slider-range (id)slider-id (float|optional)range-min (float|optional)range-max) -> nil/t | (float float)value
+	base::cell_t slider_range(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeFloat, cell::typeFloat)) {
+		bool isSetter = lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeFloat, cell::typeFloat);
+		bool isGetter = lisp::validate(c, cell::list(1), cell::typeIdentifier);
+		if (isGetter || isSetter) {
 			const auto &lname = c + 1;
 			auto l = components.find(lname->s);
 			if (l != components.end()) {
-				reinterpret_cast<Slider*>(l->second.get())->setRange((double)(c + 2)->f,
-																	 (double)(c + 3)->f);
-				return gl.t();
+				Slider *slider = reinterpret_cast<Slider*>(l->second.get());
+				if (isSetter) {
+					slider->setRange((double)(c + 2)->f,
+									 (double)(c + 3)->f);
+					return gl.t();
+				}
+
+				// getter (returns list tuple with minumum and maximum values)
+				ret.push_back(cell::list(2));
+				ret.push_back(cell((float)slider->getMinimum()));
+				ret.push_back(cell((float)slider->getMaximum()));
+				return ret.end();
 			}
 			gl.signalError("slider not found");
 			return gl.nil();
@@ -329,7 +339,7 @@ public:
 		return gl.nil();
 	}
 
-	// (slider-value (id)slider-id (float|optional)value) -> nil/t | value
+	// (slider-value (id)slider-id (float|optional)value) -> nil/t | (float)value
 	base::cell_t slider_value(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
 		if (lisp::validate(c, cell::listRange(1, 2), cell::typeIdentifier, cell::typeFloat)) {
