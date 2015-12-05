@@ -7,7 +7,8 @@
 #include "listeners.hpp"
 
 class user_interface : public Component {
-	std::map<std::string, std::unique_ptr<Component>> components;
+	std::map<base::string, std::unique_ptr<Component>> components;
+	std::map<base::string, std::unique_ptr<timerListener>> timers;
 	std::vector<std::unique_ptr<listener>> listeners;
 	Component *mainComponent;
 	base::lisp &gl;
@@ -397,8 +398,9 @@ public:
 						});
 				return gl.t();
 			}
+			// TODO: return here?
 		}
-		gl.signalError("bind-mouse-*: invalid arguments, expected (id id)");
+		gl.signalError("bind-*: invalid arguments, expected (id id)");
 		return gl.nil();
 	}
 
@@ -430,8 +432,67 @@ public:
 				}
 				return gl.nil();
 			}
+			// TODO: return here?
 		}
-		gl.signalError("unbind-mouse-*: invalid arguments, expected (id id)");
+		gl.signalError("unbind-*: invalid arguments, expected (id id)");
+		return gl.nil();
+	}
+
+	//- timers
+	// (create-timer (id)name (id)function) -> nil/t | name
+	base::cell_t create_timer(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier)) {
+			const auto &id = c + 1;
+			const auto &fx = c + 2;
+			if (timers.find(id->s) == timers.end()) {
+				timers[id->s] = std::make_unique<timerListener>(gl, fx->s);
+				return id;
+			}
+			gl.signalError(base::strs("timer named: ", id->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-timer: invalid arguments, expected (id id)");
+		return gl.nil();
+	}
+
+	// (remove-timer (id)name) -> nil/t
+	base::cell_t remove_timer(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &id = c + 1;
+			return 1 == timers.erase(id->s) ? gl.t() : gl.nil();
+		}
+		gl.signalError("remove-timer: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	// (start-timer (id)name (int)milliseconds) -> nil/t
+	base::cell_t start_timer(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt)) {
+			const auto &id = c + 1;
+			const auto &freq = c + 2;
+			auto e = timers.find(id->s);
+			if (e != timers.end()) {
+				e->second->startTimer(freq->i);
+				return gl.t();
+			}
+			return gl.nil();
+		}
+		gl.signalError("start-timer: invalid arguments, expected (id int)");
+		return gl.nil();
+	}
+
+	// (stop-timer (id)name) -> nil/t
+	base::cell_t stop_timer(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &id = c + 1;
+			auto e = timers.find(id->s);
+			if (e != timers.end()) {
+				e->second->stopTimer();
+				return gl.t();
+			}
+			return gl.nil();
+		}
+		gl.signalError("stop-timer: invalid arguments, expected (id int)");
 		return gl.nil();
 	}
 };

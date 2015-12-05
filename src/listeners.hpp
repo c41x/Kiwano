@@ -2,7 +2,7 @@
 #include "includes.hpp"
 
 // generic listener to pass events to lisp interpreter
-class listener : public MouseListener, public Slider::Listener {
+class listener : public MouseListener, public Slider::Listener, public Timer {
 protected:
 	void call() {
 		base::string lispArgs = "";
@@ -15,11 +15,12 @@ public:
 			functionId(fxId), gl(interp), c(com) {}
 	base::string functionId;
 	base::lisp &gl;
-	Component *c;
+	Component *c; // just to identyfy ownership
 	std::vector<std::function<base::string()>> args;
 
-	// this one is pure virtual, so i must override it here
+	// this are pure virtual, so i must override them here
 	void sliderValueChanged(Slider*) override {}
+	void timerCallback() override {}
 };
 
 // mouse listeners for Component class
@@ -58,4 +59,11 @@ class sliderDragEndedListener : public listener {
 public:
 	sliderDragEndedListener(base::lisp &interp, base::string fxId, Component *com) : listener(interp, fxId, com) {}
 	void sliderDragEnded(Slider *) override { call(); }
+};
+
+// Timer
+class timerListener : public listener {
+public:
+	timerListener(base::lisp &interp, base::string fxId) : listener(interp, fxId, nullptr) {}
+	void timerCallback() override { call(); }
 };

@@ -61,6 +61,12 @@ public:
 		gl.addProcedure("slider-range", std::bind(&user_interface::slider_range, &itf, _1, _2));
 		gl.addProcedure("slider-value", std::bind(&user_interface::slider_value, &itf, _1, _2));
 
+		// timers
+		gl.addProcedure("create-timer", std::bind(&user_interface::create_timer, &itf, _1, _2));
+		gl.addProcedure("remove-timer", std::bind(&user_interface::remove_timer, &itf, _1, _2));
+		gl.addProcedure("start-timer", std::bind(&user_interface::start_timer, &itf, _1, _2));
+		gl.addProcedure("stop-timer", std::bind(&user_interface::stop_timer, &itf, _1, _2));
+
 		// playback API
 		gl.addProcedure("playback-set-file", std::bind(&playback::set_file, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-unload-file", std::bind(&playback::unload_file, std::ref(gl), _1, _2));
