@@ -5,6 +5,7 @@
 #include "layout.hpp"
 #include "playback.hpp"
 #include "listeners.hpp"
+#include "slider.hpp"
 
 class user_interface : public Component {
 	std::map<base::string, std::unique_ptr<Component>> components;
@@ -301,7 +302,7 @@ public:
 		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<Slider>()));
+				components.insert(std::make_pair(name->s, std::make_unique<slider>()));
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
@@ -320,17 +321,17 @@ public:
 			const auto &lname = c + 1;
 			auto l = components.find(lname->s);
 			if (l != components.end()) {
-				Slider *slider = reinterpret_cast<Slider*>(l->second.get());
+				slider *sl = reinterpret_cast<slider*>(l->second.get());
 				if (isSetter) {
-					slider->setRange((double)(c + 2)->f,
+					sl->setRange((double)(c + 2)->f,
 									 (double)(c + 3)->f);
 					return gl.t();
 				}
 
 				// getter (returns list tuple with minumum and maximum values)
 				ret.push_back(cell::list(2));
-				ret.push_back(cell((float)slider->getMinimum()));
-				ret.push_back(cell((float)slider->getMaximum()));
+				ret.push_back(cell((float)sl->getMinimum()));
+				ret.push_back(cell((float)sl->getMaximum()));
 				return ret.end();
 			}
 			gl.signalError("slider not found");
@@ -347,15 +348,15 @@ public:
 			const auto &lname = c + 1;
 			auto l = components.find(lname->s);
 			if (l != components.end()) {
-				Slider *slider = reinterpret_cast<Slider*>(l->second.get());
-				// changes value
-				if (c->listSize() == 2) {
-					slider->setValue((double)(c + 2)->f);
+				slider *sl = reinterpret_cast<slider*>(l->second.get());
+				// changes value, changing value is not possible while dragging
+				if (c->listSize() == 2 && !sl->isDragging()) {
+					sl->setValue((double)(c + 2)->f);
 					return gl.t();
 				}
 
 				// returns value
-				ret.push_back(base::cell((float)slider->getValue()));
+				ret.push_back(base::cell((float)sl->getValue()));
 				return ret.end();
 			}
 			gl.signalError("slider not found");
