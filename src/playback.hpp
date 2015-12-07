@@ -9,17 +9,37 @@ AudioTransportSource ts;
 ScopedPointer<AudioFormatReaderSource> frs;
 TimeSliceThread thread("audio playback");
 
-void init() {
+class playbackListener : public ChangeListener {
+	base::lisp &gl;
+public:
+	base::string functionId;
+	bool enabled;
+	playbackListener(base::lisp &gli) : gl(gli), enabled(false) {}
+	void changeListenerCallback(ChangeBroadcaster *source) override {
+		if (source == &ts && enabled) {
+			gl.eval(base::strs("(", functionId, ")"));
+		}
+	}
+};
+
+playbackListener *pl = nullptr;
+
+void init(base::lisp &gl) {
 	fm.registerBasicFormats();
 	thread.startThread(3);
 	dm.addAudioCallback(&asp);
 	asp.setSource(&ts);
+	pl = new playbackListener(gl);
+	ts.addChangeListener(pl);
 }
 
 void shutdown() {
+	ts.removeAllChangeListeners();
 	ts.setSource(nullptr);
 	asp.setSource(nullptr);
 	dm.removeAudioCallback(&asp);
+	delete pl;
+	pl = nullptr;
 }
 
 //- LISP API -
@@ -90,6 +110,31 @@ base::cell_t get_pos(base::lisp &gl, base::cell_t, base::cells_t &ret) {
 base::cell_t is_playing(base::lisp &gl, base::cell_t, base::cells_t &) {
 	if (ts.isPlaying())
 		return gl.t();
+	return gl.nil();
+}
+
+// (bind-playback (id)callback)
+base::cell_t bind_playback(base::lisp &gl, base::cell_t c, base::cells_t &) {
+	if (pl) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &fx = c + 1;
+			pl->functionId = fx->s;
+			pl->enabled = true;
+			return gl.t();
+		}
+		pl->enabled = false;
+		return gl.nil();
+	}
+	gl.signalError("bind-playback: invalid arguments, expected (id)");
+	return gl.nil();
+}
+
+// (unbind-playback)
+base::cell_t unbind_playback(base::lisp &gl, base::cell_t, base::cells_t &) {
+	if (pl) {
+		pl->enabled = false;
+		return gl.t();
+	}
 	return gl.nil();
 }
 
