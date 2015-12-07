@@ -23,6 +23,12 @@
 (defun on-slider-up (time)
   (playback-seek time))
 
+(defun on-update-slider ()
+  (slider-value 'slider (playback-get-pos)))
+
+(create-timer 'update-slider 'on-update-slider)
+(start-timer 'update-slider 500) ;; start-stop?
+
 (bind-mouse-double-click 'plpl 'on-playlist-click '(selected-row))
 
 (layout-add-component 'l2 'tab 300.0 300.0 300.0)
