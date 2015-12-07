@@ -399,7 +399,7 @@ public:
 						});
 				return gl.t();
 			}
-			// TODO: return here?
+			return gl.nil();
 		}
 		gl.signalError("bind-*: invalid arguments, expected (id id)");
 		return gl.nil();
@@ -433,7 +433,7 @@ public:
 				}
 				return gl.nil();
 			}
-			// TODO: return here?
+			return gl.nil();
 		}
 		gl.signalError("unbind-*: invalid arguments, expected (id id)");
 		return gl.nil();
