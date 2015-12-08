@@ -122,7 +122,7 @@ public:
 		return gl.nil();
 	}
 
-	// (create-audio-settings name)
+	// (create-audio-settings name) -> nil/name
 	base::cell_t create_audio_settings(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
@@ -130,7 +130,7 @@ public:
 			if (components.find(name->s) == components.end()) {
 				components.insert(std::make_pair(name->s, std::make_unique<AudioDeviceSelectorComponent>(
 													 playback::dm, 0, 256, 0, 256, false, false, true, false)));
-				return gl.t();
+				return name;
 			}
 			gl.signalError(strs("components named ", name->s, " already exists"));
 			return gl.nil();
