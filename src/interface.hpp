@@ -23,6 +23,7 @@ public:
 			mainComponent->setBounds(getLocalBounds());
 	}
 
+	//- general GUI
 	// (set-main-component name) -> bool
 	base::cell_t set_main_component(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
@@ -41,6 +42,19 @@ public:
 		return gl.nil();
 	}
 
+	// (has-component name) -> bool
+	base::cell_t has_component(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto cc = components.find(name->s);
+			if (cc != components.end())
+				return gl.t();
+			return gl.nil();
+		}
+		gl.signalError("has-component: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
 	// (refresh-interface)
 	base::cell_t refresh_interface(base::cell_t, base::cells_t &) {
 		// signal to all components resized event (to refresh UI)
@@ -49,6 +63,7 @@ public:
 		return gl.t();
 	}
 
+	//- playlist
 	// (create-playlist name) -> nil/id
 	base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
@@ -80,6 +95,7 @@ public:
 		return gl.nil();
 	}
 
+	//- text button
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {
 		using namespace base;
@@ -98,30 +114,7 @@ public:
 		return gl.nil();
 	}
 
-	// (create-tabs name 'orientation{top, bottom, left, right}) -> bool/id
-	base::cell_t create_tabs(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
-				const auto &orientation = c + 2;
-				TabbedButtonBar::Orientation o = TabbedButtonBar::TabsAtTop;
-				if (orientation->s == "bottom")
-					o = TabbedButtonBar::TabsAtBottom;
-				else if (orientation->s == "left")
-					o = TabbedButtonBar::TabsAtLeft;
-				else if (orientation->s == "right")
-					o = TabbedButtonBar::TabsAtRight;
-				components.insert(std::make_pair(name->s, std::make_unique<tabs>(o)));
-				return name;
-			}
-			gl.signalError(base::strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-tabs: invalid arguments, expected (id 'id)");
-		return gl.nil();
-	}
-
+	//- audio settings
 	// (create-audio-settings name) -> nil/name
 	base::cell_t create_audio_settings(base::cell_t c, base::cells_t &) {
 		using namespace base;
@@ -139,31 +132,23 @@ public:
 		return gl.nil();
 	}
 
-	// (tabs-add-component tabs-name component-name "caption" |color|) -> bool
-	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector)) {
+	//- interpreter
+	// (create-interpreter name) -> bool/id
+	base::cell_t create_interpreter(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
-			const auto &cname = c + 2;
-			auto t = components.find(name->s);
-			auto com = components.find(cname->s);
-			if (t != components.end() && com != components.end()) {
-				const auto &caption = c + 3;
-				const auto &color = c + 4;
-				tabs *ptabs = reinterpret_cast<tabs*>(t->second.get());
-				ptabs->addTab(caption->s, Colour::fromFloatRGBA(color->v4[0],
-																color->v4[1],
-																color->v4[2],
-																color->v4[3]), com->second.get(), false);
-				return gl.t();
+			if (components.find(name->s) == components.end()) {
+				components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl)));
+				return name;
 			}
-			gl.signalError("tabs or component not found");
+			gl.signalError(base::strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
-		gl.signalError("tabs-add-component: invalid arguments, expected (id id \"string\" |vector|)");
+		gl.signalError("create-interpreter: invalid arguments, expected (id)");
 		return gl.nil();
 	}
 
+	//- layout
 	// (create-layout name (bool)horizontal) -> bool/id
 	base::cell_t create_layout(base::cell_t c, base::cells_t &) {
 		using namespace base;
@@ -178,21 +163,6 @@ public:
 			return gl.nil();
 		}
 		gl.signalError("create-layout: invalid arguments, expected (id bool)");
-		return gl.nil();
-	}
-
-	// (create-interpreter name) -> bool/id
-	base::cell_t create_interpreter(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl)));
-				return name;
-			}
-			gl.signalError(base::strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-interpreter: invalid arguments, expected (id)");
 		return gl.nil();
 	}
 
@@ -292,6 +262,132 @@ public:
 			return gl.nil();
 		}
 		gl.signalError("layout-get-splitters-count: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	//- tabs
+	// (create-tabs name 'orientation{top, bottom, left, right}) -> bool/id
+	base::cell_t create_tabs(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			if (components.find(name->s) == components.end()) {
+				const auto &orientation = c + 2;
+				TabbedButtonBar::Orientation o = TabbedButtonBar::TabsAtTop;
+				if (orientation->s == "bottom")
+					o = TabbedButtonBar::TabsAtBottom;
+				else if (orientation->s == "left")
+					o = TabbedButtonBar::TabsAtLeft;
+				else if (orientation->s == "right")
+					o = TabbedButtonBar::TabsAtRight;
+				components.insert(std::make_pair(name->s, std::make_unique<tabs>(o)));
+				return name;
+			}
+			gl.signalError(base::strs("component named ", name->s, " already exists"));
+			return gl.nil();
+		}
+		gl.signalError("create-tabs: invalid arguments, expected (id 'id)");
+		return gl.nil();
+	}
+
+	// (tabs-add-component tabs-name component-name "caption" |color|) -> bool
+	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector)) {
+			const auto &name = c + 1;
+			const auto &cname = c + 2;
+			auto t = components.find(name->s);
+			auto com = components.find(cname->s);
+			if (t != components.end() && com != components.end()) {
+				const auto &caption = c + 3;
+				const auto &color = c + 4;
+				tabs *ptabs = reinterpret_cast<tabs*>(t->second.get());
+				ptabs->addTab(caption->s, Colour::fromFloatRGBA(color->v4[0],
+																color->v4[1],
+																color->v4[2],
+																color->v4[3]), com->second.get(), false);
+				return gl.t();
+			}
+			gl.signalError("tabs or component not found");
+			return gl.nil();
+		}
+		gl.signalError("tabs-add-component: invalid arguments, expected (id id \"string\" |vector|)");
+		return gl.nil();
+	}
+
+	// (tabs-index (id)tabs (int|string|optional)index)
+	base::cell_t tabs_index(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::listRange(1, 2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString))) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				tabs *t = reinterpret_cast<tabs*>(e->second.get());
+
+				// getter
+				if (c->listSize() == 1) {
+					ret.push_back(cell((int32)t->getCurrentTabIndex()));
+					return ret.end();
+				}
+
+				// setter
+				const auto &index = c + 2;
+				if (index->type == cell::typeInt) {
+					t->setCurrentTabIndex(index->i); // for int
+					return index;
+				}
+
+				// for string
+				int ii = t->selectTabByName(index->s);
+				if (ii != -1) {
+					ret.push_back(cell(ii));
+					return ret.end();
+				}
+				return gl.nil();
+			}
+			gl.signalError(strs("tabs named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("tabs-index: invalid arguments, expected (id (optional)int)");
+		return gl.nil();
+	}
+
+	// (tabs-count (id)tabs)
+	base::cell_t tabs_count(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				tabs *t = reinterpret_cast<tabs*>(e->second.get());
+				ret.push_back(cell((int32)t->getNumTabs()));
+				return ret.end();
+			}
+			gl.signalError(strs("tabs named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("tabs-count: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	// (tabs-remove (id)tabs (int|string)index)
+	base::cell_t tabs_remove(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString))) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				tabs *t = reinterpret_cast<tabs*>(e->second.get());
+				const auto &index = c + 2;
+				if (index->type == cell::typeInt)
+					t->removeTabByIndex(index->i);
+				else t->removeTabByName(index->s);
+				return gl.t();
+			}
+			gl.signalError(strs("tabs named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("tabs-remove: invalid arguments, expected (id int)");
 		return gl.nil();
 	}
 

@@ -33,7 +33,6 @@ public:
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
 		gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
 		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
-		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
 		gl.addProcedure("create-audio-settings", std::bind(&user_interface::create_audio_settings, &itf, _1, _2));
 		gl.addProcedure("create-text-button", std::bind(&user_interface::create_text_button, &itf, _1, _2));
 		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
@@ -42,8 +41,8 @@ public:
 		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
 		gl.addProcedure("layout-get-splitter-count", std::bind(&user_interface::layout_get_splitters_count, &itf, _1, _2));
 		gl.addProcedure("layout-remove-splitter", std::bind(&user_interface::layout_remove_splitter, &itf, _1, _2));
-		gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
+		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
 		// GUI event binding
@@ -60,6 +59,13 @@ public:
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
 		gl.addProcedure("slider-range", std::bind(&user_interface::slider_range, &itf, _1, _2));
 		gl.addProcedure("slider-value", std::bind(&user_interface::slider_value, &itf, _1, _2));
+
+		// tabs
+		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
+		gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
+		gl.addProcedure("tabs-count", std::bind(&user_interface::tabs_count, &itf, _1, _2));
+		gl.addProcedure("tabs-remove", std::bind(&user_interface::tabs_remove, &itf, _1, _2));
+		gl.addProcedure("tabs-index", std::bind(&user_interface::tabs_index, &itf, _1, _2));
 
 		// timers
 		gl.addProcedure("create-timer", std::bind(&user_interface::create_timer, &itf, _1, _2));
