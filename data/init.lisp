@@ -71,7 +71,7 @@
   (layout-add-component 'l-buttons 'b-stop 30.0 100.0 -1.0)
   (layout-add-component 'l-buttons 'b-options 80.0 100.0 -1.0)
   (layout-add-component 'l-buttons 'b-interpreter 80.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'sl-seek -1.0 -1.0 -1.0)
+  (layout-add-component 'l-buttons 'sl-seek -1.0 -1.0 -1.0) ;; TODO: fix spacing
   'l-buttons)
 
 (create-layout 'l-main nil)
@@ -101,9 +101,26 @@
 	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
+(defun on-playlist-click (item-str)
+  (playback-set-file item-str)
+  (slider-range 'sl-seek 0.0 (playback-length))
+  (playback-start))
+
+(defun on-slider-up (time)
+  (playback-seek time))
+
+(defun on-update-slider ()
+  (slider-value 'sl-seek (playback-get-pos)))
+
 ;; bindings
 (bind-mouse-click 'b-options 'spawn-audio-options)
 (bind-mouse-click 'b-interpreter 'spawn-interpreter)
+(bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row))
+(bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
+
+;; update playback slider (TODO: on play, on stop)
+(create-timer 'update-slider 'on-update-slider)
+(start-timer 'update-slider 500)
 
 (set-main-component 'l-main)
 (refresh-interface)
