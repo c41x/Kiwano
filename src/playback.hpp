@@ -129,6 +129,24 @@ base::cell_t bind_playback(base::lisp &gl, base::cell_t c, base::cells_t &) {
 	return gl.nil();
 }
 
+// (playback-gain (float|optional)gain) -> t/nil | gain
+base::cell_t gain(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (pl) {
+		if (base::lisp::validate(c, base::cell::listRange(1), base::cell::typeFloat)) {
+			// setter
+			ts.setGain((c + 1)->f);
+			return gl.t();
+		}
+		else if (base::lisp::validate(c, base::cell::list(0))) {
+			// getter
+			ret.push_back(base::cell(ts.getGain()));
+			return ret.end();
+		}
+		gl.signalError("playback-gain: invalid arguments, expected ((optional) float)");
+	}
+	return gl.nil();
+}
+
 // (unbind-playback)
 base::cell_t unbind_playback(base::lisp &gl, base::cell_t, base::cells_t &) {
 	if (pl) {
