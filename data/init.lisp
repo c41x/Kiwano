@@ -66,12 +66,16 @@
   (create-text-button 'b-options "Options" "Audio options")
   (create-text-button 'b-interpreter "Interpreter" "GLISP Interpreter")
   (create-slider 'sl-seek)
+  (create-slider 'sl-gain)
+  (slider-range 'sl-gain 0.0 1.0)
+  (slider-value 'sl-gain 1.0)
   (layout-add-component 'l-buttons 'b-play 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-pause 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-stop 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-options 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'b-interpreter 80.0 80.0 80.0)
-  (layout-add-component 'l-buttons 'sl-seek -0.1 -1.0 -0.1)
+  (layout-add-component 'l-buttons 'sl-seek -0.1 -1.0 -1.0)
+  (layout-add-component 'l-buttons 'sl-gain 200.0 200.0 200.0)
   'l-buttons)
 
 (create-layout 'l-main nil)
@@ -128,6 +132,9 @@
 (defun on-update-slider ()
   (slider-value 'sl-seek (playback-get-pos)))
 
+(defun on-slider-gain (new-gain)
+  (playback-gain new-gain))
+
 ;; bindings
 (bind-mouse-click 'b-options 'spawn-audio-options)
 (bind-mouse-click 'b-interpreter 'spawn-interpreter)
@@ -136,6 +143,7 @@
 (bind-mouse-click 'b-stop 'on-stop)
 (bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row))
 (bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
+(bind-slider-changed 'sl-gain 'on-slider-gain '(slider-value))
 (create-timer 'update-slider 'on-update-slider)
 (bind-playback 'playback-changed)
 
