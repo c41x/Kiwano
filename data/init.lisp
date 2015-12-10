@@ -66,12 +66,12 @@
   (create-text-button 'b-options "Options" "Audio options")
   (create-text-button 'b-interpreter "Interpreter" "GLISP Interpreter")
   (create-slider 'sl-seek)
-  (layout-add-component 'l-buttons 'b-play 30.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'b-pause 30.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'b-stop 30.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'b-options 80.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'b-interpreter 80.0 100.0 -1.0)
-  (layout-add-component 'l-buttons 'sl-seek -1.0 -1.0 -1.0) ;; TODO: fix spacing
+  (layout-add-component 'l-buttons 'b-play 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-pause 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-stop 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-options 80.0 80.0 80.0)
+  (layout-add-component 'l-buttons 'b-interpreter 80.0 80.0 80.0)
+  (layout-add-component 'l-buttons 'sl-seek -0.1 -1.0 -0.1)
   'l-buttons)
 
 (create-layout 'l-main nil)
@@ -101,10 +101,26 @@
 	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
+(defun on-stop ()
+  (playback-stop)
+  (playback-seek 0.0))
+
+(defun on-pause ()
+  (playback-stop))
+
+(defun on-play ()
+  ;; TODO: fetch from playlist
+  (playback-start))
+
 (defun on-playlist-click (item-str)
   (playback-set-file item-str)
   (slider-range 'sl-seek 0.0 (playback-length))
   (playback-start))
+
+(defun playback-changed ()
+  (if (playback-is-playing)
+      (start-timer 'update-slider 100)
+    (stop-timer 'update-slider)))
 
 (defun on-slider-up (time)
   (playback-seek time))
@@ -115,12 +131,13 @@
 ;; bindings
 (bind-mouse-click 'b-options 'spawn-audio-options)
 (bind-mouse-click 'b-interpreter 'spawn-interpreter)
+(bind-mouse-click 'b-play 'on-play)
+(bind-mouse-click 'b-pause 'on-pause)
+(bind-mouse-click 'b-stop 'on-stop)
 (bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row))
 (bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
-
-;; update playback slider (TODO: on play, on stop)
 (create-timer 'update-slider 'on-update-slider)
-(start-timer 'update-slider 500)
+(bind-playback 'playback-changed)
 
 (set-main-component 'l-main)
 (refresh-interface)
