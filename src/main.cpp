@@ -11,6 +11,9 @@ class MainWindow : public DocumentWindow {
 	user_interface itf;
 	base::lisp gl;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow);
+    LookAndFeel_V1 lookAndFeelV1;
+    LookAndFeel_V2 lookAndFeelV2;
+    LookAndFeel_V3 lookAndFeelV3;
 
 public:
 	MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
@@ -21,6 +24,7 @@ public:
 		setTopLeftPosition(200, 200);
 		setResizable(true, true);
 		setVisible(true);
+		LookAndFeel::setDefaultLookAndFeel(&lookAndFeelV3);
 
 		// initialize playback
 		playback::init(gl);
