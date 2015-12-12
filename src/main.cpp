@@ -34,17 +34,9 @@ public:
 		gl.init();
 
 		// GUI
-		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
-		gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
 		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
 		gl.addProcedure("create-audio-settings", std::bind(&user_interface::create_audio_settings, &itf, _1, _2));
 		gl.addProcedure("create-text-button", std::bind(&user_interface::create_text_button, &itf, _1, _2));
-		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
-		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
-		gl.addProcedure("layout-remove-component", std::bind(&user_interface::layout_remove_component, &itf, _1, _2));
-		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
-		gl.addProcedure("layout-get-splitter-count", std::bind(&user_interface::layout_get_splitters_count, &itf, _1, _2));
-		gl.addProcedure("layout-remove-splitter", std::bind(&user_interface::layout_remove_splitter, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
@@ -54,15 +46,28 @@ public:
 		gl.addProcedure("bind-mouse-up", std::bind(&user_interface::bind_listener<mouseUpListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
 		gl.addProcedure("bind-mouse-double-click", std::bind(&user_interface::bind_listener<mouseDoubleClickListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
 		gl.addProcedure("bind-mouse-down", std::bind(&user_interface::bind_listener<mouseDownListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
+		gl.addProcedure("unbind-mouse", std::bind(&user_interface::unbind_listener, &itf, _1, _2, &user_interface::remove_mouse_listener_fx));
+
+		// layouts
+		gl.addProcedure("create-layout", std::bind(&user_interface::create_layout, &itf, _1, _2));
+		gl.addProcedure("layout-add-component", std::bind(&user_interface::layout_add_component, &itf, _1, _2));
+		gl.addProcedure("layout-remove-component", std::bind(&user_interface::layout_remove_component, &itf, _1, _2));
+		gl.addProcedure("layout-add-splitter", std::bind(&user_interface::layout_add_splitter, &itf, _1, _2));
+		gl.addProcedure("layout-get-splitter-count", std::bind(&user_interface::layout_get_splitters_count, &itf, _1, _2));
+		gl.addProcedure("layout-remove-splitter", std::bind(&user_interface::layout_remove_splitter, &itf, _1, _2));
+
+		// playlist
+		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
+		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
+
+		// slider
+		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
+		gl.addProcedure("slider-range", std::bind(&user_interface::slider_range, &itf, _1, _2));
+		gl.addProcedure("slider-value", std::bind(&user_interface::slider_value, &itf, _1, _2));
 		gl.addProcedure("bind-slider-changed", std::bind(&user_interface::bind_listener<sliderValueChangedListener>, &itf, _1, _2, &user_interface::add_slider_listener_fn));
 		gl.addProcedure("bind-slider-drag-begin", std::bind(&user_interface::bind_listener<sliderDragBeginListener>, &itf, _1, _2, &user_interface::add_slider_listener_fn));
 		gl.addProcedure("bind-slider-drag-end", std::bind(&user_interface::bind_listener<sliderDragEndedListener>, &itf, _1, _2, &user_interface::add_slider_listener_fn));
-		gl.addProcedure("unbind-mouse", std::bind(&user_interface::unbind_listener, &itf, _1, _2, &user_interface::remove_mouse_listener_fx));
 		gl.addProcedure("unbind-slider", std::bind(&user_interface::unbind_listener, &itf, _1, _2, &user_interface::remove_slider_listener_fx));
-
-		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
-		gl.addProcedure("slider-range", std::bind(&user_interface::slider_range, &itf, _1, _2));
-		gl.addProcedure("slider-value", std::bind(&user_interface::slider_value, &itf, _1, _2));
 
 		// tabs
 		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
