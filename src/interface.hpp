@@ -371,7 +371,7 @@ public:
 	}
 
 	// (tabs-remove (id)tabs (int|string)index)
-	base::cell_t tabs_remove(base::cell_t c, base::cells_t &ret) {
+	base::cell_t tabs_remove(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString))) {
 			const auto &name = c + 1;
@@ -392,19 +392,45 @@ public:
 	}
 
 	//- slider
-	// (create-slider name) -> nil/id
+	// (create-slider name 'style 'edit-box) -> nil/id
 	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
+		if (lisp::validate(c, cell::listRange(1, 3), cell::typeIdentifier/*TODO:, cell::typeIdentifier, cell::typeIdentifier*/)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<slider>()));
+				slider::SliderStyle style = slider::LinearHorizontal;
+				slider::TextEntryBoxPosition editBox = slider::NoTextBox;
+				if (c->listSize() > 1) {
+					const auto &s = c + 2;
+					if (s->s == "linear-horizontal") style = slider::LinearHorizontal;
+					else if (s->s == "linear-vertical") style = slider::LinearVertical;
+					else if (s->s == "linear-bar") style = slider::LinearBar;
+					else if (s->s == "linear-bar-vertical") style = slider::LinearBarVertical;
+					else if (s->s == "rotary") style = slider::Rotary;
+					else if (s->s == "rotary-horizontal-drag") style = slider::RotaryHorizontalDrag;
+					else if (s->s == "rotary-vertical-drag") style = slider::RotaryVerticalDrag;
+					else if (s->s == "rotary-horizontal-vertical-drag") style = slider::RotaryHorizontalVerticalDrag;
+					else if (s->s == "inc-dec-buttons") style = slider::IncDecButtons;
+					else if (s->s == "two-value-horizontal") style = slider::TwoValueHorizontal;
+					else if (s->s == "two-value-vertical") style = slider::TwoValueVertical;
+					else if (s->s == "three-value-horizontal") style = slider::ThreeValueHorizontal;
+					else if (s->s == "three-value-vertical") style = slider::ThreeValueVertical;
+				}
+				if (c->listSize() > 2) {
+					const auto &e = c + 3;
+					if (e->s == "no-text-box") editBox = slider::NoTextBox;
+					else if (e->s == "tex-box-left") editBox = slider::TextBoxLeft;
+					else if (e->s == "tex-box-right") editBox = slider::TextBoxRight;
+					else if (e->s == "tex-box-above") editBox = slider::TextBoxAbove;
+					else if (e->s == "tex-box-below") editBox = slider::TextBoxBelow;
+				}
+				components.insert(std::make_pair(name->s, std::make_unique<slider>(style, editBox)));
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
 			return gl.nil();
 		}
-		gl.signalError("create-slider: invalid arguments, expected (id)");
+		gl.signalError("create-slider: invalid arguments, expected (id (id|optional) (id|optional))");
 		return gl.nil();
 	}
 
@@ -476,7 +502,7 @@ public:
 	template <typename T>
 	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
 		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
+								 base::cell::typeIdentifier/*TODO:, base::cell::typeList*/)) {
 			const auto &cname = c + 1;
 			const auto &bname = c + 2;
 			auto e = components.find(cname->s);
