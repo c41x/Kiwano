@@ -83,15 +83,10 @@
 (layout-add-component 'l-main (create-playlist-tabs) -1.0 -1.0 -1.0)
 
 ;; callbacks
-(defun get-audio-settings ()
-  (if (has-component 'audio-settings)
-      'audio-settings
-    (create-audio-settings 'audio-settings)))
-
 (defun spawn-audio-options ()
   (if (not (tabs-index 'playlist-tabs "Audio Options"))
       (progn
-	(tabs-add-component 'playlist-tabs (get-audio-settings) "Audio Options" |0.9 0.5 0.5 0.9|)
+	(tabs-add-component 'playlist-tabs (audio-settings) "Audio Options" |0.9 0.5 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Audio Options"))))
 
 (defun get-interpreter ()
@@ -146,6 +141,9 @@
 (bind-slider-changed 'sl-gain 'on-slider-gain '(slider-value))
 (create-timer 'update-slider 'on-update-slider)
 (bind-playback 'playback-changed)
+
+;; init audio settings
+(audio-settings)
 
 (set-main-component 'l-main)
 (refresh-interface)
