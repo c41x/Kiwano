@@ -7,15 +7,35 @@
 #include "listeners.hpp"
 #include "slider.hpp"
 
+// change listener
+class audioSettingsChangeListener : public ChangeListener {
+public:
+	AudioDeviceManager *am;
+	audioSettingsChangeListener() : am(nullptr) {}
+	void changeListenerCallback(ChangeBroadcaster *source) override {
+		if (am == source && am) {
+			//std::cout << "store audio settings" << std::endl; TODO: log this
+			if (am->createStateXml()) {
+				//std::cout << "state xml created | saving fo file" << std::endl;
+				base::fs::store("audio-settings.xml", base::fromStr<base::stream>(
+									am->createStateXml()->createDocument("").toRawUTF8()));
+			}
+		}
+	}
+};
+
 class user_interface : public Component {
 	std::map<base::string, std::unique_ptr<Component>> components;
 	std::map<base::string, std::unique_ptr<timerListener>> timers;
 	std::vector<std::unique_ptr<listener>> listeners;
 	Component *mainComponent;
 	base::lisp &gl;
+	const base::string idAudioSettings;
+	std::unique_ptr<audioSettingsChangeListener> asListener;
 
 public:
-	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp) { }
+	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp), idAudioSettings("#audio-settings#"),
+										asListener(std::make_unique<audioSettingsChangeListener>()){ }
 	~user_interface() {}
 
 	void resized() override {
@@ -115,21 +135,25 @@ public:
 	}
 
 	//- audio settings
-	// (create-audio-settings name) -> nil/name
-	base::cell_t create_audio_settings(base::cell_t c, base::cells_t &) {
+	// (audio-settings) -> name
+	base::cell_t audio_settings(base::cell_t, base::cells_t &ret) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<AudioDeviceSelectorComponent>(
-													 playback::dm, 0, 256, 0, 256, false, false, true, false)));
-				return name;
+		if (components.find(idAudioSettings) == components.end()) {
+			Component *com = components.insert(std::make_pair(idAudioSettings, std::make_unique<AudioDeviceSelectorComponent>(
+																  playback::dm, 0, 256, 0, 256, false, false, true, false))).first->second.get();
+			AudioDeviceSelectorComponent *ac = (AudioDeviceSelectorComponent*)com;
+			if (fs::exists("audio-settings.xml")) {
+				XmlDocument doc(toStr(fs::load("audio-settings.xml")));
+				ac->deviceManager.initialise(0, 2, doc.getDocumentElement(), true);
 			}
-			gl.signalError(strs("components named ", name->s, " already exists"));
-			return gl.nil();
+			else {
+				ac->deviceManager.initialiseWithDefaultDevices(0, 2);
+			}
+			asListener->am = &ac->deviceManager;
+			ac->deviceManager.addChangeListener(asListener.get());
 		}
-		gl.signalError("create-audio-settings: invalid arguments, expected (id)");
-		return gl.nil();
+		ret.push_back(cell(cell::typeIdentifier, idAudioSettings));
+		return ret.end();
 	}
 
 	//- interpreter
@@ -619,3 +643,8 @@ public:
 		return gl.nil();
 	}
 };
+
+// TODO: on start, on close
+// TODO: get-cpu-usage
+// TODO: consider fully manual audio settings (as additional interface or replace current one)
+// TODO: audio buffer size settings load/store

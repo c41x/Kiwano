@@ -35,7 +35,7 @@ public:
 
 		// GUI
 		gl.addProcedure("create-interpreter", std::bind(&user_interface::create_interpreter, &itf, _1, _2));
-		gl.addProcedure("create-audio-settings", std::bind(&user_interface::create_audio_settings, &itf, _1, _2));
+		gl.addProcedure("audio-settings", std::bind(&user_interface::audio_settings, &itf, _1, _2));
 		gl.addProcedure("create-text-button", std::bind(&user_interface::create_text_button, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
