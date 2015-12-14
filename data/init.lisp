@@ -75,7 +75,7 @@
   (layout-add-component 'l-buttons 'b-options 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'b-interpreter 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'sl-seek -0.1 -1.0 -1.0)
-  (layout-add-component 'l-buttons 'sl-gain 200.0 200.0 200.0)
+  (layout-add-component 'l-buttons 'sl-gain 100.0 100.0 100.0)
   'l-buttons)
 
 (create-layout 'l-main nil)
