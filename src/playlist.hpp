@@ -1,6 +1,11 @@
 #pragma once
 #include "includes.hpp"
 
+#define TAGLIB_STATIC
+#include <taglib/fileref.h>
+#include <taglib/tag.h>
+#include <taglib/tpropertymap.h>
+
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public ListBoxModel {
 		StringArray entries;
@@ -50,6 +55,10 @@ public:
 	}
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
+		for (auto &f : files) {
+			//TagLib::FileRef file(f.toRawUTF8());
+			//f = (file.tag()->album() + L" | " + file.tag()->artist() + L" | " + file.tag()->title()).toCString();
+		}
 		model.entries.addArray(files);
 		box.updateContent();
 		repaint();
