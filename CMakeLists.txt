@@ -10,6 +10,7 @@ if(NOT WIN32)
   find_package(OpenGL REQUIRED)
 endif()
 find_package(Threads)
+find_package(taglib) # windows only?
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -Wno-unused-value -Wno-int-to-pointer-cast -Wno-strict-aliasing -Wno-strict-overflow -msse -msse2 -msse3")
@@ -22,6 +23,7 @@ if(NOT WIN32)
   include_directories(${OPENGL_INCLUDE_DIRS})
 endif()
 include_directories(${GRANITE_INCLUDE_DIRS})
+include_directories(${TAGLIB_INCLUDE_DIRS})
 
 if(MINGW)
   link_libraries(ks ksuser ksguid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm opengl32 uuid)
@@ -34,6 +36,7 @@ if(NOT WIN32)
 endif()
 link_libraries(${CMAKE_THREAD_LIBS_INIT})
 link_libraries(${GRANITE_LIBRARIES})
+link_libraries(${TAGLIB_LIBRARIES})
 
 add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
