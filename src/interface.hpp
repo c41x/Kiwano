@@ -648,3 +648,6 @@ public:
 // TODO: get-cpu-usage
 // TODO: consider fully manual audio settings (as additional interface or replace current one)
 // TODO: audio buffer size settings load/store
+// TODO: CUE support
+// TODO: tags support
+// TODO: playlist configuration

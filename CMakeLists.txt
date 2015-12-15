@@ -10,7 +10,7 @@ if(NOT WIN32)
   find_package(OpenGL REQUIRED)
 endif()
 find_package(Threads)
-find_package(taglib) # windows only?
+find_package(taglib REQUIRED)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -Wno-unused-value -Wno-int-to-pointer-cast -Wno-strict-aliasing -Wno-strict-overflow -msse -msse2 -msse3")
