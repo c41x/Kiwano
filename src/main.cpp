@@ -29,6 +29,9 @@ public:
 		// initialize playback
 		playback::init(gl);
 
+		// logger
+		base::log::init(base::fs::getUserDirectory() + "\\.kiwano\\log.txt");
+
 		// initialize GLISP
 		using namespace std::placeholders;
 		gl.init();
@@ -107,6 +110,7 @@ public:
 	void closeButtonPressed() override {
 		base::fs::close();
 		gl.close();
+		base::log::shutdown();
 		playback::shutdown();
 		JUCEApplication::getInstance()->systemRequestedQuit();
 	}
