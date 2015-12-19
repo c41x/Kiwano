@@ -5,8 +5,12 @@ pkg_check_modules(PC_TAGLIB QUIET taglib)
 find_path(TAGLIB_INCLUDE_DIR taglib/taglib.h
   $ENV{PROGRAMFILES}/taglib/include)
 
-find_library(TAGLIB_LIBRARY NAMES libtag PATHS
+message(STATUS "taglib/includes: ${TAGLIB_INCLUDE_DIR}")
+
+find_library(TAGLIB_LIBRARY NAMES libtag tag PATHS
   $ENV{PROGRAMFILES}/taglib/lib)
+
+message(STATUS "taglib/libraries: ${TAGLIB_LIBRARY}")
 
 set(TAGLIB_LIBRARIES ${TAGLIB_LIBRARY})
 set(TAGLIB_INCLUDE_DIRS ${TAGLIB_INCLUDE_DIR})
