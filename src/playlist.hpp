@@ -28,6 +28,16 @@ class playlist : public Component, public FileDragAndDropTarget {
     playlistModel model;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
+	// TODO: system codecs?
+	bool isFileSupported(const String &fname) {
+		return fname.endsWith(".mp3")
+			|| fname.endsWith(".wav")
+			|| fname.endsWith(".wma")
+			|| fname.endsWith(".flac")
+			|| fname.endsWith(".ogg")
+			|| fname.endsWith(".ape");
+	}
+
 public:
     playlist() : box("playlist-box", nullptr) {
 		setName("playlist");
@@ -56,8 +66,10 @@ public:
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
 		for (auto &f : files) {
-			//TagLib::FileRef file(f.toRawUTF8());
-			//f = (file.tag()->album() + L" | " + file.tag()->artist() + L" | " + file.tag()->title()).toCString();
+			if (isFileSupported(f)) {
+				//TagLib::FileRef file(f.toRawUTF8());
+				//f = (file.tag()->album() + L" | " + file.tag()->artist() + L" | " + file.tag()->title()).toCString();
+			}
 		}
 		model.entries.addArray(files);
 		box.updateContent();
