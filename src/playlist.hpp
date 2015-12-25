@@ -7,24 +7,33 @@
 #include <taglib/tpropertymap.h>
 
 class playlist : public Component, public FileDragAndDropTarget {
-    struct playlistModel : public ListBoxModel {
+    struct playlistModel : public TableListBoxModel {
 		StringArray entries;
         int getNumRows() override {
             return entries.size();
         }
 
-        void paintListBoxItem(int rowNumber, Graphics& g,
-							  int width, int height, bool rowIsSelected) override {
-            if (rowIsSelected)
-                g.fillAll(Colours::lightblue);
+		// This is overloaded from TableListBoxModel, and should fill in the background of the whole row
+		void paintRowBackground(Graphics& g, int rowNumber, int /*width*/, int /*height*/, bool rowIsSelected) override {
+			if (rowIsSelected)
+				g.fillAll(Colours::lightblue);
+			else if (rowNumber % 2)
+				g.fillAll(Colour(0xffeeeeee));
+		}
 
-            g.setColour(Colours::black);
-            g.setFont(height * 0.7f);
+		// This is overloaded from TableListBoxModel, and must paint any cells that aren't using custom
+		// components.
+		void paintCell(Graphics& g, int rowNumber, int /*columnId*/,
+						int width, int height, bool /*rowIsSelected*/) override {
+			g.setColour(Colours::black);
+			g.setFont(height * 0.7f);
 			g.drawText(entries[rowNumber], 5, 0, width, height, Justification::centredLeft, true);
-        }
+			g.setColour(Colours::black.withAlpha(0.2f));
+			g.fillRect(width - 1, 0, 1, height);
+		}
     };
 
-    ListBox box;
+    TableListBox box;
     playlistModel model;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
@@ -44,6 +53,11 @@ public:
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
 		addAndMakeVisible(box);
+
+		box.getHeader().addColumn("album", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
+		box.getHeader().addColumn("artist", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
+		box.getHeader().addColumn("title", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
+		box.setMultipleSelectionEnabled (true);
 	}
 
     void resized() override {
