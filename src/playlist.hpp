@@ -8,9 +8,32 @@
 
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public TableListBoxModel {
-		StringArray entries;
+		base::string paths;
+		std::vector<size_t> paths_i;
+
+		void init() {
+			paths.clear();
+			paths_i.clear();
+			paths_i.push_back(0);
+		}
+
+		void addItem(const String &path) {
+
+			//TagLib::FileRef file(f.toRawUTF8());
+			//f = (file.tag()->album() + L" | " + file.tag()->artist() + L" | " + file.tag()->title()).toCString();
+
+			paths.append(path.toStdString());
+			paths_i.push_back(paths.size());
+		}
+
+		base::string getItemPath(size_t index) {
+			return base::string(paths.begin() + paths_i[index],
+								paths.begin() + paths_i[index + 1]);
+		}
+
+		// GUI
         int getNumRows() override {
-            return entries.size();
+            return paths_i.size() - 1;
         }
 
 		// This is overloaded from TableListBoxModel, and should fill in the background of the whole row
@@ -27,7 +50,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 						int width, int height, bool /*rowIsSelected*/) override {
 			g.setColour(Colours::black);
 			g.setFont(height * 0.7f);
-			g.drawText(entries[rowNumber], 5, 0, width, height, Justification::centredLeft, true);
+			g.drawText(getItemPath(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
 			g.setColour(Colours::black.withAlpha(0.2f));
 			g.fillRect(width - 1, 0, 1, height);
 		}
@@ -49,6 +72,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 public:
     playlist() : box("playlist-box", nullptr) {
+		model.init();
 		setName("playlist");
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
@@ -57,7 +81,7 @@ public:
 		box.getHeader().addColumn("album", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
 		box.getHeader().addColumn("artist", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
 		box.getHeader().addColumn("title", 0, 200, 50, 1000, TableHeaderComponent::defaultFlags);
-		box.setMultipleSelectionEnabled (true);
+		box.setMultipleSelectionEnabled(true);
 	}
 
     void resized() override {
@@ -81,16 +105,14 @@ public:
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
 		for (auto &f : files) {
 			if (isFileSupported(f)) {
-				//TagLib::FileRef file(f.toRawUTF8());
-				//f = (file.tag()->album() + L" | " + file.tag()->artist() + L" | " + file.tag()->title()).toCString();
+				model.addItem(f);
 			}
 		}
-		model.entries.addArray(files);
 		box.updateContent();
 		repaint();
 	}
 
 	base::string getSelectedRowString() {
-		return model.entries[box.getSelectedRow()].toStdString();
+		return model.getItemPath(box.getSelectedRow());
 	}
 };
