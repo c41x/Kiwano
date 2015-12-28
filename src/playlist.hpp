@@ -162,9 +162,18 @@ public:
 	}
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
-		for (auto &f : files) {
-			if (isFileSupported(f)) {
-				model.addItem(f);
+		for (auto &fileName : files) {
+			if (File(fileName).isDirectory()) {
+				// recursively scan for files
+				DirectoryIterator i(File(fileName), true, "*.mp3;*.wav;*.wma;*.flac;*.ogg;*.ape");
+				while (i.next()) {
+					model.addItem(i.getFile().getFullPathName());
+				}
+			}
+			else {
+				// single file
+				if (isFileSupported(fileName))
+					model.addItem(fileName);
 			}
 		}
 		box.updateContent();
