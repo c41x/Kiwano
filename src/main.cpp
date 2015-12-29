@@ -42,6 +42,7 @@ public:
 		gl.addProcedure("create-text-button", std::bind(&user_interface::create_text_button, &itf, _1, _2));
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
+		gl.addProcedure("get-components", std::bind(&user_interface::get_components, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
 		// GUI event binding
@@ -152,4 +153,10 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: load/store named value
 // TODO: playlist: get-selected-hash
 // TODO: property map (store-property id value) (load-property id value)
-// TODO: list components, list-components-by-type
+// TODO: attach granite logger
+// TODO: on start, on close
+// TODO: get-cpu-usage
+// TODO: consider fully manual audio settings (as additional interface or replace current one)
+// TODO: audio buffer size settings load/store
+// TODO: CUE support
+// TODO: playlist configuration

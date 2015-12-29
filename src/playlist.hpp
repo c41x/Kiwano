@@ -130,7 +130,6 @@ class playlist : public Component, public FileDragAndDropTarget {
 public:
     playlist() : box("playlist-box", nullptr) {
 		model.init();
-		setName("playlist");
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
 		box.getHeader().setStretchToFitActive(true);
