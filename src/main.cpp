@@ -62,6 +62,8 @@ public:
 		// playlist
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
+		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
+		gl.addProcedure("playlist-save", std::bind(&user_interface::playlist_save, &itf, _1, _2));
 
 		// slider
 		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
@@ -146,3 +148,8 @@ START_JUCE_APPLICATION(KiwanoApplication);
 
 // TODO: load default config
 // TODO: lisp include
+// TODO: enable/disable widget
+// TODO: load/store named value
+// TODO: playlist: get-selected-hash
+// TODO: property map (store-property id value) (load-property id value)
+// TODO: list components, list-components-by-type

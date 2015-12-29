@@ -115,6 +115,43 @@ public:
 		return gl.nil();
 	}
 
+	base::cell_t playlist_load(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				const auto &path = c + 2;
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				if (p->load(path->s))
+					return gl.t();
+				return gl.nil();
+			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-load: invalid arguments, expected (id string)");
+		return gl.nil();
+	}
+
+	// TODO: do not duplicate?
+	base::cell_t playlist_save(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				const auto &path = c + 2;
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				if (p->store(path->s))
+					return gl.t();
+				return gl.nil();
+			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-save: invalid arguments, expected (id string)");
+		return gl.nil();
+	}
+
 	//- text button
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {

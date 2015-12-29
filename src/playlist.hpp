@@ -9,18 +9,18 @@
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public TableListBoxModel {
 		base::string paths, talbum, tartist, ttitle;
-		std::vector<uint> tyear, ttrack;
-		std::vector<size_t> paths_i, talbum_i, tartist_i, ttitle_i;
+		std::vector<uint32> tyear, ttrack;
+		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
 
 		void init() {
+			paths_i.clear(); // this one first (getNumRows)
+			paths_i.push_back(0);
 			paths.clear();
 			talbum.clear();
 			tartist.clear();
 			tyear.clear();
 			ttitle.clear();
 			ttrack.clear();
-			paths_i.clear();
-			paths_i.push_back(0);
 			talbum_i.clear();
 			talbum_i.push_back(0);
 			tartist_i.clear();
@@ -133,6 +133,7 @@ public:
 		setName("playlist");
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
+		box.getHeader().setStretchToFitActive(true);
 		addAndMakeVisible(box);
 
 		box.getHeader().addColumn("track", 0, 50, 20, 1000, TableHeaderComponent::defaultFlags);
@@ -182,5 +183,37 @@ public:
 
 	base::string getSelectedRowString() {
 		return model.getItemPath(box.getSelectedRow());
+	}
+
+	bool store(const base::string &f) {
+		base::stream s;
+		s.write(model.paths);
+		s.write(model.talbum);
+		s.write(model.tartist);
+		s.write(model.ttitle);
+		s.write(model.tyear);
+		s.write(model.ttrack);
+		s.write(model.paths_i);
+		s.write(model.talbum_i);
+		s.write(model.tartist_i);
+		s.write(model.ttitle_i);
+		return base::fs::store(f, s);
+	}
+
+	bool load(const base::string &f) {
+		base::stream s = base::fs::load(f);
+		bool result = s.read(model.paths) > 0
+			&& s.read(model.talbum) > 0
+			&& s.read(model.tartist) > 0
+			&& s.read(model.ttitle) > 0
+			&& s.read(model.tyear) > 0
+			&& s.read(model.ttrack) > 0
+			&& s.read(model.paths_i) > 0
+			&& s.read(model.talbum_i) > 0
+			&& s.read(model.tartist_i) > 0
+			&& s.read(model.ttitle_i) > 0;
+		box.updateContent();
+		repaint();
+		return result;
 	}
 };
