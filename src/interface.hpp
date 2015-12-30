@@ -474,7 +474,7 @@ public:
 	// (create-slider name 'style 'edit-box) -> nil/id
 	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::listRange(1, 3), cell::typeIdentifier/*TODO:, cell::typeIdentifier, cell::typeIdentifier*/)) {
+		if (lisp::validate(c, cell::listRange(1, 3), cell::typeIdentifier, cell::typeIdentifier, cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
 				slider::SliderStyle style = slider::LinearHorizontal;
@@ -581,7 +581,7 @@ public:
 	template <typename T>
 	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
 		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier/*TODO:, base::cell::typeList*/)) {
+								 base::cell::typeIdentifier, base::cell::typeList)) {
 			const auto &cname = c + 1;
 			const auto &bname = c + 2;
 			auto e = components.find(cname->s);
