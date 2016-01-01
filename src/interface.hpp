@@ -525,7 +525,7 @@ public:
 				slider *sl = reinterpret_cast<slider*>(l->second.get());
 				if (isSetter) {
 					sl->setRange((double)(c + 2)->f,
-									 (double)(c + 3)->f);
+								 (double)(c + 3)->f);
 					return gl.t();
 				}
 
