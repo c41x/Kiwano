@@ -113,19 +113,61 @@ class playlist : public Component, public FileDragAndDropTarget {
 		}
     };
 
+	// progress dialog
+	class progress : public ThreadWithProgressWindow {
+		playlistModel &m;
+		StringArray files;
+		std::function<void()> onFinish;
+	public:
+		progress(playlistModel &model, const StringArray &_files, std::function<void()> _onFinish)
+				: ThreadWithProgressWindow("Importing music", true, true),
+				  m(model), files(_files), onFinish(_onFinish) {
+			setStatusMessage("Importing music");
+		}
+
+		// TODO: system codecs?
+		bool isFileSupported(const String &fname) {
+			return fname.endsWith(".mp3")
+				|| fname.endsWith(".wav")
+				|| fname.endsWith(".wma")
+				|| fname.endsWith(".flac")
+				|| fname.endsWith(".ogg")
+				|| fname.endsWith(".ape");
+		}
+
+		void run() override {
+			setProgress(-1.0);
+			int nth = 0;
+			for (auto &fileName : files) {
+				if (File(fileName).isDirectory()) {
+					// recursively scan for files
+					DirectoryIterator i(File(fileName), true, "*.mp3;*.wav;*.wma;*.flac;*.ogg;*.ape");
+					while (i.next()) {
+						m.addItem(i.getFile().getFullPathName());
+						if (nth++ == 50) {
+							nth = 0;
+							setStatusMessage(i.getFile().getFullPathName());
+						}
+					}
+				}
+				else {
+					// single file
+					if (isFileSupported(fileName))
+						m.addItem(fileName);
+				}
+			}
+			setStatusMessage("Done.");
+		}
+
+		void threadComplete(bool/* userPressedCancel*/) override {
+			onFinish();
+			delete this;
+		}
+	};
+
     TableListBox box;
     playlistModel model;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
-
-	// TODO: system codecs?
-	bool isFileSupported(const String &fname) {
-		return fname.endsWith(".mp3")
-			|| fname.endsWith(".wav")
-			|| fname.endsWith(".wma")
-			|| fname.endsWith(".flac")
-			|| fname.endsWith(".ogg")
-			|| fname.endsWith(".ape");
-	}
 
 public:
     playlist() : box("playlist-box", nullptr) {
@@ -162,22 +204,10 @@ public:
 	}
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
-		for (auto &fileName : files) {
-			if (File(fileName).isDirectory()) {
-				// recursively scan for files
-				DirectoryIterator i(File(fileName), true, "*.mp3;*.wav;*.wma;*.flac;*.ogg;*.ape");
-				while (i.next()) {
-					model.addItem(i.getFile().getFullPathName());
-				}
-			}
-			else {
-				// single file
-				if (isFileSupported(fileName))
-					model.addItem(fileName);
-			}
-		}
-		box.updateContent();
-		repaint();
+		(new progress(model, files, [this](){
+				box.updateContent();
+				repaint();
+			}))->launchThread();
 	}
 
 	base::string getSelectedRowString() {
