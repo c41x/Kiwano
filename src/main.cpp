@@ -43,6 +43,7 @@ public:
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
 		gl.addProcedure("get-components", std::bind(&user_interface::get_components, &itf, _1, _2));
+		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
 		// GUI event binding
