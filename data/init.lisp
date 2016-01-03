@@ -66,6 +66,7 @@
   (create-text-button 'b-options "Options" "Audio options")
   (create-text-button 'b-interpreter "Interpreter" "GLISP Interpreter")
   (create-slider 'sl-seek)
+  (component-enabled 'sl-seek nil)
   (create-slider 'sl-gain)
   (slider-range 'sl-gain 0.0 1.0)
   (slider-value 'sl-gain 1.0)
@@ -102,18 +103,22 @@
 
 (defun on-stop ()
   (playback-stop)
-  (playback-seek 0.0))
+  (playback-seek 0.0)
+  (slider-value 'sl-seek 0.0)
+  (component-enabled 'sl-seek nil))
 
 (defun on-pause ()
   (playback-stop))
 
 (defun on-play ()
   ;; TODO: fetch from playlist
+  (component-enabled 'sl-seek t)
   (playback-start))
 
 (defun on-playlist-click (item-str)
   (playback-set-file item-str)
   (slider-range 'sl-seek 0.0 (playback-length))
+  (component-enabled 'sl-seek t)
   (playback-start))
 
 (defun playback-changed ()
