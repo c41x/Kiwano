@@ -150,7 +150,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 
 // TODO: load default config
 // TODO: lisp include
-// TODO: enable/disable widget
 // TODO: load/store named value
 // TODO: playlist: get-selected-hash
 // TODO: property map (store-property id value) (load-property id value)
