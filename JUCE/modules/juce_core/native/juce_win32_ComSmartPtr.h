@@ -31,7 +31,7 @@
 
 #if !defined (_MSC_VER)
 template<typename Type> struct UUIDGetter { static CLSID get() { jassertfalse; return CLSID(); } };
-// TODO: fix this
+#undef __uuidof
 #define __uuidof(x)  UUIDGetter<x>::get()
 #endif
 
