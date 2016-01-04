@@ -93,6 +93,33 @@ public:
 		return gl.nil();
 	}
 
+	// (component-enabled name (optional|nil/t)) -> bool
+	base::cell_t component_enabled(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::listRange(1, 2),
+								 base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto cc = components.find(name->s);
+			if (cc != components.end()) {
+				if (c->listSize() == 1) {
+					// getter
+					if (cc->second->isEnabled())
+						return gl.t();
+					return gl.nil();
+				}
+
+				// setter
+				const auto &doEnable = c + 2;
+				cc->second->setEnabled(!doEnable->isNil());
+				return doEnable;
+			}
+			gl.signalError(base::strs("component-enabled: component named \"", name->s, "\" not found"));
+			return gl.nil();
+		}
+		gl.signalError("component-enabled: invalid arguments, expected (id (optional)nil/t)");
+		return gl.nil();
+	}
+
 	// (refresh-interface)
 	base::cell_t refresh_interface(base::cell_t, base::cells_t &) {
 		// signal to all components resized event (to refresh UI)
@@ -525,7 +552,7 @@ public:
 				slider *sl = reinterpret_cast<slider*>(l->second.get());
 				if (isSetter) {
 					sl->setRange((double)(c + 2)->f,
-									 (double)(c + 3)->f);
+								 (double)(c + 3)->f);
 					return gl.t();
 				}
 
