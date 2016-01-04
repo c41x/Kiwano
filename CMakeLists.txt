@@ -11,22 +11,21 @@ if(NOT WIN32)
 endif()
 find_package(Threads)
 find_package(taglib REQUIRED)
-find_package(sqlite REQUIRED)
 find_package(libcue REQUIRED)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -Wno-unused-value -Wno-int-to-pointer-cast -Wno-strict-aliasing -Wno-strict-overflow -msse -msse2 -msse3")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -msse -msse2 -msse3")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 endif()
 
-include_directories("${PROJECT_SOURCE_DIR}/JUCE/")
+include_directories("${PROJECT_SOURCE_DIR}/JUCE")
+include_directories("${PROJECT_SOURCE_DIR}/sqlite")
 if(NOT WIN32)
   include_directories(${FREETYPE_INCLUDE_DIRS})
   include_directories(${OPENGL_INCLUDE_DIRS})
 endif()
 include_directories(${GRANITE_INCLUDE_DIRS})
 include_directories(${TAGLIB_INCLUDE_DIRS})
-include_directories(${SQLITE_INCLUDE_DIRS})
 include_directories(${LIBCUE_INCLUDE_DIRS})
 
 if(MINGW)
@@ -41,7 +40,6 @@ endif()
 link_libraries(${CMAKE_THREAD_LIBS_INIT})
 link_libraries(${GRANITE_LIBRARIES})
 link_libraries(${TAGLIB_LIBRARIES})
-link_libraries(${SQLITE_LIBRARIES})
 link_libraries(${LIBCUE_LIBRARIES})
 
 add_executable(kiwano WIN32
@@ -56,4 +54,5 @@ add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_basics/juce_audio_basics.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_utils/juce_audio_utils.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_formats/juce_audio_formats.cpp"
-  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp")
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp"
+  "${PROJECT_SOURCE_DIR}/sqlite/sqlite3.c")
