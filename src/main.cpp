@@ -149,6 +149,8 @@ START_JUCE_APPLICATION(KiwanoApplication);
 
 // TODO: load default config
 // TODO: lisp include
+// TODO: shortcut to open interpreter
+// TODO: error log/console window
 // TODO: enable/disable widget
 // TODO: load/store named value
 // TODO: playlist: get-selected-hash
