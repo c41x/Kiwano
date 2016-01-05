@@ -30,7 +30,7 @@ public:
 		playback::init(gl);
 
 		// logger
-		base::log::init(base::fs::getUserDirectory() + "\\.kiwano\\log.txt");
+		base::log::init(base::fs::getUserDirectory() + "/.kiwano/log.txt");
 
 		// initialize GLISP
 		using namespace std::placeholders;
@@ -151,7 +151,7 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: load default config
 // TODO: lisp include
 // TODO: shortcut to open interpreter
-// TODO: error log/console window
+// TODO: error log/console window (only for lisp?)
 // TODO: load/store named value
 // TODO: playlist: get-selected-hash
 // TODO: property map (store-property id value) (load-property id value)
