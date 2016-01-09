@@ -12,6 +12,9 @@ class playlist : public Component, public FileDragAndDropTarget {
 		std::vector<uint32> tyear, ttrack;
 		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
 
+		// persistent user defined tags map
+		std::map<base::string, std::vector<base::cell>> tags;
+
 		void init() {
 			paths_i.clear(); // this one first (getNumRows)
 			paths_i.push_back(0);
@@ -244,5 +247,37 @@ public:
 		box.updateContent();
 		repaint();
 		return result;
+	}
+
+	bool storeTags(const base::string &f) {
+		base::stream s;
+		s.write((uint32)model.tags.size());
+		for (const auto &e : model.tags) {
+			s.write(e.first);
+			// TODO: write returns / estimate size / write documentation on writing vectors?
+			s.write(sizeof(uint32) + sizeof(base::cell) * e.second.size());
+			s.write(e.second);
+		}
+		return base::fs::store(f, s);
+	}
+
+	bool loadTags(const base::string &f) {
+		model.tags.clear();
+		base::stream s = base::fs::load(f);
+		uint32 mapSize;
+		if (s.read(mapSize) == 0)
+			return false;
+		for (uint32 i = 0; i < mapSize; ++i) {
+			base::string key;
+			if (s.read(key) == 0)
+				return false;
+			auto &c = model.tags[key];
+			uint32 cellsSize;
+			if (s.read(cellsSize) == 0)
+				return false;
+			if (s.read(c) != cellsSize)
+				return false;
+		}
+		return true;
 	}
 };
