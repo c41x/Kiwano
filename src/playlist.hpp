@@ -14,6 +14,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 		// persistent user defined tags map
 		std::map<base::string, std::vector<base::cell>> tags;
+		uint32 tagsCount;
 
 		void init() {
 			paths_i.clear(); // this one first (getNumRows)
@@ -186,6 +187,8 @@ public:
 		box.getHeader().addColumn("title", 3, 200, 150, 1000, TableHeaderComponent::defaultFlags);
 		box.getHeader().addColumn("year", 4, 70, 50, 1000, TableHeaderComponent::defaultFlags);
 		box.setMultipleSelectionEnabled(true);
+
+		model.tagsCount = 0;
 	}
 
     void resized() override {
@@ -215,6 +218,31 @@ public:
 
 	base::string getSelectedRowString() {
 		return model.getItemPath(box.getSelectedRow());
+	}
+
+	void initTags(uint32 count) {
+		model.tagsCount = count;
+		// TODO: resizing?
+	}
+
+	base::cell getCustomTag(const base::string &id, uint32 index) {
+		auto e = model.tags.find(id);
+		if (e != model.tags.end() && e->second.size() <= index) {
+			return e->second[index];
+		}
+		return base::cell::nil;
+	}
+
+	void setCustomTag(const base::string &id, uint32 index, base::cell c) {
+		if (model.tagsCount > 0)  {
+			auto &e = model.tags[id];
+			if (e.size() <= index)
+				e[index] = c; // update
+			else {
+				e.resize(4, base::cell::nil); // initialize
+				e[index] = c;
+			}
+		}
 	}
 
 	bool store(const base::string &f) {
