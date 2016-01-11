@@ -44,6 +44,7 @@ link_libraries(${LIBCUE_LIBRARIES})
 
 add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
+  "${PROJECT_SOURCE_DIR}/src/customTags.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_core/juce_core.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_gui_basics/juce_gui_basics.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_events/juce_events.cpp"
