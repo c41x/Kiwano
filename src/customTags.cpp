@@ -13,7 +13,7 @@ void initTags(uint32 count) {
 
 base::cell getCustomTag(const base::string &id, uint32 index) {
 	auto e = tags.find(id);
-	if (e != tags.end() && e->second.size() <= index) {
+	if (e != tags.end() && index < e->second.size()) {
 		return e->second[index];
 	}
 	return base::cell::nil;
@@ -22,15 +22,16 @@ base::cell getCustomTag(const base::string &id, uint32 index) {
 void setCustomTag(const base::string &id, uint32 index, base::cell c) {
 	if (tagsCount > 0)  {
 		auto &e = tags[id];
-		if (e.size() <= index)
+		if (e.size() < index)
 			e[index] = c; // update
 		else {
-			e.resize(4, base::cell::nil); // initialize
+			e.resize(tagsCount, base::cell::nil); // initialize
 			e[index] = c;
 		}
 	}
 }
 
+// TODO: fix this!
 bool storeTags(const base::string &f) {
 	base::stream s;
 	s.write((uint32)tags.size());
@@ -62,4 +63,66 @@ bool loadTags(const base::string &f) {
 	}
 	return true;
 }
+
+//- LISP API
+// (ctags-init (int|items-count)) -> nil/t
+base::cell_t ctags_init(base::lisp &gl, base::cell_t c, base::cells_t &) {
+	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeInt)) {
+		const auto &num = c + 1;
+		initTags(num->i);
+		return gl.t();
+	}
+	gl.signalError("ctags-init: invalid arguments, expected (int)");
+	return gl.nil();
+}
+
+// (ctags-get (string|id) (int|items-count)) -> any/nil
+base::cell_t ctags_get(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (base::lisp::validate(c, base::cell::list(2), base::cell::typeString, base::cell::typeInt)) {
+		const auto &key = c + 1;
+		const auto &num = c + 2;
+		ret.push_back(getCustomTag(key->s, num->i));
+		return ret.end();
+	}
+	gl.signalError("ctags-get: invalid arguments, expected (string int)");
+	return gl.nil();
+}
+
+// (ctags-set (string|id) (int|items-count) any) -> nil/t
+base::cell_t ctags_set(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString, base::cell::typeInt)) { // TODO: validation
+		const auto &key = c + 1;
+		const auto &num = c + 2;
+		const auto &value = c + 3;
+		setCustomTag(key->s, num->i, *value);
+		return gl.t();
+	}
+	gl.signalError("ctags-set: invalid arguments, expected (string int any)");
+	return gl.nil();
+}
+
+// (ctags-store (string|file-name)) -> nil/t
+base::cell_t ctags_store(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
+		const auto &fileName = c + 1;
+		if (storeTags(fileName->s))
+			return gl.t();
+		return gl.nil();
+	}
+	gl.signalError("ctags-save: invalid arguments, expected (string)");
+	return gl.nil();
+}
+
+// (ctags-load (string|file-name)) -> nil/t
+base::cell_t ctags_load(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
+		const auto &fileName = c + 1;
+		if (loadTags(fileName->s))
+			return gl.t();
+		return gl.nil();
+	}
+	gl.signalError("ctags-load: invalid arguments, expected (string)");
+	return gl.nil();
+}
+
 }

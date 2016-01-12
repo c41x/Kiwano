@@ -1,5 +1,6 @@
 #include "includes.hpp"
 #include "interface.hpp"
+#include "customTags.hpp"
 
 namespace ProjectInfo {
 const char* const projectName = "Kiwano";
@@ -66,6 +67,13 @@ public:
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
 		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
 		gl.addProcedure("playlist-save", std::bind(&user_interface::playlist_save, &itf, _1, _2));
+
+		// custom tags api
+		gl.addProcedure("ctags-init", std::bind(&customTags::ctags_init, std::ref(gl), _1, _2));
+		gl.addProcedure("ctags-get", std::bind(&customTags::ctags_get, std::ref(gl), _1, _2));
+		gl.addProcedure("ctags-set", std::bind(&customTags::ctags_set, std::ref(gl), _1, _2));
+		gl.addProcedure("ctags-save", std::bind(&customTags::ctags_store, std::ref(gl), _1, _2));
+		gl.addProcedure("ctags-load", std::bind(&customTags::ctags_load, std::ref(gl), _1, _2));
 
 		// slider
 		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
@@ -162,3 +170,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: audio buffer size settings load/store
 // TODO: CUE support
 // TODO: playlist configuration
+// TODO: on exit
+// TODO: playlist groups
+// TODO: playlist image
