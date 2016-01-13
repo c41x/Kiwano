@@ -31,14 +31,11 @@ void setCustomTag(const base::string &id, uint32 index, base::cell c) {
 	}
 }
 
-// TODO: fix this!
 bool storeTags(const base::string &f) {
 	base::stream s;
 	s.write((uint32)tags.size());
 	for (const auto &e : tags) {
 		s.write(e.first);
-		// TODO: write returns / estimate size / write documentation on writing vectors?
-		s.write(sizeof(uint32) + sizeof(base::cell) * e.second.size());
 		s.write(e.second);
 	}
 	return base::fs::store(f, s);
@@ -55,10 +52,7 @@ bool loadTags(const base::string &f) {
 		if (s.read(key) == 0)
 			return false;
 		auto &c = tags[key];
-		uint32 cellsSize;
-		if (s.read(cellsSize) == 0)
-			return false;
-		if (s.read(c) != cellsSize)
+		if (s.read(c) == 0)
 			return false;
 	}
 	return true;
@@ -90,7 +84,7 @@ base::cell_t ctags_get(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
 
 // (ctags-set (string|id) (int|items-count) any) -> nil/t
 base::cell_t ctags_set(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
-	if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString, base::cell::typeInt)) { // TODO: validation
+	if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString, base::cell::typeInt /* any */)) {
 		const auto &key = c + 1;
 		const auto &num = c + 2;
 		const auto &value = c + 3;
@@ -126,3 +120,5 @@ base::cell_t ctags_load(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
 }
 
 }
+
+// TODO: (de)serialization - file validation (CRC/size check?)
