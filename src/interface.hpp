@@ -197,6 +197,30 @@ public:
 		return gl.nil();
 	}
 
+	// (playlist-add-column (id)playlist (string)caption (id)content (int)width (int)minWidth (int)maxWidth)
+	base::cell_t playlist_add_column(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
+						   cell::typeInt, cell::typeInt, cell::typeInt)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				const auto &caption = c + 2;
+				const auto &content = c + 3;
+				const auto &width = c + 4;
+				const auto &minWidth = c + 5;
+				const auto &maxWidth = c + 6;
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				p->addColumn(caption->s, content->s, width->i, minWidth->i, maxWidth->i);
+				return gl.t();
+			}
+			gl.signalError(strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-add-column: invalid arguments, expected (id string id int int int)");
+		return gl.nil();
+	}
+
 	//- text button
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {

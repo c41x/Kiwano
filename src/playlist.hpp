@@ -1,5 +1,6 @@
 #pragma once
 #include "includes.hpp"
+#include "customTags.hpp"
 
 #define TAGLIB_STATIC
 #include <taglib/fileref.h>
@@ -11,6 +12,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 		base::string paths, talbum, tartist, ttitle;
 		std::vector<uint32> tyear, ttrack;
 		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
+		std::vector<base::string> columns;
 
 		void init() {
 			paths_i.clear(); // this one first (getNumRows)
@@ -98,16 +100,29 @@ class playlist : public Component, public FileDragAndDropTarget {
 						int width, int height, bool /*rowIsSelected*/) override {
 			g.setColour(Colours::black);
 			g.setFont(height * 0.7f);
-			if (columnId == 0)
-				g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
-			else if (columnId == 1)
-				g.drawText(getItemAlbum(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-			else if (columnId == 2)
-				g.drawText(getItemArtist(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-			else if (columnId == 3)
-				g.drawText(getItemTitle(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-			else if (columnId == 4)
-				g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+
+			if (columnId < (int)columns.size()) {
+				auto &c = columns[columnId];
+				if (c == "track")
+					g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+				else if (c == "album")
+					g.drawText(getItemAlbum(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+				else if (c == "artist")
+					g.drawText(getItemArtist(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+				else if (c == "title")
+					g.drawText(getItemTitle(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+				else if (c == "year")
+					g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+				else {
+					// search in ctags
+					base::string hash = getItemAlbum(rowNumber) + getItemArtist(rowNumber) + getItemTitle(rowNumber);
+					auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
+					if (!t.isNil()) {
+						g.drawText(t.s, 5, 0, width, height, Justification::centredLeft, true);
+					}
+				}
+			}
+
 			g.setColour(Colours::black.withAlpha(0.2f));
 			g.fillRect(width - 1, 0, 1, height);
 		}
@@ -175,14 +190,8 @@ public:
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
 		box.getHeader().setStretchToFitActive(true);
-		addAndMakeVisible(box);
-
-		box.getHeader().addColumn("track", 0, 50, 20, 1000, TableHeaderComponent::defaultFlags);
-		box.getHeader().addColumn("album", 1, 200, 150, 1000, TableHeaderComponent::defaultFlags);
-		box.getHeader().addColumn("artist", 2, 200, 150, 1000, TableHeaderComponent::defaultFlags);
-		box.getHeader().addColumn("title", 3, 200, 150, 1000, TableHeaderComponent::defaultFlags);
-		box.getHeader().addColumn("year", 4, 70, 50, 1000, TableHeaderComponent::defaultFlags);
 		box.setMultipleSelectionEnabled(true);
+		addAndMakeVisible(box);
 	}
 
     void resized() override {
@@ -212,6 +221,13 @@ public:
 
 	base::string getSelectedRowString() {
 		return model.getItemPath(box.getSelectedRow());
+	}
+
+	void addColumn(const base::string &caption, const base::string &content,
+				   int width, int widthMin, int widthMax) {
+		box.getHeader().addColumn(caption, (int)model.columns.size(),
+								  width, widthMin, widthMax, TableHeaderComponent::defaultFlags);
+		model.columns.push_back(content);
 	}
 
 	bool store(const base::string &f) {
@@ -246,3 +262,8 @@ public:
 		return result;
 	}
 };
+
+// TODO: remove-column
+// TODO: clear-columns
+// TODO: get-columns
+// TODO: custom drawing functions

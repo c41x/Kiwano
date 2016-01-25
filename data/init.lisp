@@ -55,6 +55,11 @@
 (defun create-playlist-tabs ()
   (create-tabs 'playlist-tabs 'top)
   (create-playlist 'playlist)
+  (playlist-add-column 'playlist "track" 'track 50 20 1000)
+  (playlist-add-column 'playlist "album" 'album 200 150 1000)
+  (playlist-add-column 'playlist "artist" 'artist 200 150 1000)
+  (playlist-add-column 'playlist "title" 'title 200 150 1000)
+  (playlist-add-column 'playlist "year" 'year 70 50 1000)
   (tabs-add-component 'playlist-tabs 'playlist "all" |0.5 0.5 0.5 0.9|)
   'playlist-tabs)
 
