@@ -748,4 +748,18 @@ public:
 		gl.signalError("stop-timer: invalid arguments, expected (id int)");
 		return gl.nil();
 	}
+
+	//- message boxes
+	// (message-box (string)caption (string)text) -> nil/t
+	base::cell_t message_box(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeString,
+								 base::cell::typeString)) {
+			const auto &caption = c + 1;
+			const auto &text = c + 2;
+			AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
+			return gl.t();
+		}
+		gl.signalError("stop-timer: invalid arguments, expected (id int)");
+		return gl.nil();
+	}
 };

@@ -98,6 +98,9 @@ public:
 		gl.addProcedure("start-timer", std::bind(&user_interface::start_timer, &itf, _1, _2));
 		gl.addProcedure("stop-timer", std::bind(&user_interface::stop_timer, &itf, _1, _2));
 
+		// message boxes
+		gl.addProcedure("message-box", std::bind(&user_interface::message_box, &itf, _1, _2));
+
 		// playback API
 		gl.addProcedure("playback-set-file", std::bind(&playback::set_file, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-unload-file", std::bind(&playback::unload_file, std::ref(gl), _1, _2));
