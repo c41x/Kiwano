@@ -113,6 +113,13 @@ base::cell_t is_playing(base::lisp &gl, base::cell_t, base::cells_t &) {
 	return gl.nil();
 }
 
+// playback-finished -> t/nil
+base::cell_t finished_playing(base::lisp &gl, base::cell_t, base::cells_t &) {
+	if (ts.hasStreamFinished())
+		return gl.t();
+	return gl.nil();
+}
+
 // (bind-playback (id)callback)
 base::cell_t bind_playback(base::lisp &gl, base::cell_t c, base::cells_t &) {
 	if (pl) {

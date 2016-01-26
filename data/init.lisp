@@ -130,7 +130,8 @@
   (if (playback-is-playing)
       (start-timer 'update-slider 100)
     (stop-timer 'update-slider)
-    (message-box "playback-changed callback" "playback stopped / paused")))
+    (if (playback-finished)
+	(message-box "playback-changed callback" "playback finished"))))
 
 (defun on-slider-up (time)
   (playback-seek time))

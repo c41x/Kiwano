@@ -110,6 +110,7 @@ public:
 		gl.addProcedure("playback-length", std::bind(&playback::length, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-get-pos", std::bind(&playback::get_pos, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-is-playing", std::bind(&playback::is_playing, std::ref(gl), _1, _2));
+		gl.addProcedure("playback-finished", std::bind(&playback::finished_playing, std::ref(gl), _1, _2));
 		gl.addProcedure("playback-gain", std::bind(&playback::gain, std::ref(gl), _1, _2));
 		gl.addProcedure("bind-playback", std::bind(&playback::bind_playback, std::ref(gl), _1, _2));
 		gl.addProcedure("unbind-playback", std::bind(&playback::unbind_playback, std::ref(gl), _1, _2));
