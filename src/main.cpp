@@ -44,6 +44,7 @@ public:
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
 		gl.addProcedure("get-components", std::bind(&user_interface::get_components, &itf, _1, _2));
+		gl.addProcedure("repaint-component", std::bind(&user_interface::repaint_component, &itf, _1, _2));
 		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 
@@ -70,8 +71,8 @@ public:
 		gl.addProcedure("playlist-add-column", std::bind(&user_interface::playlist_add_column, &itf, _1, _2));
 
 		// custom tags api
-		gl.addProcedure("ctags-init", std::bind(&customTags::ctags_init, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-get", std::bind(&customTags::ctags_get, std::ref(gl), _1, _2));
+		gl.addProcedure("ctags-remove", std::bind(&customTags::ctags_remove, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-set", std::bind(&customTags::ctags_set, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-save", std::bind(&customTags::ctags_store, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-load", std::bind(&customTags::ctags_load, std::ref(gl), _1, _2));
@@ -100,6 +101,7 @@ public:
 
 		// message boxes
 		gl.addProcedure("message-box", std::bind(&user_interface::message_box, &itf, _1, _2));
+		gl.addProcedure("input-box", std::bind(&user_interface::input_box, &itf, _1, _2));
 
 		// playback API
 		gl.addProcedure("playback-set-file", std::bind(&playback::set_file, std::ref(gl), _1, _2));
@@ -178,3 +180,7 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: on exit
 // TODO: playlist groups
 // TODO: playlist image
+// TODO: remove playlist-get-selected?
+// TODO: copy-file with new name
+// TODO: repaint-row?
+// TODO: store/load arbitary lisp data

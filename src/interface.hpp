@@ -75,6 +75,21 @@ public:
 		return gl.nil();
 	}
 
+	// (repaint-component name) -> bool
+	base::cell_t repaint_component(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto cc = components.find(name->s);
+			if (cc != components.end()) {
+				cc->second->repaint();
+				return gl.t();
+			}
+			return gl.nil();
+		}
+		gl.signalError("repaint-component: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
 	// (get-components (id)type) -> (list of id)
 	base::cell_t get_components(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
@@ -646,6 +661,8 @@ public:
 					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
 							if (c->s == "selected-row")
 								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowString(), "\""); });
+							else if (c->s == "selected-row-id")
+								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowId(), "\""); });
 							else if (c->s == "slider-value")
 								listeners.back()->args.push_back([com](){ return base::toStr(reinterpret_cast<Slider*>(com)->getValue()); });
 						});
@@ -759,7 +776,27 @@ public:
 			AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
 			return gl.t();
 		}
-		gl.signalError("stop-timer: invalid arguments, expected (id int)");
+		gl.signalError("message-box: invalid arguments, expected (id int)");
+		return gl.nil();
+	}
+
+	// (input-box (string)caption (string)text (string)input-value) -> nil | string
+	base::cell_t input_box(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString,
+								 base::cell::typeString, base::cell::typeString)) {
+			const auto &caption = c + 1;
+			const auto &text = c + 2;
+			const auto &input = c + 3;
+            AlertWindow w(caption->s, text->s, AlertWindow::QuestionIcon);
+            w.addTextEditor("text", input->s, "text field:");
+            w.addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
+            if (w.runModalLoop() == 0) { // wait for OK
+				ret.push_back(base::cell(w.getTextEditorContents("text").toStdString()));
+				return ret.end();
+            }
+			return gl.nil();
+		}
+		gl.signalError("input-box: invalid arguments, expected (id int)");
 		return gl.nil();
 	}
 };

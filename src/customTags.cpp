@@ -4,12 +4,6 @@ namespace customTags {
 
 // persistent user defined tags map
 std::map<base::string, std::vector<base::cell>> tags;
-uint32 tagsCount = 0;
-
-void initTags(uint32 count) {
-	tagsCount = count;
-	// TODO: resizing?
-}
 
 base::cell getCustomTag(const base::string &id, uint32 index) {
 	auto e = tags.find(id);
@@ -20,15 +14,19 @@ base::cell getCustomTag(const base::string &id, uint32 index) {
 }
 
 void setCustomTag(const base::string &id, uint32 index, base::cell c) {
-	if (tagsCount > 0)  {
-		auto &e = tags[id];
-		if (e.size() < index)
-			e[index] = c; // update
-		else {
-			e.resize(tagsCount, base::cell::nil); // initialize
-			e[index] = c;
-		}
+	auto &e = tags[id];
+	if (e.size() < index)
+		e[index] = c; // update
+	else {
+		e.resize(index + 1, base::cell::nil); // initialize
+		e[index] = c;
 	}
+}
+
+void removeTag(const base::string &id) {
+	auto e = tags.find(id);
+	if (e != tags.end())
+		e->second.clear();
 }
 
 bool storeTags(const base::string &f) {
@@ -59,17 +57,6 @@ bool loadTags(const base::string &f) {
 }
 
 //- LISP API
-// (ctags-init (int|items-count)) -> nil/t
-base::cell_t ctags_init(base::lisp &gl, base::cell_t c, base::cells_t &) {
-	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeInt)) {
-		const auto &num = c + 1;
-		initTags(num->i);
-		return gl.t();
-	}
-	gl.signalError("ctags-init: invalid arguments, expected (int)");
-	return gl.nil();
-}
-
 // (ctags-get (string|id) (int|items-count)) -> any/nil
 base::cell_t ctags_get(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
 	if (base::lisp::validate(c, base::cell::list(2), base::cell::typeString, base::cell::typeInt)) {
@@ -82,7 +69,18 @@ base::cell_t ctags_get(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
 	return gl.nil();
 }
 
-// (ctags-set (string|id) (int|items-count) any) -> nil/t
+// (ctags-remove (string|id)) -> nil/t
+base::cell_t ctags_remove(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
+	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
+		const auto &key = c + 1;
+		removeTag(key->s);
+		return gl.t();
+	}
+	gl.signalError("ctags-set: invalid arguments, expected (string int any)");
+	return gl.nil();
+}
+
+// (ctags-set (string|id) (int|item-index) any) -> nil/t
 base::cell_t ctags_set(base::lisp &gl, base::cell_t c, base::cells_t &ret) {
 	if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString, base::cell::typeInt /* any */)) {
 		const auto &key = c + 1;

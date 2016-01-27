@@ -52,16 +52,25 @@
 ;;
 ;; (refresh-interface)
 
+(defvar current-id "")
+(defvar playlist-id 0)
+
+;; for given id returns new playlist
+(defun init-playlist (id)
+  ;;(message-box (strs "creating playlist: " id) "asdf")
+  (create-playlist id)
+  (playlist-add-column id "track" 'track 50 20 1000)
+  (playlist-add-column id "album" 'album 200 150 1000)
+  (playlist-add-column id "artist" 'artist 200 150 1000)
+  (playlist-add-column id "title" 'title 200 150 1000)
+  (playlist-add-column id "year" 'year 70 50 1000)
+  (playlist-add-column id "count" 'aaaaaaaaaaaaa 50 20 1000)
+  id)
+
 (defun create-playlist-tabs ()
   (create-tabs 'playlist-tabs 'top)
-  (create-playlist 'playlist)
-  (playlist-add-column 'playlist "track" 'track 50 20 1000)
-  (playlist-add-column 'playlist "album" 'album 200 150 1000)
-  (playlist-add-column 'playlist "artist" 'artist 200 150 1000)
-  (playlist-add-column 'playlist "title" 'title 200 150 1000)
-  (playlist-add-column 'playlist "year" 'year 70 50 1000)
-  (tabs-add-component 'playlist-tabs 'playlist "all" |0.5 0.5 0.5 0.9|)
-  'playlist-tabs)
+  (tabs-add-component 'playlist-tabs (init-playlist 'playlist)
+		      "all" |0.5 0.5 0.5 0.9|) 'playlist-tabs)
 
 (defun create-button-page ()
   (create-layout 'l-buttons t)
@@ -70,6 +79,7 @@
   (create-text-button 'b-stop "[ ]" "Stop playback")
   (create-text-button 'b-options "Options" "Audio options")
   (create-text-button 'b-interpreter "Interpreter" "GLISP Interpreter")
+  (create-text-button 'b-new-playlist "New Playlist" "Create new playlist")
   (create-slider 'sl-seek)
   (component-enabled 'sl-seek nil)
   (create-slider 'sl-gain)
@@ -80,6 +90,7 @@
   (layout-add-component 'l-buttons 'b-stop 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-options 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'b-interpreter 80.0 80.0 80.0)
+  (layout-add-component 'l-buttons 'b-new-playlist 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'sl-seek -0.1 -1.0 -1.0)
   (layout-add-component 'l-buttons 'sl-gain 100.0 100.0 100.0)
   'l-buttons)
@@ -106,6 +117,14 @@
 	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
+(defun on-new-playlist ()
+  (setq playlist-id (+ 1 playlist-id))
+  (tabs-add-component 'playlist-tabs
+		      (init-playlist (to-id (strs "playlist_" playlist-id)))
+		      (input-box "Playlist Name" "Enter new playlist name: " "New Playlist")
+		      |0.5 0.5 0.5 0.9|)
+  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
+
 (defun on-stop ()
   (playback-stop)
   (playback-seek 0.0)
@@ -120,8 +139,9 @@
   (component-enabled 'sl-seek t)
   (playback-start))
 
-(defun on-playlist-click (item-str)
+(defun on-playlist-click (item-str item-id)
   (playback-set-file item-str)
+  (setq current-id item-id)
   (slider-range 'sl-seek 0.0 (playback-length))
   (component-enabled 'sl-seek t)
   (playback-start))
@@ -131,7 +151,14 @@
       (start-timer 'update-slider 100)
     (stop-timer 'update-slider)
     (if (playback-finished)
-	(message-box "playback-changed callback" "playback finished"))))
+	(progn
+	  (defvar current-value (ctags-get current-id 0))
+	  (if current-value
+	      (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
+	    (ctags-set current-id 0 1)) ;; init value
+	  (ctags-save "playback-stats")
+	  (message-box "playback-changed callback" "playback finished")
+	  (repaint-component 'playlist)))))
 
 (defun on-slider-up (time)
   (playback-seek time))
@@ -148,11 +175,15 @@
 (bind-mouse-click 'b-play 'on-play)
 (bind-mouse-click 'b-pause 'on-pause)
 (bind-mouse-click 'b-stop 'on-stop)
-(bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row))
+(bind-mouse-click 'b-new-playlist 'on-new-playlist)
+(bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row selected-row-id))
 (bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
 (bind-slider-changed 'sl-gain 'on-slider-gain '(slider-value))
 (create-timer 'update-slider 'on-update-slider)
 (bind-playback 'playback-changed)
+
+;; initialize ctags
+(ctags-load "playback-stats")
 
 ;; init audio settings
 (audio-settings)

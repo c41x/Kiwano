@@ -81,6 +81,10 @@ class playlist : public Component, public FileDragAndDropTarget {
 								ttitle.begin() + ttitle_i[index + 1]);
 		}
 
+		base::string getItemId(size_t index) {
+			return getItemAlbum(index) + getItemArtist(index) + getItemTitle(index);
+		}
+
 		// GUI
         int getNumRows() override {
             return paths_i.size() - 1;
@@ -114,11 +118,14 @@ class playlist : public Component, public FileDragAndDropTarget {
 				else if (c == "year")
 					g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
 				else {
+					// TODO: custom tag
 					// search in ctags
-					base::string hash = getItemAlbum(rowNumber) + getItemArtist(rowNumber) + getItemTitle(rowNumber);
-					auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
+					base::string hash = getItemId(rowNumber);
+					//auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
+					auto t = customTags::getCustomTag(hash, 0);
+					g.drawText(base::toStr(t.i), 5, 0, width, height, Justification::centredLeft, true);
 					if (!t.isNil()) {
-						g.drawText(t.s, 5, 0, width, height, Justification::centredLeft, true);
+						//g.drawText(t.s, 5, 0, width, height, Justification::centredLeft, true);
 					}
 				}
 			}
@@ -221,6 +228,10 @@ public:
 
 	base::string getSelectedRowString() {
 		return model.getItemPath(box.getSelectedRow());
+	}
+
+	base::string getSelectedRowId() {
+		return model.getItemId(box.getSelectedRow());
 	}
 
 	void addColumn(const base::string &caption, const base::string &content,
