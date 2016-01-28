@@ -1,4 +1,5 @@
 #include "customTags.hpp"
+#include "stream.inc.hpp"
 
 namespace customTags {
 
@@ -31,28 +32,15 @@ void removeTag(const base::string &id) {
 
 bool storeTags(const base::string &f) {
 	base::stream s;
-	s.write((uint32)tags.size());
-	for (const auto &e : tags) {
-		s.write(e.first);
-		s.write(e.second);
-	}
+	s.write(tags);
 	return base::fs::store(f, s);
 }
 
 bool loadTags(const base::string &f) {
 	tags.clear();
 	base::stream s = base::fs::load(f);
-	uint32 mapSize;
-	if (s.read(mapSize) == 0)
+	if (s.read(tags) == 0)
 		return false;
-	for (uint32 i = 0; i < mapSize; ++i) {
-		base::string key;
-		if (s.read(key) == 0)
-			return false;
-		auto &c = tags[key];
-		if (s.read(c) == 0)
-			return false;
-	}
 	return true;
 }
 

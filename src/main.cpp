@@ -1,6 +1,7 @@
 #include "includes.hpp"
 #include "interface.hpp"
 #include "customTags.hpp"
+#include "settings.hpp"
 
 namespace ProjectInfo {
 const char* const projectName = "Kiwano";
@@ -76,6 +77,12 @@ public:
 		gl.addProcedure("ctags-set", std::bind(&customTags::ctags_set, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-save", std::bind(&customTags::ctags_store, std::ref(gl), _1, _2));
 		gl.addProcedure("ctags-load", std::bind(&customTags::ctags_load, std::ref(gl), _1, _2));
+
+		// settings
+		gl.addProcedure("settings-load", std::bind(&settings_load, std::ref(gl), _1, _2));
+		gl.addProcedure("settings-save", std::bind(&settings_save, std::ref(gl), _1, _2));
+		gl.addProcedure("settings-get", std::bind(&settings_get, std::ref(gl), _1, _2));
+		gl.addProcedure("settings-set", std::bind(&settings_set, std::ref(gl), _1, _2));
 
 		// slider
 		gl.addProcedure("create-slider", std::bind(&user_interface::create_slider, &itf, _1, _2));
