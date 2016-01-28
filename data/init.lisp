@@ -117,13 +117,21 @@
 	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
+(defun save-playlist-tabs ()
+  (settings-set "playlist-tabs-id" (get-components 'playlist))
+  (settings-set "playlist-id" playlist-id))
+
 (defun on-new-playlist ()
   (setq playlist-id (+ 1 playlist-id))
   (tabs-add-component 'playlist-tabs
 		      (init-playlist (to-id (strs "playlist_" playlist-id)))
 		      (input-box "Playlist Name" "Enter new playlist name: " "New Playlist")
 		      |0.5 0.5 0.5 0.9|)
-  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
+  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1))
+  ;; TODO: find better place
+  ;;(save-playlist-tabs)
+  ;;(settings-save "settings")
+  )
 
 (defun on-stop ()
   (playback-stop)
@@ -184,6 +192,7 @@
 
 ;; initialize ctags
 (ctags-load "playback-stats")
+(settings-load "settings")
 
 ;; init audio settings
 (audio-settings)
