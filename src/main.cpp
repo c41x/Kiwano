@@ -11,13 +11,15 @@ const int versionNumber = 0x10000;
 
 class MainWindow : public DocumentWindow {
 	user_interface itf;
-	base::lisp gl;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow);
     LookAndFeel_V1 lookAndFeelV1;
     LookAndFeel_V2 lookAndFeelV2;
     LookAndFeel_V3 lookAndFeelV3;
 
 public:
+	base::lisp gl;
+	base::string onExit;
+
 	MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
 							  itf(gl) {
 		//setUsingNativeTitleBar(true); // TODO: fix blink on startup
@@ -45,6 +47,7 @@ public:
 		gl.addProcedure("set-main-component", std::bind(&user_interface::set_main_component, &itf, _1, _2));
 		gl.addProcedure("has-component", std::bind(&user_interface::has_component, &itf, _1, _2));
 		gl.addProcedure("get-components", std::bind(&user_interface::get_components, &itf, _1, _2));
+		gl.addProcedure("get-child-components", std::bind(&user_interface::get_child_components, &itf, _1, _2));
 		gl.addProcedure("repaint-component", std::bind(&user_interface::repaint_component, &itf, _1, _2));
 		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
@@ -97,6 +100,7 @@ public:
 		gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
 		gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
 		gl.addProcedure("tabs-count", std::bind(&user_interface::tabs_count, &itf, _1, _2));
+		gl.addProcedure("tabs-get-components", std::bind(&user_interface::tabs_get_components, &itf, _1, _2));
 		gl.addProcedure("tabs-remove", std::bind(&user_interface::tabs_remove, &itf, _1, _2));
 		gl.addProcedure("tabs-index", std::bind(&user_interface::tabs_index, &itf, _1, _2));
 
@@ -124,6 +128,9 @@ public:
 		gl.addProcedure("bind-playback", std::bind(&playback::bind_playback, std::ref(gl), _1, _2));
 		gl.addProcedure("unbind-playback", std::bind(&playback::unbind_playback, std::ref(gl), _1, _2));
 
+		// exit handler
+		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
+
 		// prepare settings folder
 		base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
 		base::fs::createFolderTree(appPath);
@@ -133,11 +140,26 @@ public:
 		gl.eval(base::toStr(base::fs::load("init.lisp")));
 	}
 
-	void closeButtonPressed() override {
+	//- LISP API
+	// (bind-exit (id)function) -> nil/t
+	base::cell_t bind_exit(base::cell_t c, base::cells_t &) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &callback = c + 1;
+			onExit = callback->s;
+			return gl.t();
+		}
+		gl.signalError("bind-exit: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	void cleanup() {
 		base::fs::close();
 		gl.close();
 		base::log::shutdown();
 		playback::shutdown();
+	}
+
+	void closeButtonPressed() override {
 		JUCEApplication::getInstance()->systemRequestedQuit();
 	}
 };
@@ -161,6 +183,8 @@ public:
     }
 
     void systemRequestedQuit() override {
+		mainWindow->gl.eval(base::strs("(", mainWindow->onExit, ")"));
+		mainWindow->cleanup();
         quit();
     }
 
@@ -190,4 +214,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: remove playlist-get-selected?
 // TODO: copy-file with new name
 // TODO: repaint-row?
-// TODO: store/load arbitary lisp data
+// TODO: spawn window
+// TODO: get*components - get all components without specifying type
+// TODO: generate-id

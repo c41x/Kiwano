@@ -108,6 +108,52 @@ public:
 		return gl.nil();
 	}
 
+	// (get-child-components (id)type) -> (list of id)
+	base::cell_t get_child_components(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
+								 base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			const auto &type = c + 2;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				ret.push_back(base::cell::list(0));
+				auto &head = ret.back();
+				auto &com = e->second;
+
+				auto addToList = [&ret, &head](Component *c) {
+					ret.push_back(base::cell(base::cell::typeIdentifier,
+											 c->getComponentID().toStdString()));
+					head.i++;
+				};
+
+				// if component is 'tabs iterate through it's items
+				if (com->getName() == "tabs") {
+					tabs *t = reinterpret_cast<tabs*>(com.get());
+					for (int i = 0; i < t->getNumTabs(); ++i) {
+						auto tt = t->getTabContentComponent(i);
+						if (tt->getName() == type->s) {
+							addToList(tt);
+						}
+					}
+				}
+				else {
+					// default search in JUCE hierarchy
+					for (int i = 0; i < com->getNumChildComponents(); ++i) {
+						Component *ccom = com->getChildComponent(i);
+						if (ccom->getName() == type->s) {
+							addToList(ccom);
+						}
+					}
+				}
+				return ret.end();
+			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("get-child-components: invalid arguments, expected (id id)");
+		return gl.nil();
+	}
+
 	// (component-enabled name (optional|nil/t)) -> bool
 	base::cell_t component_enabled(base::cell_t c, base::cells_t &) {
 		if (base::lisp::validate(c, base::cell::listRange(1, 2),
@@ -149,7 +195,9 @@ public:
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second->setName("playlist");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second;
+				p->setName("playlist");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -245,7 +293,9 @@ public:
 			const auto &label = c + 2;
 			const auto &tip = c + 3;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s))).first->second->setName("text-button");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s))).first->second;
+				p->setName("text-button");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
@@ -283,7 +333,9 @@ public:
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl))).first->second->setName("interpreter");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl))).first->second;
+				p->setName("interpreter");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -301,7 +353,9 @@ public:
 			const auto &name = c + 1;
 			const auto &horizontal = c + 2;
 			if (components.find(name->s) == components.end()) {
-				components.insert(std::make_pair(name->s, std::make_unique<layout>(!horizontal->isNil()))).first->second->setName("layout");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<layout>(!horizontal->isNil()))).first->second;
+				p->setName("layout");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
@@ -425,7 +479,9 @@ public:
 					o = TabbedButtonBar::TabsAtLeft;
 				else if (orientation->s == "right")
 					o = TabbedButtonBar::TabsAtRight;
-				components.insert(std::make_pair(name->s, std::make_unique<tabs>(o))).first->second->setName("tabs");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<tabs>(o))).first->second;
+				p->setName("tabs");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(base::strs("component named ", name->s, " already exists"));
@@ -515,6 +571,37 @@ public:
 		return gl.nil();
 	}
 
+	// (tabs-get-components (id)tabs (id)type)
+	base::cell_t tabs_get_components(base::cell_t c, base::cells_t &ret) {
+			using namespace base;
+			if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
+				const auto &name = c + 1;
+				const auto &type = c + 2;
+				auto e = components.find(name->s);
+				if (e != components.end()) {
+					tabs *t = reinterpret_cast<tabs*>(e->second.get());
+					ret.push_back(cell::list(0));
+					auto &head = ret.back();
+					auto tabNames = t->getTabNames();
+					for (int i = 0; i < t->getNumTabs(); ++i) {
+						auto tt = t->getTabContentComponent(i);
+						if (tt->getName() == type->s) {
+							ret.push_back(cell::list(2));
+							ret.push_back(cell(cell::typeIdentifier, tt->getComponentID().toStdString()));
+							ret.push_back(cell(cell::typeString, tabNames[i].toStdString()));
+							head.i++;
+						}
+					}
+					return ret.end();
+
+				}
+				gl.signalError(strs("tabs named: ", name->s, " not found"));
+				return gl.nil();
+			}
+			gl.signalError("tabs-get-components: invalid arguments, expected (id id)");
+			return gl.nil();
+	}
+
 	// (tabs-remove (id)tabs (int|string)index)
 	base::cell_t tabs_remove(base::cell_t c, base::cells_t &) {
 		using namespace base;
@@ -569,7 +656,9 @@ public:
 					else if (e->s == "tex-box-above") editBox = slider::TextBoxAbove;
 					else if (e->s == "tex-box-below") editBox = slider::TextBoxBelow;
 				}
-				components.insert(std::make_pair(name->s, std::make_unique<slider>(style, editBox))).first->second->setName("slider");
+				auto &p = components.insert(std::make_pair(name->s, std::make_unique<slider>(style, editBox))).first->second;
+				p->setName("slider");
+				p->setComponentID(name->s);
 				return name;
 			}
 			gl.signalError(strs("component named ", name->s, " already exists"));
@@ -776,7 +865,7 @@ public:
 			AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
 			return gl.t();
 		}
-		gl.signalError("message-box: invalid arguments, expected (id int)");
+		gl.signalError("message-box: invalid arguments, expected (string string)");
 		return gl.nil();
 	}
 
