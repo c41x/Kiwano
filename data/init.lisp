@@ -65,12 +65,14 @@
   (playlist-add-column id "title" 'title 200 150 1000)
   (playlist-add-column id "year" 'year 70 50 1000)
   (playlist-add-column id "count" 'aaaaaaaaaaaaa 50 20 1000)
+  (bind-mouse-double-click id 'on-playlist-click '(selected-row selected-row-id))
   id)
 
 (defun create-playlist-tabs ()
   (create-tabs 'playlist-tabs 'top)
-  (tabs-add-component 'playlist-tabs (init-playlist 'playlist)
-		      "all" |0.5 0.5 0.5 0.9|) 'playlist-tabs)
+  ;;(tabs-add-component 'playlist-tabs (init-playlist 'playlist)
+  ;;"all" |0.5 0.5 0.5 0.9|)
+  'playlist-tabs)
 
 (defun create-button-page ()
   (create-layout 'l-buttons t)
@@ -117,21 +119,13 @@
 	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
-(defun save-playlist-tabs ()
-  (settings-set "playlist-tabs-id" (get-components 'playlist))
-  (settings-set "playlist-id" playlist-id))
-
 (defun on-new-playlist ()
   (setq playlist-id (+ 1 playlist-id))
   (tabs-add-component 'playlist-tabs
 		      (init-playlist (to-id (strs "playlist_" playlist-id)))
 		      (input-box "Playlist Name" "Enter new playlist name: " "New Playlist")
 		      |0.5 0.5 0.5 0.9|)
-  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1))
-  ;; TODO: find better place
-  ;;(save-playlist-tabs)
-  ;;(settings-save "settings")
-  )
+  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
 
 (defun on-stop ()
   (playback-stop)
@@ -164,9 +158,8 @@
 	  (if current-value
 	      (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
 	    (ctags-set current-id 0 1)) ;; init value
-	  (ctags-save "playback-stats")
 	  (message-box "playback-changed callback" "playback finished")
-	  (repaint-component 'playlist)))))
+	  (repaint-component 'playlist))))) ;//- fix
 
 (defun on-slider-up (time)
   (playback-seek time))
@@ -184,7 +177,6 @@
 (bind-mouse-click 'b-pause 'on-pause)
 (bind-mouse-click 'b-stop 'on-stop)
 (bind-mouse-click 'b-new-playlist 'on-new-playlist)
-(bind-mouse-double-click 'playlist 'on-playlist-click '(selected-row selected-row-id))
 (bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
 (bind-slider-changed 'sl-gain 'on-slider-gain '(slider-value))
 (create-timer 'update-slider 'on-update-slider)
@@ -194,8 +186,31 @@
 (ctags-load "playback-stats")
 (settings-load "settings")
 
+;; load playlist from settings
+(setq playlist-id (or (settings-get "playlist-id") 0))
+(message-box "playlist-id" (strs playlist-id))
+(dolist e (or (settings-get "playlist-tabs") '())
+	(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
+	(tabs-add-component 'playlist-tabs
+			    (init-playlist (nth 0 e))
+			    (nth 1 e) |0.5 0.5 0.5 0.9|)
+	(playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
+
 ;; init audio settings
 (audio-settings)
 
+;; setup exit callback
+(defun on-exit ()
+  (defvar tabs (tabs-get-components 'playlist-tabs 'playlist))
+  (dolist e tabs
+	  (playlist-save (nth 0 e) (strs "playlists/" (nth 0 e))))
+  (settings-set "playlist-tabs" tabs)
+  (settings-set "playlist-id" playlist-id)
+  (ctags-save "playback-stats")
+  (settings-save "settings")
+  (message-box "Exiting" "just exiting"))
+(bind-exit 'on-exit)
+
+;; make things visible
 (set-main-component 'l-main)
 (refresh-interface)
