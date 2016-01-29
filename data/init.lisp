@@ -54,6 +54,8 @@
 
 (defvar current-id "")
 (defvar playlist-id 0)
+(defvar current-index 0)
+(defvar current-playlist nil)
 
 ;; for given id returns new playlist
 (defun init-playlist (id)
@@ -65,7 +67,10 @@
   (playlist-add-column id "title" 'title 200 150 1000)
   (playlist-add-column id "year" 'year 70 50 1000)
   (playlist-add-column id "count" 'aaaaaaaaaaaaa 50 20 1000)
-  (bind-mouse-double-click id 'on-playlist-click '(selected-row selected-row-id))
+  (bind-mouse-double-click id 'on-playlist-click '(selected-row
+						   selected-row-id
+						   selected-row-index
+						   component-name))
   id)
 
 (defun create-playlist-tabs ()
@@ -141,9 +146,11 @@
   (component-enabled 'sl-seek t)
   (playback-start))
 
-(defun on-playlist-click (item-str item-id)
+(defun on-playlist-click (item-str item-id item-index playlist-name)
   (playback-set-file item-str)
   (setq current-id item-id)
+  (setq current-index item-index)
+  (setq current-playlist playlist-name)
   (slider-range 'sl-seek 0.0 (playback-length))
   (component-enabled 'sl-seek t)
   (playback-start))
@@ -159,6 +166,14 @@
 	      (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
 	    (ctags-set current-id 0 1)) ;; init value
 	  (message-box "playback-changed callback" "playback finished")
+	  (message-box "Current info" (strs current-playlist " : " current-index))
+	  (if (< (+ 1 current-index) (playlist-items-count current-playlist))
+	      (progn (setq current-index (+ 1 current-index))
+		     (setq current-id (playlist-get current-playlist current-index 'id))
+		     (playback-set-file (playlist-get current-playlist current-index 'path))
+		     (slider-range 'sl-seek 0.0 (playback-length)) ;; TODO: DRY
+		     (component-enabled 'sl-seek t) ;; TODO: playlist-select
+		     (playback-start)))
 	  (repaint-component 'playlist))))) ;//- fix
 
 (defun on-slider-up (time)
@@ -188,6 +203,8 @@
 
 ;; load playlist from settings
 (setq playlist-id (or (settings-get "playlist-id") 0))
+(setq current-id (or (settings-get "current-index") 0))
+(setq current-playlist (or (settings-get "current-playlist") nil))
 (message-box "playlist-id" (strs playlist-id))
 (dolist e (or (settings-get "playlist-tabs") '())
 	(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
@@ -206,6 +223,8 @@
 	  (playlist-save (nth 0 e) (strs "playlists/" (nth 0 e))))
   (settings-set "playlist-tabs" tabs)
   (settings-set "playlist-id" playlist-id)
+  (settings-set "current-index" current-index)
+  (settings-set "current-playlist" current-playlist)
   (ctags-save "playback-stats")
   (settings-save "settings")
   (message-box "Exiting" "just exiting"))

@@ -223,6 +223,45 @@ public:
 		return gl.nil();
 	}
 
+	base::cell_t playlist_items_count(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				ret.push_back(base::cell(base::cell::typeInt, p->getItemsCount()));
+				return ret.end();
+			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-items-count: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	base::cell_t playlist_get(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(3), base::cell::typeIdentifier,
+								 base::cell::typeInt, base::cell::typeIdentifier)) {
+			const auto &name = c + 1;
+			const auto &index = c + 2;
+			const auto &query = c + 3;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				if (query->s == "id")
+					ret.push_back(base::cell(base::cell::typeString, p->getRowId(index->i)));
+				else if (query->s == "path")
+					ret.push_back(base::cell(base::cell::typeString, p->getRowPath(index->i)));
+				else return gl.nil();
+				return ret.end();
+			}
+			gl.signalError(base::strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-get-selected: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
 	base::cell_t playlist_load(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString)) {
 			const auto &name = c + 1;
@@ -750,10 +789,14 @@ public:
 					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
 							if (c->s == "selected-row")
 								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowString(), "\""); });
+							if (c->s == "selected-row-index")
+								listeners.back()->args.push_back([com](){ return base::toStr(reinterpret_cast<playlist*>(com)->getSelectedRowIndex()); });
 							else if (c->s == "selected-row-id")
 								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowId(), "\""); });
 							else if (c->s == "slider-value")
 								listeners.back()->args.push_back([com](){ return base::toStr(reinterpret_cast<Slider*>(com)->getValue()); });
+							else if (c->s == "component-name")
+								listeners.back()->args.push_back([com](){ return base::strs("'", com->getComponentID().toStdString()); });
 						});
 				return gl.t();
 			}

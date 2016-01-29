@@ -53,41 +53,45 @@ class playlist : public Component, public FileDragAndDropTarget {
 			ttitle_i.push_back(ttitle.size());
 		}
 
-		base::string getItemPath(size_t index) {
+		base::string getItemPath(size_t index) const {
 			return base::string(paths.begin() + paths_i[index],
 								paths.begin() + paths_i[index + 1]);
 		}
 
-		uint getItemTrack(size_t index) {
+		uint getItemTrack(size_t index) const {
 			return ttrack[index];
 		}
 
-		uint getItemYear(size_t index) {
+		uint getItemYear(size_t index) const {
 			return tyear[index];
 		}
 
-		base::string getItemAlbum(size_t index) {
+		base::string getItemAlbum(size_t index) const {
 			return base::string(talbum.begin() + talbum_i[index],
 								talbum.begin() + talbum_i[index + 1]);
 		}
 
-		base::string getItemArtist(size_t index) {
+		base::string getItemArtist(size_t index) const {
 			return base::string(tartist.begin() + tartist_i[index],
 								tartist.begin() + tartist_i[index + 1]);
 		}
 
-		base::string getItemTitle(size_t index) {
+		base::string getItemTitle(size_t index) const {
 			return base::string(ttitle.begin() + ttitle_i[index],
 								ttitle.begin() + ttitle_i[index + 1]);
 		}
 
-		base::string getItemId(size_t index) {
+		base::string getItemId(size_t index) const {
 			return getItemAlbum(index) + getItemArtist(index) + getItemTitle(index);
 		}
 
 		// GUI
+		int getItemsCount() const {
+			return paths_i.size() - 1;
+		}
+
         int getNumRows() override {
-            return paths_i.size() - 1;
+            return getItemsCount();
         }
 
 		// This is overloaded from TableListBoxModel, and should fill in the background of the whole row
@@ -226,12 +230,23 @@ public:
 			}))->launchThread();
 	}
 
-	base::string getSelectedRowString() {
+	base::string getSelectedRowString() const { // TODO: rename to getSelectedRowPath
 		return model.getItemPath(box.getSelectedRow());
 	}
 
-	base::string getSelectedRowId() {
+	base::string getSelectedRowId() const {
 		return model.getItemId(box.getSelectedRow());
+	}
+
+	int32 getSelectedRowIndex() const {
+		return box.getSelectedRow();
+	}
+
+	base::string getRowPath(int32 i) const { return model.getItemPath(i); }
+	base::string getRowId(int32 i) const { return model.getItemId(i); }
+
+	int32 getItemsCount() const {
+		return model.getItemsCount();
 	}
 
 	void addColumn(const base::string &caption, const base::string &content,

@@ -72,6 +72,8 @@ public:
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
 		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
 		gl.addProcedure("playlist-save", std::bind(&user_interface::playlist_save, &itf, _1, _2));
+		gl.addProcedure("playlist-items-count", std::bind(&user_interface::playlist_items_count, &itf, _1, _2));
+		gl.addProcedure("playlist-get", std::bind(&user_interface::playlist_get, &itf, _1, _2));
 		gl.addProcedure("playlist-add-column", std::bind(&user_interface::playlist_add_column, &itf, _1, _2));
 
 		// custom tags api
