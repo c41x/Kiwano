@@ -51,6 +51,7 @@ public:
 		gl.addProcedure("repaint-component", std::bind(&user_interface::repaint_component, &itf, _1, _2));
 		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
+		gl.addProcedure("unique-id", std::bind(&user_interface::unique_id, &itf, _1, _2));
 
 		// GUI event binding
 		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_listener<mouseUpListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
@@ -210,7 +211,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: audio buffer size settings load/store
 // TODO: CUE support
 // TODO: playlist configuration
-// TODO: on exit
 // TODO: playlist groups
 // TODO: playlist image
 // TODO: remove playlist-get-selected?
@@ -218,4 +218,3 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: repaint-row?
 // TODO: spawn window
 // TODO: get*components - get all components without specifying type
-// TODO: generate-id

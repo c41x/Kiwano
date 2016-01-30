@@ -189,6 +189,26 @@ public:
 		return gl.t();
 	}
 
+	// (unique-id (string)prefix) -> string / nil
+	base::cell_t unique_id(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
+			const auto &prefix = c + 1;
+			base::string gid;
+			for (int32 n = 0; n < 99999; ++n) {
+				for (const auto &com : components) {
+					gid = base::strs(prefix->s, "_", n);
+					if (gid != com.first) {
+						ret.push_back(gid);
+						return ret.end();
+					}
+				}
+			}
+			return gl.nil();
+		}
+		gl.signalError("unique-id: invalid arguments, expected (string)");
+		return gl.nil();
+	}
+
 	//- playlist
 	// (create-playlist name) -> nil/id
 	base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
