@@ -53,7 +53,6 @@
 ;; (refresh-interface)
 
 (defvar current-id "")
-(defvar playlist-id 0)
 (defvar current-index 0)
 (defvar current-playlist nil)
 
@@ -125,9 +124,8 @@
 	(tabs-index 'playlist-tabs "Interpreter"))))
 
 (defun on-new-playlist ()
-  (setq playlist-id (+ 1 playlist-id))
   (tabs-add-component 'playlist-tabs
-		      (init-playlist (to-id (strs "playlist_" playlist-id)))
+		      (init-playlist (unique-id "playlist"))
 		      (input-box "Playlist Name" "Enter new playlist name: " "New Playlist")
 		      |0.5 0.5 0.5 0.9|)
   (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
@@ -202,10 +200,8 @@
 (settings-load "settings")
 
 ;; load playlist from settings
-(setq playlist-id (or (settings-get "playlist-id") 0))
 (setq current-id (or (settings-get "current-index") 0))
 (setq current-playlist (or (settings-get "current-playlist") nil))
-(message-box "playlist-id" (strs playlist-id))
 (dolist e (or (settings-get "playlist-tabs") '())
 	(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
 	(tabs-add-component 'playlist-tabs
@@ -222,7 +218,6 @@
   (dolist e tabs
 	  (playlist-save (nth 0 e) (strs "playlists/" (nth 0 e))))
   (settings-set "playlist-tabs" tabs)
-  (settings-set "playlist-id" playlist-id)
   (settings-set "current-index" current-index)
   (settings-set "current-playlist" current-playlist)
   (ctags-save "playback-stats")
