@@ -189,7 +189,7 @@ public:
 		return gl.t();
 	}
 
-	// (unique-id (string)prefix) -> string / nil
+	// (unique-id (string)prefix) -> id / nil
 	base::cell_t unique_id(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
 			const auto &prefix = c + 1;
@@ -198,7 +198,7 @@ public:
 				for (const auto &com : components) {
 					gid = base::strs(prefix->s, "_", n);
 					if (gid != com.first) {
-						ret.push_back(gid);
+						ret.push_back({base::cell::typeIdentifier, gid});
 						return ret.end();
 					}
 				}
