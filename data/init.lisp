@@ -83,6 +83,9 @@
   (create-text-button 'b-play ">" "Play")
   (create-text-button 'b-pause "||" "Pause")
   (create-text-button 'b-stop "[ ]" "Stop playback")
+  (create-text-button 'b-prev "<<" "Previous")
+  (create-text-button 'b-next ">>" "Next")
+  (create-text-button 'b-rand "%" "Random")
   (create-text-button 'b-options "Options" "Audio options")
   (create-text-button 'b-interpreter "Interpreter" "GLISP Interpreter")
   (create-text-button 'b-new-playlist "New Playlist" "Create new playlist")
@@ -94,6 +97,9 @@
   (layout-add-component 'l-buttons 'b-play 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-pause 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-stop 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-prev 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-next 30.0 30.0 30.0)
+  (layout-add-component 'l-buttons 'b-rand 30.0 30.0 30.0)
   (layout-add-component 'l-buttons 'b-options 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'b-interpreter 80.0 80.0 80.0)
   (layout-add-component 'l-buttons 'b-new-playlist 80.0 80.0 80.0)
@@ -144,6 +150,28 @@
   (component-enabled 'sl-seek t)
   (playback-start))
 
+(defun play-selected ()
+  (setq current-id (playlist-get current-playlist current-index 'id))
+  (playback-set-file (playlist-get current-playlist current-index 'path))
+  (slider-range 'sl-seek 0.0 (playback-length)) ;; TODO: DRY
+  (component-enabled 'sl-seek t) ;; TODO: playlist-select
+  (playlist-select current-playlist current-index)
+  (playback-start))
+
+(defun on-next ()
+  (if (< (+ 1 current-index) (playlist-items-count current-playlist))
+      (progn (setq current-index (+ 1 current-index))
+	     (play-selected))))
+
+(defun on-prev ()
+  (if (>= (- current-index 1) 0)
+      (progn (setq current-index (- current-index 1))
+	     (play-selected))))
+
+(defun on-rand ()
+  (progn (setq current-index (rand (playlist-items-count current-playlist)))
+	 (play-selected)))
+
 (defun on-playlist-click (item-str item-id item-index playlist-name)
   (playback-set-file item-str)
   (setq current-id item-id)
@@ -163,16 +191,10 @@
 	  (if current-value
 	      (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
 	    (ctags-set current-id 0 1)) ;; init value
-	  (message-box "playback-changed callback" "playback finished")
-	  (message-box "Current info" (strs current-playlist " : " current-index))
-	  (if (< (+ 1 current-index) (playlist-items-count current-playlist))
-	      (progn (setq current-index (+ 1 current-index))
-		     (setq current-id (playlist-get current-playlist current-index 'id))
-		     (playback-set-file (playlist-get current-playlist current-index 'path))
-		     (slider-range 'sl-seek 0.0 (playback-length)) ;; TODO: DRY
-		     (component-enabled 'sl-seek t) ;; TODO: playlist-select
-		     (playback-start)))
-	  (repaint-component 'playlist))))) ;//- fix
+	  ;;(message-box "playback-changed callback" "playback finished")
+	  ;;(message-box "Current info" (strs current-playlist " : " current-index))
+	  (on-next)
+	  (repaint-component current-playlist)))))
 
 (defun on-slider-up (time)
   (playback-seek time))
@@ -189,6 +211,9 @@
 (bind-mouse-click 'b-play 'on-play)
 (bind-mouse-click 'b-pause 'on-pause)
 (bind-mouse-click 'b-stop 'on-stop)
+(bind-mouse-click 'b-prev 'on-prev)
+(bind-mouse-click 'b-next 'on-next)
+(bind-mouse-click 'b-rand 'on-rand)
 (bind-mouse-click 'b-new-playlist 'on-new-playlist)
 (bind-slider-drag-end 'sl-seek 'on-slider-up '(slider-value))
 (bind-slider-changed 'sl-gain 'on-slider-gain '(slider-value))
