@@ -242,6 +242,10 @@ public:
 		return box.getSelectedRow();
 	}
 
+	void selectRow(int32 row) {
+		box.selectRow(row);
+	}
+
 	base::string getRowPath(int32 i) const { return model.getItemPath(i); }
 	base::string getRowId(int32 i) const { return model.getItemId(i); }
 

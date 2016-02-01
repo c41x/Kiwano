@@ -243,6 +243,24 @@ public:
 		return gl.nil();
 	}
 
+	base::cell_t playlist_select(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeInt)) {
+			const auto &name = c + 1;
+			const auto &row = c + 2;
+			auto e = components.find(name->s);
+			if (e != components.end()) {
+				auto p = reinterpret_cast<playlist*>(e->second.get());
+				p->selectRow(row->i);
+				return gl.t();
+			}
+			gl.signalError(strs("component named: ", name->s, " not found"));
+			return gl.nil();
+		}
+		gl.signalError("playlist-select: invalid arguments, expected (id int)");
+		return gl.nil();
+	}
+
 	base::cell_t playlist_items_count(base::cell_t c, base::cells_t &ret) {
 		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
 			const auto &name = c + 1;

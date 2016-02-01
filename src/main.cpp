@@ -15,6 +15,7 @@ class MainWindow : public DocumentWindow {
     LookAndFeel_V1 lookAndFeelV1;
     LookAndFeel_V2 lookAndFeelV2;
     LookAndFeel_V3 lookAndFeelV3;
+	base::rng<> r;
 
 public:
 	base::lisp gl;
@@ -71,6 +72,7 @@ public:
 		// playlist
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
+		gl.addProcedure("playlist-select", std::bind(&user_interface::playlist_select, &itf, _1, _2));
 		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
 		gl.addProcedure("playlist-save", std::bind(&user_interface::playlist_save, &itf, _1, _2));
 		gl.addProcedure("playlist-items-count", std::bind(&user_interface::playlist_items_count, &itf, _1, _2));
@@ -131,6 +133,9 @@ public:
 		gl.addProcedure("bind-playback", std::bind(&playback::bind_playback, std::ref(gl), _1, _2));
 		gl.addProcedure("unbind-playback", std::bind(&playback::unbind_playback, std::ref(gl), _1, _2));
 
+		// other utils
+		gl.addProcedure("rand", std::bind(&MainWindow::random, this, _1, _2));
+
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
 
@@ -152,6 +157,17 @@ public:
 			return gl.t();
 		}
 		gl.signalError("bind-exit: invalid arguments, expected (id)");
+		return gl.nil();
+	}
+
+	// (rand (int)max) -> nil/t
+	base::cell_t random(base::cell_t c, base::cells_t &ret) {
+		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeInt)) {
+			const auto &max = c + 1;
+			ret.push_back(r.integer(max->i));
+			return ret.end();
+		}
+		gl.signalError("rand: invalid arguments, expected (int)");
 		return gl.nil();
 	}
 
@@ -215,6 +231,9 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: playlist image
 // TODO: remove playlist-get-selected?
 // TODO: copy-file with new name
+// TODO: file manipulation?
 // TODO: repaint-row?
 // TODO: spawn window
 // TODO: get*components - get all components without specifying type
+// TODO: date/time
+// TODO: global keybinding
