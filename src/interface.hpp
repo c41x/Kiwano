@@ -6,6 +6,7 @@
 #include "playback.hpp"
 #include "listeners.hpp"
 #include "slider.hpp"
+#include "fxTemplates.hpp"
 
 // change listener
 class audioSettingsChangeListener : public ChangeListener {
@@ -36,89 +37,82 @@ class user_interface : public Component {
 public:
 	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp), idAudioSettings("#audio-settings#"),
 										asListener(std::make_unique<audioSettingsChangeListener>()){ }
-	~user_interface() {}
+	~user_interface() { }
 
 	void resized() override {
 		if (mainComponent)
 			mainComponent->setBounds(getLocalBounds());
 	}
 
+	// curry skeleton templates
+	template <typename... Args, typename T>
+	base::cell_t fxValidate(const base::string &fxName, base::cell_t c, T fx, Args... v) {
+		return fxValidateSkeleton(gl, fxName, c, fx, v...);
+	}
+
+	template <typename... Args, typename T, typename TC>
+	base::cell_t fxValidateAccess(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
+		return fxValidateAccessSkeleton(gl, fxName, c, fx, container, v...);
+	}
+
+	template <typename... Args, typename T, typename TC>
+	base::cell_t fxValidateTryAccess(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
+		return fxValidateTryAccessSkeleton(gl, fxName, c, fx, container, v...);
+	}
+
+	template <typename... Args, typename T, typename TC>
+	base::cell_t fxValidateCreate(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
+		return fxValidateCreateSkeleton(gl, fxName, c, fx, container, v...);
+	}
+
 	//- general GUI
 	// (set-main-component name) -> bool
 	base::cell_t set_main_component(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto cc = components.find(name->s);
-			if (cc != components.end()) {
-				mainComponent = cc->second.get();
+		return fxValidateAccess("set-main-component", c, [c, this](Component *cc) -> base::cell_t {
+				mainComponent = cc;
 				addAndMakeVisible(mainComponent);
 				mainComponent->setBounds(getLocalBounds());
 				return gl.t();
-			}
-			gl.signalError("component not found");
-			return gl.nil();
-		}
-		gl.signalError("set-main-component: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (has-component name) -> bool
 	base::cell_t has_component(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto cc = components.find(name->s);
-			if (cc != components.end())
+		return fxValidateTryAccess("has-component", c, [c, this](Component *) -> base::cell_t {
 				return gl.t();
-			return gl.nil();
-		}
-		gl.signalError("has-component: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (repaint-component name) -> bool
 	base::cell_t repaint_component(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto cc = components.find(name->s);
-			if (cc != components.end()) {
-				cc->second->repaint();
+		return fxValidateAccess("repaint-component", c, [this](Component *c) -> base::cell_t {
+				c->repaint();
 				return gl.t();
-			}
-			return gl.nil();
-		}
-		gl.signalError("repaint-component: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (get-components (id)type) -> (list of id)
 	base::cell_t get_components(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &type = c + 1;
-			ret.push_back(base::cell::list(0));
-			auto &head = ret.back();
-			for (const auto &com : components) {
-				if (com.second->getName() == type->s) {
-					ret.push_back(base::cell(base::cell::typeIdentifier, com.first));
-					head.i++;
+		return fxValidate("get-components", c, [c, &ret, this]() -> base::cell_t {
+				const auto &type = c + 1;
+				ret.push_back(base::cell::list(0));
+				auto &head = ret.back();
+				for (const auto &com : components) {
+					if (com.second->getName() == type->s) {
+						ret.push_back(base::cell(base::cell::typeIdentifier, com.first));
+						head.i++;
+					}
 				}
-			}
-			return ret.end();
-		}
-		gl.signalError("get-components: invalid arguments, expected (id)");
-		return gl.nil();
+				return ret.end();
+			}, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (get-child-components (id)type) -> (list of id)
 	base::cell_t get_child_components(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			const auto &type = c + 2;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
+		return fxValidateAccess("get-child-components", c, [c, &ret, this](Component *e) -> base::cell_t {
+				const auto &type = c + 2;
 				ret.push_back(base::cell::list(0));
 				auto &head = ret.back();
-				auto &com = e->second;
 
 				auto addToList = [&ret, &head](Component *c) {
 					ret.push_back(base::cell(base::cell::typeIdentifier,
@@ -127,8 +121,8 @@ public:
 				};
 
 				// if component is 'tabs iterate through it's items
-				if (com->getName() == "tabs") {
-					tabs *t = reinterpret_cast<tabs*>(com.get());
+				if (e->getName() == "tabs") {
+					tabs *t = reinterpret_cast<tabs*>(e);
 					for (int i = 0; i < t->getNumTabs(); ++i) {
 						auto tt = t->getTabContentComponent(i);
 						if (tt->getName() == type->s) {
@@ -138,47 +132,33 @@ public:
 				}
 				else {
 					// default search in JUCE hierarchy
-					for (int i = 0; i < com->getNumChildComponents(); ++i) {
-						Component *ccom = com->getChildComponent(i);
-						if (ccom->getName() == type->s) {
-							addToList(ccom);
+					for (int i = 0; i < e->getNumChildComponents(); ++i) {
+						Component *com = e->getChildComponent(i);
+						if (com->getName() == type->s) {
+							addToList(com);
 						}
 					}
 				}
 				return ret.end();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("get-child-components: invalid arguments, expected (id id)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	// (component-enabled name (optional|nil/t)) -> bool
 	base::cell_t component_enabled(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::listRange(1, 2),
-								 base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto cc = components.find(name->s);
-			if (cc != components.end()) {
+		using namespace base;
+		return fxValidateAccess("component-enabled", c, [c, this](Component *e) -> cell_t {
 				if (c->listSize() == 1) {
 					// getter
-					if (cc->second->isEnabled())
+					if (e->isEnabled())
 						return gl.t();
 					return gl.nil();
 				}
 
 				// setter
 				const auto &doEnable = c + 2;
-				cc->second->setEnabled(!doEnable->isNil());
+				e->setEnabled(!doEnable->isNil());
 				return doEnable;
-			}
-			gl.signalError(base::strs("component-enabled: component named \"", name->s, "\" not found"));
-			return gl.nil();
-		}
-		gl.signalError("component-enabled: invalid arguments, expected (id (optional)nil/t)");
-		return gl.nil();
+			}, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeIdentifier);
 	}
 
 	// (refresh-interface)
@@ -191,22 +171,18 @@ public:
 
 	// (unique-id (string)prefix) -> id / nil
 	base::cell_t unique_id(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
-			const auto &prefix = c + 1;
-			base::string gid;
-			for (int32 n = 0; n < 99999; ++n) {
-				for (const auto &com : components) {
+		return fxValidate("unique-id", c, [c, &ret, this]() -> auto {
+				const auto &prefix = c + 1;
+				base::string gid;
+				for (int32 n = 0; n < 99999; ++n) {
 					gid = base::strs(prefix->s, "_", n);
-					if (gid != com.first) {
+					if (components.count(gid) == 0) {
 						ret.push_back({base::cell::typeIdentifier, gid});
 						return ret.end();
 					}
 				}
-			}
-			return gl.nil();
-		}
-		gl.signalError("unique-id: invalid arguments, expected (string)");
-		return gl.nil();
+				return gl.nil();
+			}, base::cell::list(1), base::cell::typeString);
 	}
 
 	//- playlist
@@ -881,92 +857,67 @@ public:
 	//- timers
 	// (create-timer (id)name (id)function) -> nil/t | name
 	base::cell_t create_timer(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier)) {
-			const auto &id = c + 1;
-			const auto &fx = c + 2;
-			if (timers.find(id->s) == timers.end()) {
+		return fxValidateCreate("create-timer", c, [c, this]() -> base::cell_t {
+				const auto &id = c + 1;
+				const auto &fx = c + 2;
 				timers[id->s] = std::make_unique<timerListener>(gl, fx->s);
 				return id;
-			}
-			gl.signalError(base::strs("timer named: ", id->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-timer: invalid arguments, expected (id id)");
-		return gl.nil();
+			}, timers, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	// (remove-timer (id)name) -> nil/t
 	base::cell_t remove_timer(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &id = c + 1;
-			return 1 == timers.erase(id->s) ? gl.t() : gl.nil();
-		}
-		gl.signalError("remove-timer: invalid arguments, expected (id)");
-		return gl.nil();
+		return fxValidate("remove-timer", c, [c, this]() -> base::cell_t {
+				const auto &id = c + 1;
+				return 1 == timers.erase(id->s) ? gl.t() : gl.nil();
+			}, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (start-timer (id)name (int)milliseconds) -> nil/t
 	base::cell_t start_timer(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt)) {
-			const auto &id = c + 1;
-			const auto &freq = c + 2;
-			auto e = timers.find(id->s);
-			if (e != timers.end()) {
-				e->second->startTimer(freq->i);
+		return fxValidateAccess("start-timer", c, [c, this](timerListener *t) -> base::cell_t {
+				const auto &freq = c + 2;
+				t->startTimer(freq->i);
 				return gl.t();
-			}
-			return gl.nil();
-		}
-		gl.signalError("start-timer: invalid arguments, expected (id int)");
-		return gl.nil();
+			}, timers, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt);
 	}
 
 	// (stop-timer (id)name) -> nil/t
 	base::cell_t stop_timer(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &id = c + 1;
-			auto e = timers.find(id->s);
-			if (e != timers.end()) {
-				e->second->stopTimer();
+		return fxValidateAccess("stop-timer", c, [c, this](timerListener *t) -> base::cell_t {
+				t->stopTimer();
 				return gl.t();
-			}
-			return gl.nil();
-		}
-		gl.signalError("stop-timer: invalid arguments, expected (id int)");
-		return gl.nil();
+			}, timers, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	//- message boxes
 	// (message-box (string)caption (string)text) -> nil/t
 	base::cell_t message_box(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeString,
-								 base::cell::typeString)) {
-			const auto &caption = c + 1;
-			const auto &text = c + 2;
-			AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
-			return gl.t();
-		}
-		gl.signalError("message-box: invalid arguments, expected (string string)");
-		return gl.nil();
+		return fxValidate("message-box", c, [c, this]() -> base::cell_t {
+				const auto &caption = c + 1;
+				const auto &text = c + 2;
+				AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
+				return gl.t();
+			}, base::cell::list(2), base::cell::typeString, base::cell::typeString);
 	}
 
 	// (input-box (string)caption (string)text (string)input-value) -> nil | string
 	base::cell_t input_box(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(3), base::cell::typeString,
-								 base::cell::typeString, base::cell::typeString)) {
-			const auto &caption = c + 1;
-			const auto &text = c + 2;
-			const auto &input = c + 3;
-            AlertWindow w(caption->s, text->s, AlertWindow::QuestionIcon);
-            w.addTextEditor("text", input->s, "text field:");
-            w.addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
-            if (w.runModalLoop() == 0) { // wait for OK
-				ret.push_back(base::cell(w.getTextEditorContents("text").toStdString()));
-				return ret.end();
-            }
-			return gl.nil();
-		}
-		gl.signalError("input-box: invalid arguments, expected (id int)");
-		return gl.nil();
+		using namespace base;
+		return fxValidate("input-box", c, [c, &ret, this]() -> cell_t {
+				const auto &caption = c + 1;
+				const auto &text = c + 2;
+				const auto &input = c + 3;
+				AlertWindow w(caption->s, text->s, AlertWindow::QuestionIcon);
+				w.addTextEditor("text", input->s, "text field:");
+				w.addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
+				if (w.runModalLoop() == 0) { // wait for OK
+					ret.push_back(cell(w.getTextEditorContents("text").toStdString()));
+					return ret.end();
+				}
+				return gl.nil();
+			}, cell::list(3), cell::typeString, cell::typeString, cell::typeString);
 	}
 };
+
+// ~972

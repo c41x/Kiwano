@@ -33,7 +33,7 @@ granite::base::cell_t fxValidateAccessSkeleton(granite::base::lisp &gl, const gr
 // validate + call only if element is not present in container (no error when not found)
 template <typename... Args, typename T, typename TC>
 granite::base::cell_t fxValidateTryAccessSkeleton(granite::base::lisp &gl, const granite::base::string &fxName,
-											   granite::base::cell_t c, TC fx, T &container, Args... v) {
+												  granite::base::cell_t c, TC fx, T &container, Args... v) {
 	using namespace granite::base;
 	if (lisp::validate(c, v...)) {
 		const auto &name = c + 1;
