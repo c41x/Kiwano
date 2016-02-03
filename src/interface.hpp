@@ -68,7 +68,7 @@ public:
 	//- general GUI
 	// (set-main-component name) -> bool
 	base::cell_t set_main_component(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess("set-main-component", c, [c, this](Component *cc) -> base::cell_t {
+		return fxValidateAccess("set-main-component", c, [c, this](Component *cc) -> auto {
 				mainComponent = cc;
 				addAndMakeVisible(mainComponent);
 				mainComponent->setBounds(getLocalBounds());
@@ -78,14 +78,14 @@ public:
 
 	// (has-component name) -> bool
 	base::cell_t has_component(base::cell_t c, base::cells_t &) {
-		return fxValidateTryAccess("has-component", c, [c, this](Component *) -> base::cell_t {
+		return fxValidateTryAccess("has-component", c, [c, this](Component *) -> auto {
 				return gl.t();
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (repaint-component name) -> bool
 	base::cell_t repaint_component(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess("repaint-component", c, [this](Component *c) -> base::cell_t {
+		return fxValidateAccess("repaint-component", c, [this](Component *c) -> auto {
 				c->repaint();
 				return gl.t();
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
@@ -93,7 +93,7 @@ public:
 
 	// (get-components (id)type) -> (list of id)
 	base::cell_t get_components(base::cell_t c, base::cells_t &ret) {
-		return fxValidate("get-components", c, [c, &ret, this]() -> base::cell_t {
+		return fxValidate("get-components", c, [c, &ret, this]() -> auto {
 				const auto &type = c + 1;
 				ret.push_back(base::cell::list(0));
 				auto &head = ret.back();
@@ -109,7 +109,7 @@ public:
 
 	// (get-child-components (id)type) -> (list of id)
 	base::cell_t get_child_components(base::cell_t c, base::cells_t &ret) {
-		return fxValidateAccess("get-child-components", c, [c, &ret, this](Component *e) -> base::cell_t {
+		return fxValidateAccess("get-child-components", c, [c, &ret, this](Component *e) -> auto {
 				const auto &type = c + 2;
 				ret.push_back(base::cell::list(0));
 				auto &head = ret.back();
@@ -146,7 +146,7 @@ public:
 	// (component-enabled name (optional|nil/t)) -> bool
 	base::cell_t component_enabled(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		return fxValidateAccess("component-enabled", c, [c, this](Component *e) -> cell_t {
+		return fxValidateAccess("component-enabled", c, [c, this](Component *e) -> auto {
 				if (c->listSize() == 1) {
 					// getter
 					if (e->isEnabled())
@@ -188,153 +188,89 @@ public:
 	//- playlist
 	// (create-playlist name) -> nil/id
 	base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
+		return fxValidateCreate("create-playlist", c, [c, this]() -> auto {
+				const auto &name = c + 1;
 				auto &p = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second;
 				p->setName("playlist");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(base::strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-playlist: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+		return fxValidateAccess("playlist-get-selected", c, [&ret](Component *e) -> auto {
+				auto p = reinterpret_cast<playlist*>(e);
 				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowString()));
 				return ret.end();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-get-selected: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	base::cell_t playlist_select(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeInt)) {
-			const auto &name = c + 1;
-			const auto &row = c + 2;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+		return fxValidateAccess("playlist-select", c, [c, this](Component *e) -> auto {
+				const auto &row = c + 2;
+				auto p = reinterpret_cast<playlist*>(e);
 				p->selectRow(row->i);
 				return gl.t();
-			}
-			gl.signalError(strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-select: invalid arguments, expected (id int)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt);
 	}
 
 	base::cell_t playlist_items_count(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+		return fxValidateAccess("playlist-items-count", c, [&ret](Component *e) -> auto {
+				auto p = reinterpret_cast<playlist*>(e);
 				ret.push_back(base::cell(base::cell::typeInt, p->getItemsCount()));
 				return ret.end();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-items-count: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	base::cell_t playlist_get(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(3), base::cell::typeIdentifier,
-								 base::cell::typeInt, base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			const auto &index = c + 2;
-			const auto &query = c + 3;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+		using namespace base;
+		return fxValidateAccess("playlist-get-selected", c, [&ret, this, c](Component *e) -> auto {
+				const auto &index = c + 2;
+				const auto &query = c + 3;
+				auto p = reinterpret_cast<playlist*>(e);
 				if (query->s == "id")
-					ret.push_back(base::cell(base::cell::typeString, p->getRowId(index->i)));
+					ret.push_back(cell(cell::typeString, p->getRowId(index->i)));
 				else if (query->s == "path")
-					ret.push_back(base::cell(base::cell::typeString, p->getRowPath(index->i)));
+					ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
 				else return gl.nil();
 				return ret.end();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-get-selected: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, cell::list(3), cell::typeIdentifier, cell::typeInt, cell::typeIdentifier);
 	}
 
 	base::cell_t playlist_load(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
+		return fxValidateAccess("playlist-load", c, [c, this](Component *e) -> auto {
 				const auto &path = c + 2;
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+				auto p = reinterpret_cast<playlist*>(e);
 				if (p->load(path->s))
 					return gl.t();
 				return gl.nil();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-load: invalid arguments, expected (id string)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
 	}
 
-	// TODO: do not duplicate?
 	base::cell_t playlist_save(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
+		return fxValidateAccess("playlist-save", c, [c, this](Component *e) -> auto {
 				const auto &path = c + 2;
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+				auto p = reinterpret_cast<playlist*>(e);
 				if (p->store(path->s))
 					return gl.t();
 				return gl.nil();
-			}
-			gl.signalError(base::strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-save: invalid arguments, expected (id string)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
 	}
 
 	// (playlist-add-column (id)playlist (string)caption (id)content (int)width (int)minWidth (int)maxWidth)
 	base::cell_t playlist_add_column(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
-						   cell::typeInt, cell::typeInt, cell::typeInt)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
+		return fxValidateAccess("playlist-add-column", c, [c, this](Component *e) -> auto {
 				const auto &caption = c + 2;
 				const auto &content = c + 3;
 				const auto &width = c + 4;
 				const auto &minWidth = c + 5;
 				const auto &maxWidth = c + 6;
-				auto p = reinterpret_cast<playlist*>(e->second.get());
+				auto p = reinterpret_cast<playlist*>(e);
 				p->addColumn(caption->s, content->s, width->i, minWidth->i, maxWidth->i);
 				return gl.t();
-			}
-			gl.signalError(strs("component named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("playlist-add-column: invalid arguments, expected (id string id int int int)");
-		return gl.nil();
+			}, components, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
+			cell::typeInt, cell::typeInt, cell::typeInt);
 	}
 
 	//- text button
@@ -857,7 +793,7 @@ public:
 	//- timers
 	// (create-timer (id)name (id)function) -> nil/t | name
 	base::cell_t create_timer(base::cell_t c, base::cells_t &) {
-		return fxValidateCreate("create-timer", c, [c, this]() -> base::cell_t {
+		return fxValidateCreate("create-timer", c, [c, this]() -> auto {
 				const auto &id = c + 1;
 				const auto &fx = c + 2;
 				timers[id->s] = std::make_unique<timerListener>(gl, fx->s);
@@ -867,7 +803,7 @@ public:
 
 	// (remove-timer (id)name) -> nil/t
 	base::cell_t remove_timer(base::cell_t c, base::cells_t &) {
-		return fxValidate("remove-timer", c, [c, this]() -> base::cell_t {
+		return fxValidate("remove-timer", c, [c, this]() -> auto {
 				const auto &id = c + 1;
 				return 1 == timers.erase(id->s) ? gl.t() : gl.nil();
 			}, base::cell::list(1), base::cell::typeIdentifier);
@@ -875,7 +811,7 @@ public:
 
 	// (start-timer (id)name (int)milliseconds) -> nil/t
 	base::cell_t start_timer(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess("start-timer", c, [c, this](timerListener *t) -> base::cell_t {
+		return fxValidateAccess("start-timer", c, [c, this](timerListener *t) -> auto {
 				const auto &freq = c + 2;
 				t->startTimer(freq->i);
 				return gl.t();
@@ -884,7 +820,7 @@ public:
 
 	// (stop-timer (id)name) -> nil/t
 	base::cell_t stop_timer(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess("stop-timer", c, [c, this](timerListener *t) -> base::cell_t {
+		return fxValidateAccess("stop-timer", c, [c, this](timerListener *t) -> auto {
 				t->stopTimer();
 				return gl.t();
 			}, timers, base::cell::list(1), base::cell::typeIdentifier);
@@ -893,7 +829,7 @@ public:
 	//- message boxes
 	// (message-box (string)caption (string)text) -> nil/t
 	base::cell_t message_box(base::cell_t c, base::cells_t &) {
-		return fxValidate("message-box", c, [c, this]() -> base::cell_t {
+		return fxValidate("message-box", c, [c, this]() -> auto {
 				const auto &caption = c + 1;
 				const auto &text = c + 2;
 				AlertWindow::showMessageBox(AlertWindow::InfoIcon, caption->s, text->s, "ok");
@@ -904,7 +840,7 @@ public:
 	// (input-box (string)caption (string)text (string)input-value) -> nil | string
 	base::cell_t input_box(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		return fxValidate("input-box", c, [c, &ret, this]() -> cell_t {
+		return fxValidate("input-box", c, [c, &ret, this]() -> auto {
 				const auto &caption = c + 1;
 				const auto &text = c + 2;
 				const auto &input = c + 3;
