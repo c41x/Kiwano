@@ -65,6 +65,11 @@ public:
 		return fxValidateCreateSkeleton(gl, fxName, c, fx, container, v...);
 	}
 
+	template <typename... Args, typename T, typename TC>
+	base::cell_t fxValidateAccess2(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
+		return fxValidateAccess2Skeleton(gl, fxName, c, fx, container, v...);
+	}
+
 	//- general GUI
 	// (set-main-component name) -> bool
 	base::cell_t set_main_component(base::cell_t c, base::cells_t &) {
@@ -190,7 +195,7 @@ public:
 	base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
 		return fxValidateCreate("create-playlist", c, [c, this]() -> auto {
 				const auto &name = c + 1;
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<playlist>())).first->second;
+				auto &p = components[name->s] = std::make_unique<playlist>();
 				p->setName("playlist");
 				p->setComponentID(name->s);
 				return name;
@@ -277,21 +282,15 @@ public:
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeString, cell::typeString)) {
-			const auto &name = c + 1;
-			const auto &label = c + 2;
-			const auto &tip = c + 3;
-			if (components.find(name->s) == components.end()) {
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<TextButton>(label->s, tip->s))).first->second;
+		return fxValidateCreate("create-text-button", c, [c, this]() -> auto {
+				const auto &name = c + 1;
+				const auto &label = c + 2;
+				const auto &tip = c + 3;
+				auto &p = components[name->s] = std::make_unique<TextButton>(label->s, tip->s);
 				p->setName("text-button");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-text-button: invalid arguments, expected (id string string)");
-		return gl.nil();
+			}, components, cell::list(3), cell::typeIdentifier, cell::typeString, cell::typeString);
 	}
 
 	//- audio settings
@@ -319,138 +318,77 @@ public:
 	//- interpreter
 	// (create-interpreter name) -> bool/id
 	base::cell_t create_interpreter(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<interpreter>(gl))).first->second;
+		return fxValidateCreate("create-interpreter", c, [c, this]() -> auto {
+				const auto &name = c + 1;
+				auto &p = components[name->s] = std::make_unique<interpreter>(gl);
 				p->setName("interpreter");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(base::strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-interpreter: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	//- layout
 	// (create-layout name (bool)horizontal) -> bool/id
 	base::cell_t create_layout(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			const auto &horizontal = c + 2;
-			if (components.find(name->s) == components.end()) {
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<layout>(!horizontal->isNil()))).first->second;
+		return fxValidateCreate("create-layout", c, [c, this]() -> auto {
+				const auto &name = c + 1;
+				const auto &horizontal = c + 2;
+				auto &p = components[name->s] = std::make_unique<layout>(!horizontal->isNil());
 				p->setName("layout");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-layout: invalid arguments, expected (id bool)");
-		return gl.nil();
+			}, components, cell::list(2), cell::typeIdentifier, cell::typeIdentifier);
 	}
 
 	// (layout-add-component layout-id component-id (float)min (float)max (float)preffered) -> bool
 	base::cell_t layout_add_component(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(5),
-						   cell::typeIdentifier, cell::typeIdentifier,
-						   cell::typeFloat, cell::typeFloat, cell::typeFloat)) {
-			const auto &lname = c + 1;
-			const auto &cname = c + 2;
-			auto l = components.find(lname->s);
-			auto com = components.find(cname->s);
-			if (l != components.end() && com != components.end()) {
+		return fxValidateAccess2("layout-add-component", c, [c, this](Component *lay, Component *com) -> auto {
 				const auto &minimum = c + 3;
 				const auto &maximum = c + 4;
 				const auto &preferred = c + 5;
-				layout *lay = reinterpret_cast<layout*>(l->second.get());
-				lay->addComponent(com->second.get(), (double)minimum->f, (double)maximum->f, (double)preferred->f);
+				layout *l = reinterpret_cast<layout*>(lay);
+				l->addComponent(com, (double)minimum->f, (double)maximum->f, (double)preferred->f);
 				return gl.t();
-			}
-			gl.signalError("layout or component not found");
-			return gl.nil();
-		}
-		gl.signalError("layout-add-component: invalid arguments, expected (id, id, float, float, float)");
-		return gl.nil();
+			}, components, cell::list(5), cell::typeIdentifier, cell::typeIdentifier,cell::typeFloat, cell::typeFloat, cell::typeFloat);
 	}
 
 	// (layout-remove-component layout-id component-id) -> bool
 	base::cell_t layout_remove_component(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
-			const auto &lname = c + 1;
-			const auto &cname = c + 2;
-			auto l = components.find(lname->s);
-			auto com = components.find(cname->s);
-			if (l != components.end() && com != components.end()) {
-				layout *lay = reinterpret_cast<layout*>(l->second.get());
-				lay->removeComponent(com->second.get());
+		return fxValidateAccess2("layout-remove-component", c, [this](Component *lay, Component *com) -> auto {
+				layout *l = reinterpret_cast<layout*>(lay);
+				l->removeComponent(com);
 				return gl.t();
-			}
-			gl.signalError("layout or component not found");
-			return gl.nil();
-		}
-		gl.signalError("layout-remove-component: invalid arguments, expected (id id)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	// (layout-remove-splitter layout-id (int)splitter-index)
 	base::cell_t layout_remove_splitter(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeInt)) {
-			const auto &lname = c + 1;
-			auto l = components.find(lname->s);
-			if (l != components.end()) {
+		return fxValidateAccess("layout-remove-splitter", c, [c, this](Component *com) -> auto {
 				const auto sIndex = c + 2;
-				layout *lay = reinterpret_cast<layout*>(l->second.get());
+				layout *lay = reinterpret_cast<layout*>(com);
 				lay->removeSplitter(sIndex->i);
 				return gl.t();
-			}
-			gl.signalError("layout not found");
-			return gl.nil();
-		}
-		gl.signalError("layout-remove-splitter: invalid arguments, expected (id int)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt);
 	}
 
 	// (layout-add-splitter layout-id)
 	base::cell_t layout_add_splitter(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &lname = c + 1;
-			auto l = components.find(lname->s);
-			if (l != components.end()) {
-				layout *lay = reinterpret_cast<layout*>(l->second.get());
+		return fxValidateAccess("layout-add-splitter", c, [this](Component *com) -> auto {
+				layout *lay = reinterpret_cast<layout*>(com);
 				lay->addSplitter();
 				return gl.t();
-			}
-			gl.signalError("layout not found");
-			return gl.nil();
-		}
-		gl.signalError("layout-add-splitter: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (layout-get-splitters-count layout-id)
 	base::cell_t layout_get_splitters_count(base::cell_t c, base::cells_t &ret) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
-			const auto &lname = c + 1;
-			auto l = components.find(lname->s);
-			if (l != components.end()) {
-				layout *lay = reinterpret_cast<layout*>(l->second.get());
+		return fxValidateAccess("layout-get-splitters-count", c, [&ret](Component *com) -> auto {
+				layout *lay = reinterpret_cast<layout*>(com);
 				ret.push_back(base::cell(lay->getSplittersCount()));
 				return ret.end();
-			}
-			gl.signalError("layout not found");
-			return gl.nil();
-		}
-		gl.signalError("layout-get-splitters-count: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	//- tabs
