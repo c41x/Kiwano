@@ -252,7 +252,7 @@ public:
 			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
 	}
 
-	base::cell_t playlist_save(base::cell_t c, base::cells_t &ret) {
+	base::cell_t playlist_save(base::cell_t c, base::cells_t &) {
 		return fxValidateAccess("playlist-save", c, [c, this](Component *e) -> auto {
 				const auto &path = c + 2;
 				auto p = reinterpret_cast<playlist*>(e);
@@ -263,7 +263,7 @@ public:
 	}
 
 	// (playlist-add-column (id)playlist (string)caption (id)content (int)width (int)minWidth (int)maxWidth)
-	base::cell_t playlist_add_column(base::cell_t c, base::cells_t &ret) {
+	base::cell_t playlist_add_column(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		return fxValidateAccess("playlist-add-column", c, [c, this](Component *e) -> auto {
 				const auto &caption = c + 2;
@@ -394,10 +394,8 @@ public:
 	//- tabs
 	// (create-tabs name 'orientation{top, bottom, left, right}) -> bool/id
 	base::cell_t create_tabs(base::cell_t c, base::cells_t &) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
+		return fxValidateCreate("create-tabs", c, [c,this]() -> auto {
+				const auto &name = c + 1;
 				const auto &orientation = c + 2;
 				TabbedButtonBar::Orientation o = TabbedButtonBar::TabsAtTop;
 				if (orientation->s == "bottom")
@@ -406,51 +404,33 @@ public:
 					o = TabbedButtonBar::TabsAtLeft;
 				else if (orientation->s == "right")
 					o = TabbedButtonBar::TabsAtRight;
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<tabs>(o))).first->second;
+				auto &p = components[name->s] = std::make_unique<tabs>(o);
 				p->setName("tabs");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(base::strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-tabs: invalid arguments, expected (id 'id)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	// (tabs-add-component tabs-name component-name "caption" |color|) -> bool
 	base::cell_t tabs_add_component(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector)) {
-			const auto &name = c + 1;
-			const auto &cname = c + 2;
-			auto t = components.find(name->s);
-			auto com = components.find(cname->s);
-			if (t != components.end() && com != components.end()) {
+		return fxValidateAccess2("tabs-add-component", c, [c, this](Component *tab, Component *com) -> auto {
 				const auto &caption = c + 3;
 				const auto &color = c + 4;
-				tabs *ptabs = reinterpret_cast<tabs*>(t->second.get());
+				tabs *ptabs = reinterpret_cast<tabs*>(tab);
 				ptabs->addTab(caption->s, Colour::fromFloatRGBA(color->v4[0],
 																color->v4[1],
 																color->v4[2],
-																color->v4[3]), com->second.get(), false);
+																color->v4[3]), com, false);
 				return gl.t();
-			}
-			gl.signalError("tabs or component not found");
-			return gl.nil();
-		}
-		gl.signalError("tabs-add-component: invalid arguments, expected (id id \"string\" |vector|)");
-		return gl.nil();
+			}, components, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector);
 	}
 
 	// (tabs-index (id)tabs (int|string|optional)index)
 	base::cell_t tabs_index(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		if (lisp::validate(c, cell::listRange(1, 2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString))) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				tabs *t = reinterpret_cast<tabs*>(e->second.get());
+		return fxValidateAccess("tabs-index", c, [c, this, &ret](Component *e) -> auto {
+				tabs *t = reinterpret_cast<tabs*>(e);
 
 				// getter
 				if (c->listSize() == 1) {
@@ -472,82 +452,51 @@ public:
 					return ret.end();
 				}
 				return gl.nil();
-			}
-			gl.signalError(strs("tabs named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("tabs-index: invalid arguments, expected (id (optional)int)");
-		return gl.nil();
+			}, components, cell::listRange(1, 2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString));
 	}
 
 	// (tabs-count (id)tabs)
 	base::cell_t tabs_count(base::cell_t c, base::cells_t &ret) {
-		using namespace base;
-		if (lisp::validate(c, cell::list(1), cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				tabs *t = reinterpret_cast<tabs*>(e->second.get());
-				ret.push_back(cell((int32)t->getNumTabs()));
+		return fxValidateAccess("tabs-count", c, [&ret, this](Component *e) -> auto {
+				tabs *t = reinterpret_cast<tabs*>(e);
+				ret.push_back(base::cell((int32)t->getNumTabs()));
 				return ret.end();
-			}
-			gl.signalError(strs("tabs named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("tabs-count: invalid arguments, expected (id)");
-		return gl.nil();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (tabs-get-components (id)tabs (id)type)
 	base::cell_t tabs_get_components(base::cell_t c, base::cells_t &ret) {
-			using namespace base;
-			if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::typeIdentifier)) {
-				const auto &name = c + 1;
+		using namespace base;
+		return fxValidateAccess("tabs-get-components", c, [c, &ret, this](Component *e) -> auto {
 				const auto &type = c + 2;
-				auto e = components.find(name->s);
-				if (e != components.end()) {
-					tabs *t = reinterpret_cast<tabs*>(e->second.get());
-					ret.push_back(cell::list(0));
-					auto &head = ret.back();
-					auto tabNames = t->getTabNames();
-					for (int i = 0; i < t->getNumTabs(); ++i) {
-						auto tt = t->getTabContentComponent(i);
-						if (tt->getName() == type->s) {
-							ret.push_back(cell::list(2));
-							ret.push_back(cell(cell::typeIdentifier, tt->getComponentID().toStdString()));
-							ret.push_back(cell(cell::typeString, tabNames[i].toStdString()));
-							head.i++;
-						}
+				tabs *t = reinterpret_cast<tabs*>(e);
+				ret.push_back(cell::list(0));
+				auto &head = ret.back();
+				auto tabNames = t->getTabNames();
+				for (int i = 0; i < t->getNumTabs(); ++i) {
+					auto tt = t->getTabContentComponent(i);
+					if (tt->getName() == type->s) {
+						ret.push_back(cell::list(2));
+						ret.push_back(cell(cell::typeIdentifier, tt->getComponentID().toStdString()));
+						ret.push_back(cell(cell::typeString, tabNames[i].toStdString()));
+						head.i++;
 					}
-					return ret.end();
-
 				}
-				gl.signalError(strs("tabs named: ", name->s, " not found"));
-				return gl.nil();
-			}
-			gl.signalError("tabs-get-components: invalid arguments, expected (id id)");
-			return gl.nil();
+				return ret.end();
+			}, components, cell::list(2), cell::typeIdentifier, cell::typeIdentifier);
 	}
 
 	// (tabs-remove (id)tabs (int|string)index)
 	base::cell_t tabs_remove(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::list(2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString))) {
-			const auto &name = c + 1;
-			auto e = components.find(name->s);
-			if (e != components.end()) {
-				tabs *t = reinterpret_cast<tabs*>(e->second.get());
+		return fxValidateAccess("tabs-remove", c, [c, this](Component *e) -> auto {
+				tabs *t = reinterpret_cast<tabs*>(e);
 				const auto &index = c + 2;
 				if (index->type == cell::typeInt)
 					t->removeTabByIndex(index->i);
 				else t->removeTabByName(index->s);
 				return gl.t();
-			}
-			gl.signalError(strs("tabs named: ", name->s, " not found"));
-			return gl.nil();
-		}
-		gl.signalError("tabs-remove: invalid arguments, expected (id int)");
-		return gl.nil();
+			}, components, cell::list(2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString));
 	}
 
 	//- slider
