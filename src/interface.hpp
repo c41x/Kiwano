@@ -503,9 +503,8 @@ public:
 	// (create-slider name 'style 'edit-box) -> nil/id
 	base::cell_t create_slider(base::cell_t c, base::cells_t &) {
 		using namespace base;
-		if (lisp::validate(c, cell::listRange(1, 3), cell::typeIdentifier, cell::typeIdentifier, cell::typeIdentifier)) {
-			const auto &name = c + 1;
-			if (components.find(name->s) == components.end()) {
+		return fxValidateCreate("create-slider", c, [c, this]() -> auto {
+				const auto &name = c + 1;
 				slider::SliderStyle style = slider::LinearHorizontal;
 				slider::TextEntryBoxPosition editBox = slider::NoTextBox;
 				if (c->listSize() > 1) {
@@ -532,18 +531,14 @@ public:
 					else if (e->s == "tex-box-above") editBox = slider::TextBoxAbove;
 					else if (e->s == "tex-box-below") editBox = slider::TextBoxBelow;
 				}
-				auto &p = components.insert(std::make_pair(name->s, std::make_unique<slider>(style, editBox))).first->second;
+				auto &p = components[name->s] = std::make_unique<slider>(style, editBox);
 				p->setName("slider");
 				p->setComponentID(name->s);
 				return name;
-			}
-			gl.signalError(strs("component named ", name->s, " already exists"));
-			return gl.nil();
-		}
-		gl.signalError("create-slider: invalid arguments, expected (id (id|optional) (id|optional))");
-		return gl.nil();
+			}, components, cell::listRange(1, 3), cell::typeIdentifier, cell::typeIdentifier, cell::typeIdentifier);
 	}
 
+	// TODO: skl
 	// (slider-range (id)slider-id (float|optional)range-min (float|optional)range-max) -> nil/t | (float float)value
 	base::cell_t slider_range(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
@@ -576,11 +571,8 @@ public:
 	// (slider-value (id)slider-id (float|optional)value) -> nil/t | (float)value
 	base::cell_t slider_value(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		if (lisp::validate(c, cell::listRange(1, 2), cell::typeIdentifier, cell::typeFloat)) {
-			const auto &lname = c + 1;
-			auto l = components.find(lname->s);
-			if (l != components.end()) {
-				slider *sl = reinterpret_cast<slider*>(l->second.get());
+		return fxValidateAccess("slider-set-value", c, [c, &ret, this](Component *l) -> auto {
+				slider *sl = reinterpret_cast<slider*>(l);
 				// changes value, changing value is not possible while dragging
 				if (c->listSize() == 2 && !sl->isDragging()) {
 					sl->setValue((double)(c + 2)->f);
@@ -590,12 +582,7 @@ public:
 				// returns value
 				ret.push_back(base::cell((float)sl->getValue()));
 				return ret.end();
-			}
-			gl.signalError("slider not found");
-			return gl.nil();
-		}
-		gl.signalError("slider-set-value: invalid arguments, expected (id float)");
-		return gl.nil();
+			}, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeFloat);
 	}
 
 	//- bindings
