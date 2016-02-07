@@ -58,3 +58,5 @@ add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_formats/juce_audio_formats.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp"
   "${PROJECT_SOURCE_DIR}/sqlite/sqlite3.c")
+
+install(TARGETS kiwano DESTINATION bin)
