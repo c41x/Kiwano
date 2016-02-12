@@ -538,18 +538,12 @@ public:
 			}, components, cell::listRange(1, 3), cell::typeIdentifier, cell::typeIdentifier, cell::typeIdentifier);
 	}
 
-	// TODO: skl
 	// (slider-range (id)slider-id (float|optional)range-min (float|optional)range-max) -> nil/t | (float float)value
 	base::cell_t slider_range(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		bool isSetter = lisp::validate(c, cell::list(3), cell::typeIdentifier, cell::typeFloat, cell::typeFloat);
-		bool isGetter = lisp::validate(c, cell::list(1), cell::typeIdentifier);
-		if (isGetter || isSetter) {
-			const auto &lname = c + 1;
-			auto l = components.find(lname->s);
-			if (l != components.end()) {
-				slider *sl = reinterpret_cast<slider*>(l->second.get());
-				if (isSetter) {
+		return fxValidateAccess("slider-range", c, [c, &ret, this](Component *l) -> auto {
+				slider *sl = reinterpret_cast<slider*>(l);
+				if (c->listSize() == 3) {
 					sl->setRange((double)(c + 2)->f,
 								 (double)(c + 3)->f);
 					return gl.t();
@@ -560,12 +554,7 @@ public:
 				ret.push_back(cell((float)sl->getMinimum()));
 				ret.push_back(cell((float)sl->getMaximum()));
 				return ret.end();
-			}
-			gl.signalError("slider not found");
-			return gl.nil();
-		}
-		gl.signalError("slider-set-range: invalid arguments, expected (id float float)");
-		return gl.nil();
+			}, components, cell::any(cell::list(1), cell::list(3)), cell::typeIdentifier, cell::typeFloat, cell::typeFloat);
 	}
 
 	// (slider-value (id)slider-id (float|optional)value) -> nil/t | (float)value
@@ -598,13 +587,8 @@ public:
 	// (bind-* (id)component (id)function (list|optional)bindings) -> bool
 	template <typename T>
 	base::cell_t bind_listener(base::cell_t c, base::cells_t &, void(*addFx)(Component *, listener *)) {
-		if (base::lisp::validate(c, base::cell::listRange(2, 3), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier, base::cell::typeList)) {
-			const auto &cname = c + 1;
-			const auto &bname = c + 2;
-			auto e = components.find(cname->s);
-			if (e != components.end()) {
-				Component *com = e->second.get();
+		return fxValidateAccess("bind-*", c, [c, addFx, this](Component *com) -> auto {
+				const auto &bname = c + 2;
 				listeners.push_back(std::make_unique<T>(gl, bname->s, com));
 				addFx(com, listeners.back().get());
 
@@ -623,11 +607,7 @@ public:
 								listeners.back()->args.push_back([com](){ return base::strs("'", com->getComponentID().toStdString()); });
 						});
 				return gl.t();
-			}
-			return gl.nil();
-		}
-		gl.signalError("bind-*: invalid arguments, expected (id id)");
-		return gl.nil();
+			}, components, base::cell::listRange(2, 3), base::cell::typeIdentifier, base::cell::typeIdentifier, base::cell::typeList);
 	}
 
 	// custom listener removers
@@ -641,13 +621,8 @@ public:
 
 	// (unbind-* (id)component (id)function)
 	base::cell_t unbind_listener(base::cell_t c, base::cells_t &, void(*removeFx)(Component *, listener *)) {
-		if (base::lisp::validate(c, base::cell::list(2), base::cell::typeIdentifier,
-								 base::cell::typeIdentifier)) {
-			const auto &cname = c + 1;
-			const auto &bname = c + 2;
-			auto e = components.find(cname->s);
-			if (e != components.end()) {
-				Component *com = e->second.get();
+		return fxValidateAccess("unbind-*", c, [c, removeFx, this](Component *com) -> auto {
+				const auto &bname = c + 2;
 				auto l = std::find_if(listeners.begin(), listeners.end(), [&com, &bname](const auto &a) {
 						return a->c == com && a->functionId == bname->s;
 					});
@@ -657,11 +632,7 @@ public:
 					return gl.t();
 				}
 				return gl.nil();
-			}
-			return gl.nil();
-		}
-		gl.signalError("unbind-*: invalid arguments, expected (id id)");
-		return gl.nil();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	//- timers
@@ -729,5 +700,3 @@ public:
 			}, cell::list(3), cell::typeString, cell::typeString, cell::typeString);
 	}
 };
-
-// ~972
