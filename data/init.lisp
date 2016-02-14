@@ -188,9 +188,13 @@
     (if (playback-finished)
 	(progn
 	  (defvar current-value (ctags-get current-id 0))
+	  (defvar first-play (ctags-get current-id 2))
 	  (if current-value
-	      (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
+		(ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
 	    (ctags-set current-id 0 1)) ;; init value
+	  (ctags-set current-id 3 (current-date)) ;; set timestamp
+	  (if (not first-play)
+	      (ctags-set current-id 2 (current-date))) ;; set first play date
 	  ;;(message-box "playback-changed callback" "playback finished")
 	  ;;(message-box "Current info" (strs current-playlist " : " current-index))
 	  (on-next)
