@@ -135,6 +135,7 @@ public:
 
 		// other utils
 		gl.addProcedure("rand", std::bind(&MainWindow::random, this, _1, _2));
+		gl.addProcedure("current-time", std::bind(&MainWindow::current_time, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -169,6 +170,12 @@ public:
 		}
 		gl.signalError("rand: invalid arguments, expected (int)");
 		return gl.nil();
+	}
+
+	// (current-time) -> int (unix)
+	base::cell_t current_time(base::cell_t, base::cells_t &ret) {
+		ret.push_back((int)time(NULL));
+		return ret.end();
 	}
 
 	void cleanup() {
