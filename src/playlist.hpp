@@ -82,7 +82,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 		}
 
 		base::string getItemId(size_t index) const {
-			return getItemAlbum(index) + getItemArtist(index) + getItemTitle(index);
+			return getItemAlbum(index) + getItemArtist(index) + getItemTitle(index) + base::toStr(getItemTrack(index));
 		}
 
 		// GUI
