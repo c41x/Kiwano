@@ -16,7 +16,7 @@ base::cell getCustomTag(const base::string &id, uint32 index) {
 
 void setCustomTag(const base::string &id, uint32 index, base::cell c) {
 	auto &e = tags[id];
-	if (e.size() < index)
+	if (index < e.size())
 		e[index] = c; // update
 	else {
 		e.resize(index + 1, base::cell::nil); // initialize
