@@ -136,6 +136,7 @@ public:
 		// other utils
 		gl.addProcedure("rand", std::bind(&MainWindow::random, this, _1, _2));
 		gl.addProcedure("current-time", std::bind(&MainWindow::current_time, this, _1, _2));
+		gl.addProcedure("time-format", std::bind(&MainWindow::time_format, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -176,6 +177,22 @@ public:
 	base::cell_t current_time(base::cell_t, base::cells_t &ret) {
 		ret.push_back((int)time(NULL));
 		return ret.end();
+	}
+
+	// (time-format (int)time (string)format) -> string/nil
+	base::cell_t time_format(base::cell_t c, base::cells_t &ret) {
+		return fxValidateSkeleton(gl, "time-format", c, [c, &ret]() -> auto {
+				const auto &unixTime = c + 1;
+				const auto &format = c + 2;
+				char *buff = new char[128]; // TODO: estimate size
+				struct tm *timeinfo;
+				time_t rawTime = (time_t)unixTime->i;
+				timeinfo = localtime(&rawTime);
+				strftime(buff, 128, format->s.c_str(), timeinfo);
+				ret.push_back(base::string(buff));
+				delete []buff;
+				return ret.end();
+			}, base::cell::list(2), base::cell::typeInt, base::cell::typeString);
 	}
 
 	void cleanup() {
