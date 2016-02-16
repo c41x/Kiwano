@@ -184,13 +184,10 @@ public:
 		return fxValidateSkeleton(gl, "time-format", c, [c, &ret]() -> auto {
 				const auto &unixTime = c + 1;
 				const auto &format = c + 2;
-				char *buff = new char[128]; // TODO: estimate size
-				struct tm *timeinfo;
 				time_t rawTime = (time_t)unixTime->i;
-				timeinfo = localtime(&rawTime);
-				strftime(buff, 128, format->s.c_str(), timeinfo);
-				ret.push_back(base::string(buff));
-				delete []buff;
+				std::stringstream ss;
+				ss << std::put_time(localtime(&rawTime), format->s.c_str());
+				ret.push_back(ss.str());
 				return ret.end();
 			}, base::cell::list(2), base::cell::typeInt, base::cell::typeString);
 	}

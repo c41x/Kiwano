@@ -16,6 +16,7 @@
 #include <modules/juce_audio_utils/juce_audio_utils.h>
 #include <base/base.hpp>
 #include <memory>
+#include <iomanip>
 
 using namespace juce;
 using namespace granite;
