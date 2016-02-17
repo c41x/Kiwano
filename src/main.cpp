@@ -256,5 +256,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: repaint-row?
 // TODO: spawn window
 // TODO: get*components - get all components without specifying type
-// TODO: date/time
 // TODO: global keybinding
