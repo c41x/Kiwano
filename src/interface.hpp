@@ -99,17 +99,18 @@ public:
 	// (get-components (id)type) -> (list of id)
 	base::cell_t get_components(base::cell_t c, base::cells_t &ret) {
 		return fxValidate("get-components", c, [c, &ret, this]() -> auto {
+				bool all = c->listSize() == 0; // if there are no arguments - get all components
 				const auto &type = c + 1;
 				ret.push_back(base::cell::list(0));
 				auto &head = ret.back();
 				for (const auto &com : components) {
-					if (com.second->getName() == type->s) {
+					if (all || com.second->getName() == type->s) {
 						ret.push_back(base::cell(base::cell::typeIdentifier, com.first));
 						head.i++;
 					}
 				}
 				return ret.end();
-			}, base::cell::list(1), base::cell::typeIdentifier);
+			}, base::cell::listRange(0, 1), base::cell::typeIdentifier);
 	}
 
 	// (get-child-components (id)type) -> (list of id)
