@@ -107,7 +107,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 		void paintCell(Graphics& g, int rowNumber, int columnId,
 						int width, int height, bool /*rowIsSelected*/) override {
 			g.setColour(Colours::black);
-			g.setFont(height * 0.7f);
+			g.setFont(Font("Ubuntu Condensed", height * 0.9f, Font::plain));
 
 			if (columnId < (int)columns.size()) {
 				auto &c = columns[columnId];
@@ -151,7 +151,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			setStatusMessage("Importing music");
 		}
 
-		// TODO: system codecs?
+		// TODO: system codecs? add-accepted-format?
 		bool isFileSupported(const String &fname) {
 			return fname.endsWith(".mp3")
 				|| fname.endsWith(".wav")
@@ -202,6 +202,7 @@ public:
 		box.setMultipleSelectionEnabled(true);
 		box.getHeader().setStretchToFitActive(true);
 		box.setMultipleSelectionEnabled(true);
+		box.setRowHeight(18.0f); // TODO: LISP
 		addAndMakeVisible(box);
 	}
 
