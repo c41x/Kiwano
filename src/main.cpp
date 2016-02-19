@@ -153,24 +153,20 @@ public:
 	//- LISP API
 	// (bind-exit (id)function) -> nil/t
 	base::cell_t bind_exit(base::cell_t c, base::cells_t &) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeIdentifier)) {
-			const auto &callback = c + 1;
-			onExit = callback->s;
-			return gl.t();
-		}
-		gl.signalError("bind-exit: invalid arguments, expected (id)");
-		return gl.nil();
+		return fxValidateSkeleton(gl, "bind-exit", c, [this, c]() -> auto {
+				const auto &callback = c + 1;
+				onExit = callback->s;
+				return gl.t();
+			}, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
 	// (rand (int)max) -> nil/t
 	base::cell_t random(base::cell_t c, base::cells_t &ret) {
-		if (base::lisp::validate(c, base::cell::list(1), base::cell::typeInt)) {
-			const auto &max = c + 1;
-			ret.push_back(r.integer(max->i));
-			return ret.end();
-		}
-		gl.signalError("rand: invalid arguments, expected (int)");
-		return gl.nil();
+		return fxValidateSkeleton(gl, "rand", c, [&ret, c, this]() -> auto {
+				const auto &max = c + 1;
+				ret.push_back(r.integer(max->i));
+				return ret.end();
+			}, base::cell::list(1), base::cell::typeInt);
 	}
 
 	// (current-time) -> int (unix)
@@ -238,9 +234,7 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: lisp include
 // TODO: shortcut to open interpreter
 // TODO: error log/console window (only for lisp?)
-// TODO: load/store named value
 // TODO: playlist: get-selected-hash
-// TODO: property map (store-property id value) (load-property id value)
 // TODO: attach granite logger
 // TODO: on start, on close
 // TODO: get-cpu-usage
