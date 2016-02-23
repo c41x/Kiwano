@@ -14,7 +14,8 @@
 // #include <modules/juce_opengl/juce_opengl.h>
 // #include <modules/juce_video/juce_video.h>
 #include <modules/juce_audio_utils/juce_audio_utils.h>
-#include <base/base.hpp>
+#define GE_DONT_INCLUDE_GLFW
+#include <system/system.hpp>
 #include <memory>
 #include <iomanip>
 
