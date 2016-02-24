@@ -37,6 +37,9 @@ public:
 		// logger
 		base::log::init(base::fs::getUserDirectory() + "/.kiwano/log.txt");
 
+		// hotkeys
+		system::hotkey::init();
+
 		// initialize GLISP
 		using namespace std::placeholders;
 		gl.init();
@@ -189,6 +192,7 @@ public:
 	}
 
 	void cleanup() {
+		system::hotkey::shutdown();
 		base::fs::close();
 		gl.close();
 		base::log::shutdown();
