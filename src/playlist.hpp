@@ -107,7 +107,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 		void paintCell(Graphics& g, int rowNumber, int columnId,
 						int width, int height, bool /*rowIsSelected*/) override {
 			g.setColour(Colours::black);
-			g.setFont(Font("Ubuntu Condensed", height * 0.9f, Font::plain));
+			g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
 
 			if (columnId < (int)columns.size()) {
 				auto &c = columns[columnId];

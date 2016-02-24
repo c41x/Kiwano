@@ -8,9 +8,13 @@ pkg_check_modules(PC_GRANITE QUIET Granite)
 find_path(GRANITE_INCLUDE_DIR base/base.hpp
   $ENV{PROGRAMFILES}/granite/include)
 
-find_library(GRANITE_LIBRARY NAMES libbase libsystem base system PATHS
+find_library(GRANITE_LIBRARY_BASE NAMES libbase base PATHS
   $ENV{PROGRAMFILES}/granite/lib)
 
+find_library(GRANITE_LIBRARY_SYSTEM NAMES libsystem system PATHS
+  $ENV{PROGRAMFILES}/granite/lib)
+
+set(GRANITE_LIBRARY ${GRANITE_LIBRARY_BASE})
 set(GRANITE_LIBRARIES ${GRANITE_LIBRARY})
 set(GRANITE_INCLUDE_DIRS ${GRANITE_INCLUDE_DIR})
 
