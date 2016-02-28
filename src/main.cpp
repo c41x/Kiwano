@@ -9,6 +9,13 @@ const char* const versionString = "0.1";
 const int versionNumber = 0x10000;
 }
 
+class hotkeyProcessing : public Timer {
+public:
+	void timerCallback() override {
+		system::hotkey::process();
+	}
+};
+
 class MainWindow : public DocumentWindow {
 	user_interface itf;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow);
@@ -16,6 +23,7 @@ class MainWindow : public DocumentWindow {
     LookAndFeel_V2 lookAndFeelV2;
     LookAndFeel_V3 lookAndFeelV3;
 	base::rng<> r;
+	hotkeyProcessing hotkeyProcess;
 
 public:
 	base::lisp gl;
@@ -140,6 +148,8 @@ public:
 		gl.addProcedure("rand", std::bind(&MainWindow::random, this, _1, _2));
 		gl.addProcedure("current-time", std::bind(&MainWindow::current_time, this, _1, _2));
 		gl.addProcedure("time-format", std::bind(&MainWindow::time_format, this, _1, _2));
+		gl.addProcedure("bind-hotkey", std::bind(&MainWindow::bind_hotkey, this, _1, _2));
+		gl.addProcedure("unbind-hotkey", std::bind(&MainWindow::unbind_hotkey, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -189,6 +199,42 @@ public:
 				ret.push_back(ss.str());
 				return ret.end();
 			}, base::cell::list(2), base::cell::typeInt, base::cell::typeString);
+	}
+
+	// (bind-hotkey (string|int)key (string|int)mod (id)bind) -> nil/(int)id
+	base::cell_t bind_hotkey(base::cell_t c, base::cells_t &ret) {
+		using namespace base;
+		return fxValidateSkeleton(gl, "bind-hotkey", c, [this, c, &ret]() -> auto {
+				const auto &key = c + 1;
+				const auto &mod = c + 2;
+				const auto &fx = c + 3;
+				const string fxName = fx->s;
+
+				// register hotkey in system
+				int bound = system::hotkey::add(key->type == cell::typeInt ? key->i : system::getKey(key->s),
+												mod->type == cell::typeInt ? mod->i : system::getModifier(mod->s),
+												[this, fxName]() {
+													gl.eval(strs("(", fxName, ")"));
+												});
+
+				// return bind id
+				if (bound > 0) {
+					hotkeyProcess.startTimer(200);
+					ret.push_back({bound});
+					return ret.end();
+				}
+
+				return gl.nil();
+			}, cell::list(3), cell::anyOf(cell::typeString, cell::typeInt), cell::anyOf(cell::typeString, cell::typeInt), cell::typeIdentifier);
+	}
+
+	// (unbind-hotkey (int)id) -> nil/t
+	base::cell_t unbind_hotkey(base::cell_t c, base::cells_t &) {
+		return fxValidateSkeleton(gl, "unbind-hotkey", c, [this, c]() -> auto {
+				const auto &id = c + 1;
+				bool unbound = system::hotkey::remove(id->i);
+				return unbound ? gl.t() : gl.nil();
+			}, base::cell::list(1), base::cell::typeInt);
 	}
 
 	void cleanup() {
@@ -254,3 +300,5 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: repaint-row?
 // TODO: spawn window
 // TODO: global keybinding
+// TODO: bug: de/serialization of playlists when audio options or interpreters are open
+// TODO: stop timer when no binds (need update granite API)
