@@ -85,4 +85,24 @@ granite::base::cell_t fxValidateAccess2Skeleton(granite::base::lisp &gl, const g
 	return gl.nil();
 }
 
+// validate + call only if 1st elements is present and 2nd is not present in container
+template <typename... Args, typename T, typename TC>
+granite::base::cell_t fxValidateAccessCreateSkeleton(granite::base::lisp &gl, const granite::base::string &fxName,
+													 granite::base::cell_t c, TC fx, T &container, Args... v) {
+	using namespace granite::base;
+	if (lisp::validate(c, v...)) {
+		const auto &name = c + 1;
+		const auto &name2 = c + 2;
+		auto cc = container.find(name->s);
+		auto cc2 = container.find(name2->s);
+		if (cc != container.end() && cc2 == container.end()) {
+			return fx(cc->second.get());
+		}
+		gl.signalError(strs(fxName, ": component named \"", name->s, "\" not found, or \"", name2->s, "\" already exists"));
+		return gl.nil();
+	}
+	gl.signalError(strs(fxName, ": invalid arguments, expected (", lisp::validateStr(v...), ")"));
+	return gl.nil();
+}
+
 // TODO: use get()?
