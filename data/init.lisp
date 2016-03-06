@@ -150,6 +150,11 @@
   (component-enabled 'sl-seek t)
   (playback-start))
 
+(defun toggle-playback ()
+  (if (playback-is-playing)
+      (on-pause)
+    (on-play)))
+
 (defun play-selected ()
   (setq current-id (playlist-get current-playlist current-index 'id))
   (playback-set-file (playlist-get current-playlist current-index 'path))
@@ -253,6 +258,9 @@
   (settings-save "settings")
   (message-box "Exiting" "just exiting"))
 (bind-exit 'on-exit)
+
+;; bind hotkeys
+(bind-hotkey "Pause" "" 'toggle-playback)
 
 ;; make things visible
 (set-main-component 'l-main)
