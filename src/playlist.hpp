@@ -14,6 +14,38 @@ class playlist : public Component, public FileDragAndDropTarget {
 		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
 		std::vector<base::string> columns;
 
+		playlistModel(playlistModel &r, const base::string &filter) {
+			// reset
+			paths_i = {0};
+			talbum_i = {0};
+			tartist_i = {0};
+			ttitle_i = {0};
+			init();
+
+			// fill (filter)
+			const int items = r.getItemsCount();
+			base::string f = base::lowerCase(filter);
+			for (int i = 0; i < items; ++i) {
+				if (base::string::npos != base::lowerCase(r.getItemArtist(i)).find(f) ||
+					base::string::npos != base::lowerCase(r.getItemAlbum(i)).find(f) ||
+					base::string::npos != base::lowerCase(r.getItemTitle(i)).find(f)) {
+					paths.append(r.getItemPath(i));
+					talbum.append(r.getItemAlbum(i));
+					tartist.append(r.getItemArtist(i));
+					ttitle.append(r.getItemTitle(i));
+					tyear.push_back(r.getItemYear(i));
+					ttrack.push_back(r.getItemTrack(i));
+					paths_i.push_back(paths.size());
+					talbum_i.push_back(talbum.size());
+					tartist_i.push_back(tartist.size());
+					ttitle_i.push_back(ttitle.size());
+				}
+			}
+		}
+
+		playlistModel() {}
+		~playlistModel() {}
+
 		void init() {
 			paths_i.clear(); // this one first (getNumRows)
 			paths_i.push_back(0);
@@ -195,15 +227,25 @@ class playlist : public Component, public FileDragAndDropTarget {
     playlistModel model;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
-public:
-    playlist() : box("playlist-box", nullptr) {
-		model.init();
+	void init() {
 		box.setModel(&model);
 		box.setMultipleSelectionEnabled(true);
 		box.getHeader().setStretchToFitActive(true);
 		box.setMultipleSelectionEnabled(true);
 		box.setRowHeight(18.0f); // TODO: LISP
 		addAndMakeVisible(box);
+	}
+
+public:
+    playlist() : box("playlist-box", nullptr) {
+		model.init();
+		init();
+	}
+
+	playlist(playlist &r, const base::string &filter)
+			: box("playlist-box", nullptr),
+			  model(r.model, filter) {
+		init();
 	}
 
     void resized() override {
