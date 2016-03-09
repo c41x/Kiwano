@@ -44,7 +44,7 @@ public:
 			mainComponent->setBounds(getLocalBounds());
 	}
 
-	// curry skeleton templates
+	// curry skeleton templates, TODO: simplify this?
 	template <typename... Args, typename T>
 	base::cell_t fxValidate(const base::string &fxName, base::cell_t c, T fx, Args... v) {
 		return fxValidateSkeleton(gl, fxName, c, fx, v...);
@@ -53,6 +53,11 @@ public:
 	template <typename... Args, typename T, typename TC>
 	base::cell_t fxValidateAccess(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
 		return fxValidateAccessSkeleton(gl, fxName, c, fx, container, v...);
+	}
+
+	template <typename... Args, typename T, typename TC>
+	base::cell_t fxValidateAccessCreate(const base::string &fxName, base::cell_t c, T fx, TC &container, Args... v) {
+		return fxValidateAccessCreateSkeleton(gl, fxName, c, fx, container, v...);
 	}
 
 	template <typename... Args, typename T, typename TC>
@@ -203,6 +208,18 @@ public:
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 
+	// (create-filtered-playlist (id)base-playlist (id)new-playlist (string)filter) -> name/nil
+	base::cell_t create_filtered_playlist(base::cell_t c, base::cells_t &) {
+		return fxValidateAccessCreate("create-filtered-playlist", c, [this, c](Component *com) -> auto {
+				const auto &name = c + 2;
+				const auto &filter = c + 3;
+				auto &p = components[name->s] = std::make_unique<playlist>(*((playlist*)com), filter->s, true);
+				p->setName("playlist");
+				p->setComponentID(name->s);
+				return name;
+			}, components, base::cell::list(3), base::cell::typeIdentifier, base::cell::typeIdentifier, base::cell::typeString);
+	}
+
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
 		return fxValidateAccess("playlist-get-selected", c, [&ret](Component *e) -> auto {
 				auto p = reinterpret_cast<playlist*>(e);
@@ -326,6 +343,17 @@ public:
 				p->setComponentID(name->s);
 				return name;
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
+	}
+
+	//- windows
+	// (create-windows (id)name (vector)background-color)
+	base::cell_t create_window(base::cell_t c, base::cells_t &) {
+		return gl.nil();
+	}
+
+	// (windows-add-component (id)window-name (id)component-id)
+	base::cell_t window_add_component(base::cell_t c, base::cells_t &) {
+		return gl.nil()
 	}
 
 	//- layout

@@ -82,6 +82,7 @@ public:
 
 		// playlist
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
+		gl.addProcedure("create-filtered-playlist", std::bind(&user_interface::create_filtered_playlist, &itf, _1, _2));
 		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
 		gl.addProcedure("playlist-select", std::bind(&user_interface::playlist_select, &itf, _1, _2));
 		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
@@ -302,3 +303,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: global keybinding
 // TODO: bug: de/serialization of playlists when audio options or interpreters are open
 // TODO: stop timer when no binds (need update granite API)
+// TODO: custom columns in filtered playlist
