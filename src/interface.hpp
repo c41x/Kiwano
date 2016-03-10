@@ -213,7 +213,7 @@ public:
 		return fxValidateAccessCreate("create-filtered-playlist", c, [this, c](Component *com) -> auto {
 				const auto &name = c + 2;
 				const auto &filter = c + 3;
-				auto &p = components[name->s] = std::make_unique<playlist>(*((playlist*)com), filter->s, true);
+				auto &p = components[name->s] = std::make_unique<playlist>(*((playlist*)com), filter->s);
 				p->setName("playlist");
 				p->setComponentID(name->s);
 				return name;
@@ -353,7 +353,7 @@ public:
 
 	// (windows-add-component (id)window-name (id)component-id)
 	base::cell_t window_add_component(base::cell_t c, base::cells_t &) {
-		return gl.nil()
+		return gl.nil();
 	}
 
 	//- layout
