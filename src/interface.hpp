@@ -348,7 +348,19 @@ public:
 	//- windows
 	// (create-windows (id)name (vector)background-color)
 	base::cell_t create_window(base::cell_t c, base::cells_t &) {
-		return gl.nil();
+		return fxValidateCreate("create-window", c, [c, this]() -> auto {
+				const auto &name = c + 1;
+				auto &w = components[name->s] = std::make_unique<DocumentWindow>("w", Colour::fromFloatRGBA(1.0f, 1.0f, 1.0f, 1.0f), 0);
+
+				DocumentWindow *dw = (DocumentWindow*)w.get();
+				Rectangle<int> area (0, 0, 300, 400);
+				dw->setBounds(area);
+				dw->setResizable(true, true);
+				dw->setUsingNativeTitleBar(false);
+				dw->setVisible(true);
+
+				return name;
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeVector);
 	}
 
 	// (windows-add-component (id)window-name (id)component-id)
