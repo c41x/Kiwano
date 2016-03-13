@@ -123,7 +123,7 @@ public:
 
 		// window
 		gl.addProcedure("create-window", std::bind(&user_interface::create_window, &itf, _1, _2));
-		gl.addProcedure("window-add-component", std::bind(&user_interface::window_add_component, &itf, _1, _2));
+		gl.addProcedure("window-set-main-component", std::bind(&user_interface::window_set_main_component, &itf, _1, _2));
 
 		// timers
 		gl.addProcedure("create-timer", std::bind(&user_interface::create_timer, &itf, _1, _2));
@@ -307,4 +307,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: global keybinding
 // TODO: bug: de/serialization of playlists when audio options or interpreters are open
 // TODO: stop timer when no binds (need update granite API)
-// TODO: custom columns in filtered playlist
+// TODO: windows positioning (center screen)

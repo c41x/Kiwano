@@ -346,26 +346,44 @@ public:
 	}
 
 	//- windows
-	// (create-windows (id)name (vector)background-color)
+	// (create-window (id)name (string)caption (vector)bounds (vector)background-color)
 	base::cell_t create_window(base::cell_t c, base::cells_t &) {
+		using namespace base;
 		return fxValidateCreate("create-window", c, [c, this]() -> auto {
 				const auto &name = c + 1;
-				auto &w = components[name->s] = std::make_unique<DocumentWindow>("w", Colour::fromFloatRGBA(1.0f, 1.0f, 1.0f, 1.0f), 0);
+				const auto &caption = c + 2;
+				const auto &bounds = c + 3;
+				const auto &color = c + 4;
+				auto &w = components[name->s] =
+					std::make_unique<DocumentWindow>(caption->s,
+													 Colour::fromFloatRGBA(color->v4[0],
+																		   color->v4[1],
+																		   color->v4[2],
+																		   color->v4[3]),
+													 DocumentWindow::allButtons);
 
 				DocumentWindow *dw = (DocumentWindow*)w.get();
-				Rectangle<int> area (0, 0, 300, 400);
+				Rectangle<int> area((int)bounds->v4[0],
+									(int)bounds->v4[1],
+									(int)bounds->v4[2],
+									(int)bounds->v4[3]);
 				dw->setBounds(area);
 				dw->setResizable(true, true);
 				dw->setUsingNativeTitleBar(false);
 				dw->setVisible(true);
 
 				return name;
-			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeVector);
+			}, components, cell::list(4), cell::typeIdentifier, cell::typeString, cell::typeVector, cell::typeVector);
 	}
 
-	// (windows-add-component (id)window-name (id)component-id)
-	base::cell_t window_add_component(base::cell_t c, base::cells_t &) {
-		return gl.nil();
+	// (windows-set-main-component (id)window-name (id)component-id) -> t/nil
+	base::cell_t window_set_main_component(base::cell_t c, base::cells_t &) {
+		return fxValidateAccess2("window-set-main-component", c, [this](Component *window, Component *com) -> auto {
+				auto w = reinterpret_cast<DocumentWindow*>(window);
+				w->addAndMakeVisible(com);
+				com->setBounds(w->getLocalBounds());
+				return gl.t();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
 	//- layout
