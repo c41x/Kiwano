@@ -363,10 +363,10 @@ public:
 													 DocumentWindow::allButtons);
 
 				DocumentWindow *dw = (DocumentWindow*)w.get();
-				Rectangle<int> area((int)bounds->v4[0],
-									(int)bounds->v4[1],
-									(int)bounds->v4[2],
-									(int)bounds->v4[3]);
+				juce::Rectangle<int> area((int)bounds->v4[0],
+										  (int)bounds->v4[1],
+										  (int)bounds->v4[2],
+										  (int)bounds->v4[3]);
 				dw->setBounds(area);
 				dw->setResizable(true, true);
 				dw->setUsingNativeTitleBar(false);
