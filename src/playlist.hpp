@@ -273,7 +273,7 @@ public:
 			}))->launchThread();
 	}
 
-	base::string getSelectedRowString() const { // TODO: rename to getSelectedRowPath
+	base::string getSelectedRowPath() const {
 		return model.getItemPath(box.getSelectedRow());
 	}
 

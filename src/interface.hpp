@@ -223,7 +223,7 @@ public:
 	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
 		return fxValidateAccess("playlist-get-selected", c, [&ret](Component *e) -> auto {
 				auto p = reinterpret_cast<playlist*>(e);
-				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowString()));
+				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowPath()));
 				return ret.end();
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
@@ -655,7 +655,7 @@ public:
 				if (c->listSize() == 3)
 					base::lisp::mapc(c + 3, [com, this](base::cell_t c) {
 							if (c->s == "selected-row")
-								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowString(), "\""); });
+								listeners.back()->args.push_back([com](){ return base::strs("\"", reinterpret_cast<playlist*>(com)->getSelectedRowPath(), "\""); });
 							if (c->s == "selected-row-index")
 								listeners.back()->args.push_back([com](){ return base::toStr(reinterpret_cast<playlist*>(com)->getSelectedRowIndex()); });
 							else if (c->s == "selected-row-id")
