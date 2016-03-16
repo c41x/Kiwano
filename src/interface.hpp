@@ -15,9 +15,9 @@ public:
 	audioSettingsChangeListener() : am(nullptr) {}
 	void changeListenerCallback(ChangeBroadcaster *source) override {
 		if (am == source && am) {
-			//std::cout << "store audio settings" << std::endl; TODO: log this
+			logInfo("storing audio settings...");
 			if (am->createStateXml()) {
-				//std::cout << "state xml created | saving fo file" << std::endl;
+				logInfo("saving audio settings to \"audio-settings.xml\"");
 				base::fs::store("audio-settings.xml", base::fromStr<base::stream>(
 									am->createStateXml()->createDocument("").toRawUTF8()));
 			}
