@@ -308,3 +308,5 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: bug: de/serialization of playlists when audio options or interpreters are open
 // TODO: stop timer when no binds (need update granite API)
 // TODO: windows positioning (center screen)
+// TODO: window main component rescaling
+// TODO: window closing

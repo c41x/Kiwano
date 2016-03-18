@@ -263,15 +263,16 @@
 (bind-hotkey "Pause" "" 'toggle-playback)
 
 ;; filtered playlist test
-;; (create-filtered-playlist 'playlist_0 'ppp "Ashra")
-;; (tabs-add-component 'playlist-tabs 'ppp "Ashra" |0.3 0.5 0.7 0.9|)
-;; (playlist-add-column 'ppp "track" 'track 50 20 1000)
-;; (playlist-add-column 'ppp "album" 'album 200 150 1000)
-;; (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
-;; (playlist-add-column 'ppp "title" 'title 200 150 1000)
-;; (playlist-add-column 'ppp "year" 'year 70 50 1000)
-;; (playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
-
+(create-filtered-playlist 'playlist_0 'ppp
+			  (input-box "Search for:" "Enter query: " ""))
+(playlist-add-column 'ppp "track" 'track 50 20 1000)
+(playlist-add-column 'ppp "album" 'album 200 150 1000)
+(playlist-add-column 'ppp "artist" 'artist 200 150 1000)
+(playlist-add-column 'ppp "title" 'title 200 150 1000)
+(playlist-add-column 'ppp "year" 'year 70 50 1000)
+(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
+(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
+(window-set-main-component 'search-window 'ppp)
 
 ;; make things visible
 (set-main-component 'l-main)
