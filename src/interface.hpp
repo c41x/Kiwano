@@ -380,8 +380,8 @@ public:
 	base::cell_t window_set_main_component(base::cell_t c, base::cells_t &) {
 		return fxValidateAccess2("window-set-main-component", c, [this](Component *window, Component *com) -> auto {
 				auto w = reinterpret_cast<DocumentWindow*>(window);
-				w->addAndMakeVisible(com);
 				com->setBounds(w->getLocalBounds());
+				w->setContentOwned(com, true);
 				return gl.t();
 			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
