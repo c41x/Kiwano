@@ -6,6 +6,7 @@
 #include "playback.hpp"
 #include "listeners.hpp"
 #include "slider.hpp"
+#include "window.hpp"
 #include "fxTemplates.hpp"
 
 // change listener
@@ -355,14 +356,14 @@ public:
 				const auto &bounds = c + 3;
 				const auto &color = c + 4;
 				auto &w = components[name->s] =
-					std::make_unique<DocumentWindow>(caption->s,
-													 Colour::fromFloatRGBA(color->v4[0],
-																		   color->v4[1],
-																		   color->v4[2],
-																		   color->v4[3]),
-													 DocumentWindow::allButtons);
+					std::make_unique<window>(gl, caption->s,
+											 Colour::fromFloatRGBA(color->v4[0],
+																   color->v4[1],
+																   color->v4[2],
+																   color->v4[3]),
+											 window::allButtons);
 
-				DocumentWindow *dw = (DocumentWindow*)w.get();
+				window *dw = (window*)w.get();
 				juce::Rectangle<int> area((int)bounds->v4[0],
 										  (int)bounds->v4[1],
 										  (int)bounds->v4[2],
@@ -378,8 +379,8 @@ public:
 
 	// (windows-set-main-component (id)window-name (id)component-id) -> t/nil
 	base::cell_t window_set_main_component(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess2("window-set-main-component", c, [this](Component *window, Component *com) -> auto {
-				auto w = reinterpret_cast<DocumentWindow*>(window);
+		return fxValidateAccess2("window-set-main-component", c, [this](Component *wnd, Component *com) -> auto {
+				auto w = reinterpret_cast<window*>(wnd);
 				com->setBounds(w->getLocalBounds());
 				w->setContentOwned(com, true);
 				return gl.t();

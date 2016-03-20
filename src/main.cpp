@@ -303,7 +303,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: copy-file with new name
 // TODO: file manipulation?
 // TODO: repaint-row?
-// TODO: spawn window
 // TODO: global keybinding
 // TODO: bug: de/serialization of playlists when audio options or interpreters are open
 // TODO: stop timer when no binds (need update granite API)
