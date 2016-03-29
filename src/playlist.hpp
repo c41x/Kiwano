@@ -14,6 +14,10 @@ class playlist : public Component, public FileDragAndDropTarget {
 		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
 		std::vector<base::string> columns;
 
+		// filtering
+		base::string filterQuery;
+		bool filterEnabled;
+
 		playlistModel(playlistModel &r, const base::string &filter) {
 			// reset
 			paths_i = {0};
@@ -26,6 +30,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			const int items = r.getItemsCount();
 			base::string f = base::lowerCase(filter);
 			for (int i = 0; i < items; ++i) {
+				// TODO: wrap
 				if (base::string::npos != base::lowerCase(r.getItemArtist(i)).find(f) ||
 					base::string::npos != base::lowerCase(r.getItemAlbum(i)).find(f) ||
 					base::string::npos != base::lowerCase(r.getItemTitle(i)).find(f)) {
@@ -43,7 +48,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			}
 		}
 
-		playlistModel() {}
+		playlistModel() : filterEnabled(false) {}
 		~playlistModel() {}
 
 		void init() {
@@ -83,6 +88,41 @@ class playlist : public Component, public FileDragAndDropTarget {
 			talbum_i.push_back(talbum.size());
 			tartist_i.push_back(tartist.size());
 			ttitle_i.push_back(ttitle.size());
+		}
+
+		// checks if given query match item at index
+		bool filterMatch(size_t index, const base::string &query) const {
+			base::string f = base::lowerCase(query);
+			return base::string::npos != base::lowerCase(getItemArtist(index)).find(f)
+				|| base::string::npos != base::lowerCase(getItemAlbum(index)).find(f)
+				|| base::string::npos != base::lowerCase(getItemTitle(index)).find(f);
+		}
+
+		// returns next filtered item index
+		int filterNextIndex(int currentPosition, bool wrap) const {
+			const int items = getItemsCount();
+			for (int i = currentPosition + 1; i < items; ++i) {
+				if (filterMatch(i, filterQuery))
+					return i;
+			}
+
+			// wrapped search
+			if (wrap)
+				return filterNextIndex(0, false);
+
+			// no result found - return currentPosition back
+			return currentPosition;
+		}
+
+		// enables highlight for filter
+		void filterEnable(const base::string &query) {
+			filterEnabled = true;
+			filterQuery = query;
+
+		}
+
+		void filterDisable() {
+			filterEnabled = false;
 		}
 
 		base::string getItemPath(size_t index) const {
@@ -128,10 +168,17 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 		// This is overloaded from TableListBoxModel, and should fill in the background of the whole row
 		void paintRowBackground(Graphics& g, int rowNumber, int /*width*/, int /*height*/, bool rowIsSelected) override {
-			if (rowIsSelected)
+			if (filterEnabled && filterMatch(rowNumber, filterQuery)) {
+				if (rowIsSelected)
+					g.fillAll(Colours::lightyellow);
+				else g.fillAll(Colours::lightgreen);
+			}
+			else if (rowIsSelected) {
 				g.fillAll(Colours::lightblue);
-			else if (rowNumber % 2)
+			}
+			else if (rowNumber % 2) {
 				g.fillAll(Colour(0xffeeeeee));
+			}
 		}
 
 		// This is overloaded from TableListBoxModel, and must paint any cells that aren't using custom
@@ -301,6 +348,25 @@ public:
 		box.getHeader().addColumn(caption, (int)model.columns.size(),
 								  width, widthMin, widthMax, TableHeaderComponent::defaultFlags);
 		model.columns.push_back(content);
+	}
+
+	void filterEnable(const base::string &query) {
+		model.filterEnable(query);
+		box.repaint();
+	}
+
+	void filterDisable() {
+		model.filterDisable();
+	}
+
+	void filterSelectNext() {
+		int current = box.getSelectedRow();
+		if (current == -1)
+			current = 0; // no row selected -> start from the beginning
+		int next = model.filterNextIndex(current, true); // search for next index
+		if (current != next) {
+			box.selectRow(next);
+		}
 	}
 
 	bool store(const base::string &f) {

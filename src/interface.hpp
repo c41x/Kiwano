@@ -297,6 +297,31 @@ public:
 			cell::typeInt, cell::typeInt, cell::typeInt);
 	}
 
+	base::cell_t playlist_enable_filter(base::cell_t c, base::cells_t &) {
+		return fxValidateAccess("playlist-enable-filter", c, [c, this](Component *e) -> auto {
+				const auto &query = c + 2;
+				auto p = reinterpret_cast<playlist*>(e);
+				p->filterEnable(query->s);
+				return gl.t();
+			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
+	}
+
+	base::cell_t playlist_filter_next(base::cell_t c, base::cells_t &) {
+		return fxValidateAccess("playlist-filter-next", c, [c, this](Component *e) -> auto {
+				auto p = reinterpret_cast<playlist*>(e);
+				p->filterSelectNext();
+				return gl.t();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
+	}
+
+	base::cell_t playlist_disable_filter(base::cell_t c, base::cells_t &) {
+		return fxValidateAccess("playlist-disable-filter", c, [c, this](Component *e) -> auto {
+				auto p = reinterpret_cast<playlist*>(e);
+				p->filterDisable();
+				return gl.t();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
+	}
+
 	//- text button
 	// (create-text-button name (string)caption (string)tooltip) -> nil/id
 	base::cell_t create_text_button(base::cell_t c, base::cells_t &) {

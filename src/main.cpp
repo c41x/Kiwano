@@ -24,6 +24,7 @@ class MainWindow : public DocumentWindow {
     LookAndFeel_V3 lookAndFeelV3;
 	base::rng<> r;
 	hotkeyProcessing hotkeyProcess;
+	std::map<base::string, base::string> keyMap;
 
 public:
 	base::lisp gl;
@@ -41,6 +42,9 @@ public:
 
 		// initialize playback
 		playback::init(gl);
+
+		// initialize timer
+		base::timer::init();
 
 		// logger
 		base::log::init(base::fs::getUserDirectory() + "/.kiwano/log.txt");
@@ -90,6 +94,9 @@ public:
 		gl.addProcedure("playlist-items-count", std::bind(&user_interface::playlist_items_count, &itf, _1, _2));
 		gl.addProcedure("playlist-get", std::bind(&user_interface::playlist_get, &itf, _1, _2));
 		gl.addProcedure("playlist-add-column", std::bind(&user_interface::playlist_add_column, &itf, _1, _2));
+		gl.addProcedure("playlist-enable-filter", std::bind(&user_interface::playlist_enable_filter, &itf, _1, _2));
+		gl.addProcedure("playlist-filter-next", std::bind(&user_interface::playlist_filter_next, &itf, _1, _2));
+		gl.addProcedure("playlist-disable-filter", std::bind(&user_interface::playlist_disable_filter, &itf, _1, _2));
 
 		// custom tags api
 		gl.addProcedure("ctags-get", std::bind(&customTags::ctags_get, std::ref(gl), _1, _2));
@@ -242,6 +249,13 @@ public:
 			}, base::cell::list(1), base::cell::typeInt);
 	}
 
+	// TODO: -
+	// // (bind-key (string)key-desc (id)callback)
+	// base::cell_t bind_key(base::cell_t c, base::cells_t &) {
+	// 	return fxValidateCreateSkeleton(gl, "bind-key", c, [this, c]() -> auto {
+	// 		}, keyMap, base::cell::list(3), base::cell::typeIdentifier, base::cell::typeString, base::cell::typeIdentifier);
+	// }
+
 	void cleanup() {
 		system::hotkey::shutdown();
 		base::fs::close();
@@ -252,6 +266,14 @@ public:
 
 	void closeButtonPressed() override {
 		JUCEApplication::getInstance()->systemRequestedQuit();
+	}
+
+	// TODO: -
+	bool keyPressed(const KeyPress &k) override {
+		if (KeyPress::F3Key == k.getKeyCode()) {
+			gl.eval("(message-box \"aaa\" \"bbb\")");
+		}
+		return true;
 	}
 };
 
@@ -308,3 +330,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: stop timer when no binds (need update granite API)
 // TODO: windows positioning (center screen) (bounds-center-screen w h)
 // TODO: window closing
+// TODO: (de)serialize window position (see: restoreWindowStateFromString)
