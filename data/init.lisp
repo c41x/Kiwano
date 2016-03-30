@@ -262,17 +262,30 @@
 ;; bind hotkeys
 (bind-hotkey "Pause" "" 'toggle-playback)
 
-;; filtered playlist test
-(create-filtered-playlist 'playlist_0 'ppp
-			  (input-box "Search for:" "Enter query: " ""))
-(playlist-add-column 'ppp "track" 'track 50 20 1000)
-(playlist-add-column 'ppp "album" 'album 200 150 1000)
-(playlist-add-column 'ppp "artist" 'artist 200 150 1000)
-(playlist-add-column 'ppp "title" 'title 200 150 1000)
-(playlist-add-column 'ppp "year" 'year 70 50 1000)
-(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
-(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
-(window-set-main-component 'search-window 'ppp)
+;; ;; filtered playlist test
+;; (create-filtered-playlist 'playlist_0 'ppp
+;; 			  (input-box "Search for:" "Enter query: " ""))
+;; (playlist-add-column 'ppp "track" 'track 50 20 1000)
+;; (playlist-add-column 'ppp "album" 'album 200 150 1000)
+;; (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
+;; (playlist-add-column 'ppp "title" 'title 200 150 1000)
+;; (playlist-add-column 'ppp "year" 'year 70 50 1000)
+;; (playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
+;; (create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
+;; (window-set-main-component 'search-window 'ppp)
+
+;; TODO: replace current-playlist
+(defun on-f3 ()
+  (if (playlist-filter-enabled current-playlist)
+      (playlist-disable-filter current-playlist)
+    (playlist-enable-filter current-playlist (input-box "Quick search" "Query: " ""))))
+
+(defun on-n ()
+  (if (playlist-filter-enabled current-playlist)
+      (playlist-filter-next current-playlist)))
+
+(bind-key "F3" 'on-f3)
+(bind-key "F4" 'on-n)
 
 ;; make things visible
 (set-main-component 'l-main)
