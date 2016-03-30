@@ -315,10 +315,19 @@ public:
 	}
 
 	base::cell_t playlist_disable_filter(base::cell_t c, base::cells_t &) {
-		return fxValidateAccess("playlist-disable-filter", c, [c, this](Component *e) -> auto {
+		return fxValidateAccess("playlist-disable-filter", c, [this](Component *e) -> auto {
 				auto p = reinterpret_cast<playlist*>(e);
 				p->filterDisable();
 				return gl.t();
+			}, components, base::cell::list(1), base::cell::typeIdentifier);
+	}
+
+	base::cell_t playlist_filter_enabled(base::cell_t c, base::cells_t &) {
+		return fxValidateAccess("playlist-filter-enabled", c, [this](Component *e) -> auto {
+				auto p = reinterpret_cast<playlist*>(e);
+				if (p->filterEnabled())
+					return gl.t();
+				return gl.nil();
 			}, components, base::cell::list(1), base::cell::typeIdentifier);
 	}
 

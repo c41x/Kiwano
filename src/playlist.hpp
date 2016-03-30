@@ -357,6 +357,11 @@ public:
 
 	void filterDisable() {
 		model.filterDisable();
+		box.repaint();
+	}
+
+	bool filterEnabled() const {
+		return model.filterEnabled;
 	}
 
 	void filterSelectNext() {

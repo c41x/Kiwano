@@ -24,7 +24,7 @@ class MainWindow : public DocumentWindow {
     LookAndFeel_V3 lookAndFeelV3;
 	base::rng<> r;
 	hotkeyProcessing hotkeyProcess;
-	std::map<base::string, base::string> keyMap;
+	std::map<int, base::string> keyMap;
 
 public:
 	base::lisp gl;
@@ -97,6 +97,7 @@ public:
 		gl.addProcedure("playlist-enable-filter", std::bind(&user_interface::playlist_enable_filter, &itf, _1, _2));
 		gl.addProcedure("playlist-filter-next", std::bind(&user_interface::playlist_filter_next, &itf, _1, _2));
 		gl.addProcedure("playlist-disable-filter", std::bind(&user_interface::playlist_disable_filter, &itf, _1, _2));
+		gl.addProcedure("playlist-filter-enabled", std::bind(&user_interface::playlist_filter_enabled, &itf, _1, _2));
 
 		// custom tags api
 		gl.addProcedure("ctags-get", std::bind(&customTags::ctags_get, std::ref(gl), _1, _2));
@@ -162,6 +163,8 @@ public:
 		gl.addProcedure("time-format", std::bind(&MainWindow::time_format, this, _1, _2));
 		gl.addProcedure("bind-hotkey", std::bind(&MainWindow::bind_hotkey, this, _1, _2));
 		gl.addProcedure("unbind-hotkey", std::bind(&MainWindow::unbind_hotkey, this, _1, _2));
+		gl.addProcedure("bind-key", std::bind(&MainWindow::bind_key, this, _1, _2));
+		gl.addProcedure("unbind-key", std::bind(&MainWindow::unbind_key, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -249,12 +252,37 @@ public:
 			}, base::cell::list(1), base::cell::typeInt);
 	}
 
-	// TODO: -
-	// // (bind-key (string)key-desc (id)callback)
-	// base::cell_t bind_key(base::cell_t c, base::cells_t &) {
-	// 	return fxValidateCreateSkeleton(gl, "bind-key", c, [this, c]() -> auto {
-	// 		}, keyMap, base::cell::list(3), base::cell::typeIdentifier, base::cell::typeString, base::cell::typeIdentifier);
-	// }
+	// (bind-key (string)key-desc (id)callback)
+	base::cell_t bind_key(base::cell_t c, base::cells_t &) {
+		return fxValidateSkeleton(gl, "bind-key", c, [this, c]() -> auto {
+				const auto &key = c + 1;
+				const auto &callback = c + 2;
+				KeyPress kp = KeyPress::createFromDescription(key->s);
+				if (kp.isValid()) {
+					int keyCode = kp.getKeyCode();
+					keyMap[keyCode] = callback->s;
+					return gl.t();
+				}
+				return gl.nil();
+			}, base::cell::list(2), base::cell::typeString, base::cell::typeIdentifier);
+	}
+
+	// (unbind-key (string)key-desc)
+	base::cell_t unbind_key(base::cell_t c, base::cells_t &) {
+		return fxValidateSkeleton(gl, "unbind-key", c, [this, c]() -> auto {
+				const auto &key = c + 1;
+				KeyPress kp = KeyPress::createFromDescription(key->s);
+				if (kp.isValid()) {
+					int keyCode = kp.getKeyCode();
+					auto e = keyMap.find(keyCode);
+					if (e != keyMap.end()) {
+						keyMap.erase(e);
+						return gl.t();
+					}
+				}
+				return gl.nil();
+			}, base::cell::list(1), base::cell::typeString);
+	}
 
 	void cleanup() {
 		system::hotkey::shutdown();
@@ -268,12 +296,13 @@ public:
 		JUCEApplication::getInstance()->systemRequestedQuit();
 	}
 
-	// TODO: -
 	bool keyPressed(const KeyPress &k) override {
-		if (KeyPress::F3Key == k.getKeyCode()) {
-			gl.eval("(message-box \"aaa\" \"bbb\")");
+		auto e = keyMap.find(k.getKeyCode());
+		if (e != keyMap.end()) {
+			gl.eval(base::strs("(", e->second, ")"));
+			return true;
 		}
-		return true;
+		return false;
 	}
 };
 
