@@ -30,10 +30,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			const int items = r.getItemsCount();
 			base::string f = base::lowerCase(filter);
 			for (int i = 0; i < items; ++i) {
-				// TODO: wrap
-				if (base::string::npos != base::lowerCase(r.getItemArtist(i)).find(f) ||
-					base::string::npos != base::lowerCase(r.getItemAlbum(i)).find(f) ||
-					base::string::npos != base::lowerCase(r.getItemTitle(i)).find(f)) {
+				if (filterMatch(i, f)) {
 					paths.append(r.getItemPath(i));
 					talbum.append(r.getItemAlbum(i));
 					tartist.append(r.getItemArtist(i));
