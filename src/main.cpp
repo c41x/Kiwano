@@ -360,3 +360,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: windows positioning (center screen) (bounds-center-screen w h)
 // TODO: window closing
 // TODO: (de)serialize window position (see: restoreWindowStateFromString)
+// TODO: timer threading issues
