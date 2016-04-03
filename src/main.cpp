@@ -362,3 +362,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: window closing
 // TODO: (de)serialize window position (see: restoreWindowStateFromString)
 // TODO: timer threading issues
+// TODO: "invisible" mainWindow
