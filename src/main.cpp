@@ -68,6 +68,7 @@ public:
 		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 		gl.addProcedure("unique-id", std::bind(&user_interface::unique_id, &itf, _1, _2));
+		gl.addProcedure("component-centre", std::bind(&user_interface::component_centre, &itf, _1, _2));
 
 		// GUI event binding
 		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_listener<mouseUpListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
