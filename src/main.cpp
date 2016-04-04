@@ -68,6 +68,7 @@ public:
 		gl.addProcedure("component-enabled", std::bind(&user_interface::component_enabled, &itf, _1, _2));
 		gl.addProcedure("refresh-interface", std::bind(&user_interface::refresh_interface, &itf, _1, _2));
 		gl.addProcedure("unique-id", std::bind(&user_interface::unique_id, &itf, _1, _2));
+		gl.addProcedure("component-centre", std::bind(&user_interface::component_centre, &itf, _1, _2));
 
 		// GUI event binding
 		gl.addProcedure("bind-mouse-click", std::bind(&user_interface::bind_listener<mouseUpListener>, &itf, _1, _2, &user_interface::add_mouse_listener_fn));
@@ -360,3 +361,5 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: windows positioning (center screen) (bounds-center-screen w h)
 // TODO: window closing
 // TODO: (de)serialize window position (see: restoreWindowStateFromString)
+// TODO: timer threading issues
+// TODO: "invisible" mainWindow

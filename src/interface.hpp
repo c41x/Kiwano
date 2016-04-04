@@ -173,6 +173,24 @@ public:
 			}, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeIdentifier);
 	}
 
+	// TODO: (component-centre (id)name (optional|int)width (optional|int)height) -> bool
+	base::cell_t component_centre(base::cell_t c, base::cells_t &) {
+		using namespace base;
+		return fxValidateAccess("component-centre", c, [c, this](Component *com) -> auto {
+				int w, h;
+				if (c->listSize() == 3) {
+					w = (c + 2)->i;
+					h = (c + 2)->i;
+				}
+				else {
+					w = com->getWidth();
+					h = com->getHeight();
+				}
+				com->centreWithSize(w, h);
+				return gl.t();
+			}, components, cell::any(cell::list(1), cell::list(3)), cell::typeIdentifier, cell::typeInt, cell::typeInt);
+	}
+
 	// (refresh-interface)
 	base::cell_t refresh_interface(base::cell_t, base::cells_t &) {
 		// signal to all components resized event (to refresh UI)
