@@ -804,10 +804,26 @@ public:
 				AlertWindow w(caption->s, text->s, AlertWindow::QuestionIcon);
 				w.addTextEditor("text", input->s, "text field:");
 				w.addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
+
+				// TODO: hack until GLISP gets proper multithread eval
+				std::vector<int> intervals(timers.size());
+				for (auto e = timers.begin(); e != timers.end(); e++) {
+					intervals.push_back(e->second->getTimerInterval());
+					e->second->stopTimer();
+				}
+				auto reviveTimers = [this, &intervals]() {
+					int i = 0;
+					for (auto e = timers.begin(); e != timers.end(); e++) {
+						e->second->startTimer(intervals[i++]);
+					}
+				};
+
 				if (w.runModalLoop() == 0) { // wait for OK
 					ret.push_back(cell(w.getTextEditorContents("text").toStdString()));
+					reviveTimers();
 					return ret.end();
 				}
+				reviveTimers();
 				return gl.nil();
 			}, cell::list(3), cell::typeString, cell::typeString, cell::typeString);
 	}
