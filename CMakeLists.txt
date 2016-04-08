@@ -26,7 +26,7 @@ if(NOT WIN32)
 endif()
 include_directories(${GRANITE_INCLUDE_DIRS})
 include_directories(${TAGLIB_INCLUDE_DIRS})
-include_directories(${LIBCUE_INCLUDE_DIRS})
+include_directories(${LIBCUE_INCLUDE_DIR})
 
 if(MINGW)
   link_libraries(ks ksuser ksguid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm opengl32 uuid)

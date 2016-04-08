@@ -15,8 +15,6 @@ find_path(LIBCUE_INCLUDE_DIR NAMES libcue/libcue.h libcue.h
     $ENV{PROGRAMFILES}/libcue/include
 )
 
-message(STATUS "libcue/includes: ${LIBCUE_INCLUDE_DIR}")
-
 find_library(LIBCUE_LIBRARIES NAMES cue libcue
     PATHS
     ${PC_LIBCUE_LIBDIR}
@@ -24,6 +22,7 @@ find_library(LIBCUE_LIBRARIES NAMES cue libcue
     $ENV{PROGRAMFILES}/libcue/lib
 )
 
+message(STATUS "libcue/includes: ${LIBCUE_INCLUDE_DIR}")
 message(STATUS "libcue/libraries: ${LIBCUE_LIBRARIES}")
 
 include(FindPackageHandleStandardArgs)
