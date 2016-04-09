@@ -7,6 +7,8 @@
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
 
+#include <libcue/libcue.h>
+
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public TableListBoxModel {
 		base::string paths, talbum, tartist, ttitle;
@@ -66,25 +68,68 @@ class playlist : public Component, public FileDragAndDropTarget {
 		}
 
 		void addItem(const String &path) {
-			paths.append(path.toStdString());
-			paths_i.push_back(paths.size());
-
-			// read tags from file
-			TagLib::FileRef file(path.toRawUTF8());
-			if (!file.isNull() && file.tag()) {
-				talbum.append(file.tag()->album().toCString());
-				tartist.append(file.tag()->artist().toCString());
-				ttitle.append(file.tag()->title().toCString());
-				tyear.push_back(file.tag()->year());
-				ttrack.push_back(file.tag()->track());
+			base::string gpath = path.toStdString();
+			if (base::extractExt(gpath) == "cue") {
+				base::stream s = base::fs::load(gpath);
+				if (s.size() > 0) {
+					Cd *cd = cue_parse_string((const char*)s.data());
+					if (cd != nullptr) {
+						Rem *rem = cd_get_rem(cd);
+						if (rem != nullptr) {
+							Cdtext *cdtext = cd_get_cdtext(cd);
+							if (cdtext != nullptr) {
+								const char *defaultArtist = cdtext_get(PTI_PERFORMER, cdtext);
+								const char *defaultTitle = cdtext_get(PTI_TITLE, cdtext);
+								const char *defaultDate = rem_get(REM_DATE, rem);
+								int tracks = cd_get_ntrack(cd);
+								const char *path = nullptr;
+								for (int i = 1; i <= tracks; ++i) {
+									Track *track = cd_get_track(cd, i);
+									path = track_get_filename(track); // if diff -> store new?
+									cdtext = track_get_cdtext(track);
+									if (cdtext != nullptr) {
+										const char *artist = cdtext_get(PTI_PERFORMER, cdtext);
+										const char *title = cdtext_get(PTI_TITLE, cdtext);
+										int trackIndex = track_get_index(track, i);
+										int start = track_get_start(track);
+										int length = track_get_length(track);
+									}
+									rem = track_get_rem(track);
+									if (rem != nullptr) {
+										const char *date = rem_get(REM_DATE, rem);
+									}
+								}
+								return;
+							}
+						}
+					}
+					logInfo(base::strs("CUE: could not parse / syntax error in: ", gpath));
+				}
+				else {
+					logInfo(base::strs("could not load CUE - empty file: ", gpath));
+				}
 			}
 			else {
-				tyear.push_back(0);
-				ttrack.push_back(0);
+				paths.append(gpath);
+				paths_i.push_back(paths.size());
+
+				// read tags from file
+				TagLib::FileRef file(path.toRawUTF8());
+				if (!file.isNull() && file.tag()) {
+					talbum.append(file.tag()->album().toCString());
+					tartist.append(file.tag()->artist().toCString());
+					ttitle.append(file.tag()->title().toCString());
+					tyear.push_back(file.tag()->year());
+					ttrack.push_back(file.tag()->track());
+				}
+				else {
+					tyear.push_back(0);
+					ttrack.push_back(0);
+				}
+				talbum_i.push_back(talbum.size());
+				tartist_i.push_back(tartist.size());
+				ttitle_i.push_back(ttitle.size());
 			}
-			talbum_i.push_back(talbum.size());
-			tartist_i.push_back(tartist.size());
-			ttitle_i.push_back(ttitle.size());
 		}
 
 		// checks if given query match item at index
@@ -242,8 +287,9 @@ class playlist : public Component, public FileDragAndDropTarget {
 			int nth = 0;
 			for (auto &fileName : files) {
 				if (File(fileName).isDirectory()) {
+					// TODO: prevent duplicate in CUE
 					// recursively scan for files
-					DirectoryIterator i(File(fileName), true, "*.mp3;*.wav;*.wma;*.flac;*.ogg;*.ape");
+					DirectoryIterator i(File(fileName), true, "*.mp3;*.wav;*.wma;*.flac;*.ogg;*.ape;*.cue");
 					while (i.next()) {
 						m.addItem(i.getFile().getFullPathName());
 						if (nth++ == 50) {
