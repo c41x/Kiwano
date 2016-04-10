@@ -7,7 +7,9 @@
 #include <taglib/tag.h>
 #include <taglib/tpropertymap.h>
 
-#include <libcue/libcue.h>
+extern "C" {
+	#include <libcue/libcue.h>
+}
 
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public TableListBoxModel {
