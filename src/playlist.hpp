@@ -89,17 +89,36 @@ class playlist : public Component, public FileDragAndDropTarget {
 									Track *track = cd_get_track(cd, i);
 									path = track_get_filename(track); // if diff -> store new?
 									cdtext = track_get_cdtext(track);
+									const char *artist = nullptr;
+									const char *title = nullptr;
+									int trackIndex = 0;
+									int start = 0;
+									int length = 0;
+									const char *date = nullptr;
+
 									if (cdtext != nullptr) {
-										const char *artist = cdtext_get(PTI_PERFORMER, cdtext);
-										const char *title = cdtext_get(PTI_TITLE, cdtext);
-										int trackIndex = track_get_index(track, i);
-										int start = track_get_start(track);
-										int length = track_get_length(track);
+										artist = cdtext_get(PTI_PERFORMER, cdtext);
+										title = cdtext_get(PTI_TITLE, cdtext);
+										trackIndex = track_get_index(track, i);
+										start = track_get_start(track);
+										length = track_get_length(track);
 									}
 									rem = track_get_rem(track);
 									if (rem != nullptr) {
-										const char *date = rem_get(REM_DATE, rem);
+										date = rem_get(REM_DATE, rem);
 									}
+
+									if (defaultArtist == nullptr) defaultArtist = "?";
+									if (defaultTitle == nullptr) defaultTitle = "?";
+									if (defaultDate == nullptr) defaultDate = "?";
+									if (path == nullptr) path = "?";
+									if (artist == nullptr) artist = "?";
+									if (title == nullptr) title = "?";
+									if (date == nullptr) date = "?";
+
+									logInfo(base::strs("adding: ", defaultArtist, ", ", defaultTitle, ", ", defaultDate,
+													   ", ", tracks, ", ", path, ", ", artist, ", ", title, ", ",
+													   start, ", ", length, ", ", date));
 								}
 								return;
 							}
@@ -281,7 +300,8 @@ class playlist : public Component, public FileDragAndDropTarget {
 				|| fname.endsWith(".wma")
 				|| fname.endsWith(".flac")
 				|| fname.endsWith(".ogg")
-				|| fname.endsWith(".ape");
+				|| fname.endsWith(".ape")
+				|| fname.endsWith(".cue");
 		}
 
 		void run() override {
@@ -305,6 +325,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 					if (isFileSupported(fileName))
 						m.addItem(fileName);
 				}
+				std::cout << fileName << std::endl;
 			}
 			setStatusMessage("Done.");
 		}
@@ -359,6 +380,9 @@ public:
 	}
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
+		for (auto f : files) {
+			std::cout << f << std::endl;
+		}
 		(new progress(model, files, [this](){
 				box.updateContent();
 				repaint();
