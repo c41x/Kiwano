@@ -119,6 +119,20 @@ class playlist : public Component, public FileDragAndDropTarget {
 									logInfo(base::strs("adding: ", defaultArtist, ", ", defaultTitle, ", ", defaultDate,
 													   ", ", tracks, ", ", path, ", ", artist, ", ", title, ", ",
 													   start, ", ", length, ", ", date));
+
+									// TODO: default artist?
+									paths.append(path); // prevent duplicates?
+									paths_i.push_back(paths.size());
+									talbum.append(defaultTitle);
+									tartist.append(artist);
+									ttitle.append(title);
+									if (base::strIs<int>(date))
+										tyear.push_back(base::fromStr<int>(date));
+									else tyear.push_back(0);
+									ttrack.push_back(trackIndex);
+									talbum_i.push_back(talbum.size());
+									tartist_i.push_back(tartist.size());
+									ttitle_i.push_back(ttitle.size());
 								}
 								return;
 							}
@@ -325,7 +339,6 @@ class playlist : public Component, public FileDragAndDropTarget {
 					if (isFileSupported(fileName))
 						m.addItem(fileName);
 				}
-				std::cout << fileName << std::endl;
 			}
 			setStatusMessage("Done.");
 		}
@@ -380,9 +393,6 @@ public:
 	}
 
 	void filesDropped (const StringArray& files, int /*x*/, int /*y*/) override {
-		for (auto f : files) {
-			std::cout << f << std::endl;
-		}
 		(new progress(model, files, [this](){
 				box.updateContent();
 				repaint();
