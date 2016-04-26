@@ -42,6 +42,7 @@ link_libraries(${GRANITE_LIBRARY_BASE})
 link_libraries(${GRANITE_LIBRARY_SYSTEM})
 link_libraries(${TAGLIB_LIBRARIES})
 link_libraries(${LIBCUE_LIBRARIES})
+link_libraries(z)
 
 add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
