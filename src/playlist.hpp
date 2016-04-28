@@ -8,7 +8,11 @@
 #include <taglib/tpropertymap.h>
 
 extern "C" {
+	#ifdef GE_PLATFORM_WINDOWS
+	#include <libcue.h>
+	#else
 	#include <libcue/libcue.h>
+	#endif
 }
 
 class playlist : public Component, public FileDragAndDropTarget {
