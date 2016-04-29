@@ -286,6 +286,7 @@ public:
 	}
 
 	void cleanup() {
+		itf.cleanup();
 		system::hotkey::shutdown();
 		base::fs::close();
 		gl.close();

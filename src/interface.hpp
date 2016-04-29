@@ -45,6 +45,13 @@ public:
 			mainComponent->setBounds(getLocalBounds());
 	}
 
+	void cleanup() {
+		// stop all timers
+		for (auto &t : timers) {
+			t.second->stopTimer();
+		}
+	}
+
 	// curry skeleton templates, TODO: simplify this?
 	template <typename... Args, typename T>
 	base::cell_t fxValidate(const base::string &fxName, base::cell_t c, T fx, Args... v) {
