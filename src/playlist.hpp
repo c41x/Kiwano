@@ -15,9 +15,16 @@ extern "C" {
 	#endif
 }
 
+struct seekRange {
+	uint32 start;
+	uint32 end;
+	seekRange() : start(0), end(0) {}
+};
+
 class playlist : public Component, public FileDragAndDropTarget {
     struct playlistModel : public TableListBoxModel {
 		base::string paths, talbum, tartist, ttitle;
+		std::vector<seekRange> tseek;
 		std::vector<uint32> tyear, ttrack;
 		std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
 		std::vector<base::string> columns;
@@ -44,6 +51,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 					tartist.append(r.getItemArtist(i));
 					ttitle.append(r.getItemTitle(i));
 					tyear.push_back(r.getItemYear(i));
+					tseek.push_back(r.getItemSeekCUE(i));
 					ttrack.push_back(r.getItemTrack(i));
 					paths_i.push_back(paths.size());
 					talbum_i.push_back(talbum.size());
@@ -63,6 +71,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			talbum.clear();
 			tartist.clear();
 			tyear.clear();
+			tseek.clear();
 			ttitle.clear();
 			ttrack.clear();
 			talbum_i.clear();
@@ -133,6 +142,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 									if (base::strIs<int>(date))
 										tyear.push_back(base::fromStr<int>(date));
 									else tyear.push_back(0);
+									tseek.push_back({start, start + length});
 									ttrack.push_back(trackIndex);
 									talbum_i.push_back(talbum.size());
 									tartist_i.push_back(tartist.size());
@@ -159,10 +169,12 @@ class playlist : public Component, public FileDragAndDropTarget {
 					tartist.append(file.tag()->artist().toCString());
 					ttitle.append(file.tag()->title().toCString());
 					tyear.push_back(file.tag()->year());
+					tseek.push_back(seekRange());
 					ttrack.push_back(file.tag()->track());
 				}
 				else {
 					tyear.push_back(0);
+					tseek.push_back(seekRange());
 					ttrack.push_back(0);
 				}
 				talbum_i.push_back(talbum.size());
@@ -217,6 +229,10 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 		uint getItemYear(size_t index) const {
 			return tyear[index];
+		}
+
+		seekRange getItemSeekCUE(size_t index) const {
+			return tseek[index];
 		}
 
 		base::string getItemAlbum(size_t index) const {
@@ -464,6 +480,7 @@ public:
 		s.write(model.tartist);
 		s.write(model.ttitle);
 		s.write(model.tyear);
+		s.write(model.tseek);
 		s.write(model.ttrack);
 		s.write(model.paths_i);
 		s.write(model.talbum_i);
@@ -479,6 +496,7 @@ public:
 			&& s.read(model.tartist) > 0
 			&& s.read(model.ttitle) > 0
 			&& s.read(model.tyear) > 0
+			&& s.read(model.tseek) > 0
 			&& s.read(model.ttrack) > 0
 			&& s.read(model.paths_i) > 0
 			&& s.read(model.talbum_i) > 0
