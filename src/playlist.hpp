@@ -16,9 +16,10 @@ extern "C" {
 }
 
 struct seekRange {
-	uint32 start;
-	uint32 end;
+	int start;
+	int end;
 	seekRange() : start(0), end(0) {}
+	seekRange(int _start, int _end) : start(_start), end(_end) {}
 };
 
 class playlist : public Component, public FileDragAndDropTarget {
@@ -285,7 +286,8 @@ class playlist : public Component, public FileDragAndDropTarget {
 			g.setColour(Colours::black);
 			g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
 
-			if (columnId < (int)columns.size()) {
+			if (columnId < (int)columns.size() &&
+				rowNumber < getNumRows()) {
 				auto &c = columns[columnId];
 				if (c == "track")
 					g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
