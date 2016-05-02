@@ -134,7 +134,6 @@ class playlist : public Component, public FileDragAndDropTarget {
 													   ", ", tracks, ", ", path, ", ", artist, ", ", title, ", ",
 													   start, ", ", length, ", ", date));
 
-									// TODO: default artist?
 									paths.append(path); // prevent duplicates?
 									paths_i.push_back(paths.size());
 									talbum.append(defaultTitle);

@@ -32,7 +32,7 @@ public:
 
 	MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
 							  itf(gl) {
-		//setUsingNativeTitleBar(true); // TODO: fix blink on startup
+		setUsingNativeTitleBar(true);
 		setContentOwned(&itf, false);
 		setSize(800, 600);
 		setTopLeftPosition(200, 200);
@@ -332,7 +332,7 @@ public:
         quit();
     }
 
-    void anotherInstanceStarted (const String& commandLine) override {
+    void anotherInstanceStarted(const String& commandLine) override {
     }
 };
 
@@ -364,3 +364,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: (de)serialize window position (see: restoreWindowStateFromString)
 // TODO: timer threading issues
 // TODO: "invisible" mainWindow
+// TODO: Ubuntu Unity window movement bug, non native title bar
