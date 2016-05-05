@@ -133,8 +133,7 @@ public:
 		// window
 		gl.addProcedure("create-window", std::bind(&user_interface::create_window, &itf, _1, _2));
 		gl.addProcedure("window-set-main-component", std::bind(&user_interface::window_set_main_component, &itf, _1, _2));
-		gl.addProcedure("window-get-state", std::bind(&user_interface::window_get_state, &itf, _1, _2));
-		gl.addProcedure("window-set-state", std::bind(&user_interface::window_set_state, &itf, _1, _2));
+		gl.addProcedure("window-state", std::bind(&user_interface::window_state, &itf, _1, _2));
 
 		// timers
 		gl.addProcedure("create-timer", std::bind(&user_interface::create_timer, &itf, _1, _2));

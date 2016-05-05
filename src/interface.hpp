@@ -446,24 +446,23 @@ public:
 			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
 	}
 
-	// (window-get-state (id)window-name) -> string/nil
-	base::cell_t window_get_state(base::cell_t c, base::cells_t &ret) {
-		return fxValidateAccess("window-get-state", c, [this, &ret](Component *wnd) -> auto {
+	// (window-state (id)window-name (string|optional)state) -> string/nil | t/nil
+	base::cell_t window_state(base::cell_t c, base::cells_t &ret) {
+		return fxValidateAccess("window-state", c, [this, &ret](Component *wnd) -> auto {
 				auto w = reinterpret_cast<window*>(wnd);
-				ret.push_back(w->getWindowStateAsString().toStdString());
-				return ret.end();
-			}, components, base::cell::list(1), base::cell::typeIdentifier);
-	}
 
-	// (window-set-state (id)window-name (string)state) -> t/nil
-	base::cell_t window_set_state(base::cell_t c, base::cells_t &ret) {
-		return fxValidateAccess("window-set-state", c, [this, c](Component *wnd) -> auto {
-				auto w = reinterpret_cast<window*>(wnd);
+				// getter
+				if (c->listSize() == 1) {
+					ret.push_back(w->getWindowStateAsString().toStdString());
+					return ret.end();
+				}
+
+				// setter
 				const auto state = c + 2;
 				if (w->restoreWindowStateFromString(state->s))
 					return gl.t();
 				return gl.nil();
-			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
+			}, components, base::cell::listRange(1, 2), base::cell::typeIdentifier, base::cell::typeString);
 	}
 
 	//- layout
