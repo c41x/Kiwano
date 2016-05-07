@@ -167,6 +167,7 @@ public:
 		gl.addProcedure("unbind-hotkey", std::bind(&MainWindow::unbind_hotkey, this, _1, _2));
 		gl.addProcedure("bind-key", std::bind(&MainWindow::bind_key, this, _1, _2));
 		gl.addProcedure("unbind-key", std::bind(&MainWindow::unbind_key, this, _1, _2));
+		gl.addProcedure("main-window-state", std::bind(&MainWindow::main_window_state, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -284,6 +285,23 @@ public:
 				}
 				return gl.nil();
 			}, base::cell::list(1), base::cell::typeString);
+	}
+
+	// (main-window-state (id)window-name (string|optional)state) -> string/nil | t/nil
+	base::cell_t main_window_state(base::cell_t c, base::cells_t &ret) {
+		return fxValidateSkeleton(gl, "main-window-state", c, [this, c, &ret]() -> auto {
+				// getter
+				if (c->listSize() == 0) {
+					ret.push_back(getWindowStateAsString().toStdString());
+					return ret.end();
+				}
+
+				// setter
+				const auto state = c + 1;
+				if (restoreWindowStateFromString(state->s))
+					return gl.t();
+				return gl.nil();
+			}, base::cell::listRange(0, 1), base::cell::typeString);
 	}
 
 	void cleanup() {

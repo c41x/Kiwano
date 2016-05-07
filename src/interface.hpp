@@ -448,7 +448,7 @@ public:
 
 	// (window-state (id)window-name (string|optional)state) -> string/nil | t/nil
 	base::cell_t window_state(base::cell_t c, base::cells_t &ret) {
-		return fxValidateAccess("window-state", c, [this, &ret](Component *wnd) -> auto {
+		return fxValidateAccess("window-state", c, [this, &ret, c](Component *wnd) -> auto {
 				auto w = reinterpret_cast<window*>(wnd);
 
 				// getter
