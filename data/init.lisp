@@ -189,6 +189,10 @@
 			    (nth 1 e) |0.5 0.5 0.5 0.9|)
 	(playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
 
+;; restore window layout and position
+(if (settings-get "main-wnd-state")
+    (main-window-state (settings-get "main-wnd-state")))
+
 ;; init audio settings
 (audio-settings)
 
@@ -200,6 +204,7 @@
   (settings-set "playlist-tabs" tabs)
   (settings-set "current-index" current-index)
   (settings-set "current-playlist" current-playlist)
+  (settings-set "main-wnd-state" (main-window-state))
   (ctags-save "playback-stats")
   (settings-save "settings")
   ;;(message-box "Exiting" "just exiting")
