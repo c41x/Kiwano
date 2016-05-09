@@ -304,6 +304,15 @@ public:
 			}, base::cell::listRange(0, 1), base::cell::typeString);
 	}
 
+	static base::cell_t copy_file(base::cell_t c, base::cells_t &) {
+		return fxValidateSkeleton(gl, "copy-file", c, [this, c]() -> auto {
+				const auto &from = c + 1;
+				const auto &to = c + 2;
+				base::fs::store(to->s, base::fs::load(from->s));
+				return gl.t();
+			}, base::cell::list(2), base::cell::typeString, base::cell::typeString);
+	}
+
 	void cleanup() {
 		itf.cleanup();
 		system::hotkey::shutdown();
@@ -361,9 +370,7 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: lisp include
 // TODO: shortcut to open interpreter
 // TODO: error log/console window (only for lisp?)
-// TODO: playlist: get-selected-hash
 // TODO: attach granite logger
-// TODO: on start, on close
 // TODO: get-cpu-usage
 // TODO: consider fully manual audio settings (as additional interface or replace current one)
 // TODO: audio buffer size settings load/store
@@ -380,7 +387,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: stop timer when no binds (need update granite API)
 // TODO: windows positioning (center screen) (bounds-center-screen w h)
 // TODO: window closing
-// TODO: (de)serialize window position (see: restoreWindowStateFromString)
 // TODO: timer threading issues
 // TODO: "invisible" mainWindow
 // TODO: Ubuntu Unity window movement bug, non native title bar
