@@ -168,6 +168,7 @@ public:
 		gl.addProcedure("bind-key", std::bind(&MainWindow::bind_key, this, _1, _2));
 		gl.addProcedure("unbind-key", std::bind(&MainWindow::unbind_key, this, _1, _2));
 		gl.addProcedure("main-window-state", std::bind(&MainWindow::main_window_state, this, _1, _2));
+		gl.addProcedure("copy-file", std::bind(&MainWindow::copy_file, this, _1, _2));
 
 		// exit handler
 		gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
