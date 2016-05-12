@@ -305,7 +305,7 @@ public:
 			}, base::cell::listRange(0, 1), base::cell::typeString);
 	}
 
-	static base::cell_t copy_file(base::cell_t c, base::cells_t &) {
+	base::cell_t copy_file(base::cell_t c, base::cells_t &) {
 		return fxValidateSkeleton(gl, "copy-file", c, [this, c]() -> auto {
 				const auto &from = c + 1;
 				const auto &to = c + 2;
