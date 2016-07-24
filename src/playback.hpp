@@ -1,5 +1,6 @@
 #pragma once
 #include "includes.hpp"
+#include <regex>
 
 namespace playback {
 AudioDeviceManager dm;
@@ -47,10 +48,30 @@ void shutdown() {
 base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
 	if (base::lisp::validate(c, base::cell::list(1), base::cell::typeString)) {
 		const auto &fname = c + 1;
+
+		// stop current playback
 		ts.stop();
 		ts.setSource(nullptr);
 		frs = nullptr;
-		AudioFormatReader *r = fm.createReaderFor(File(fname->s));
+
+		AudioFormatReader *r;
+
+		// ectract CUE information (if any)
+		std::regex cue("^(.*):(\\d+):(\\d+)$");
+		std::smatch result;
+		std::regex_search(fname->s, result, cue);
+		if (result.size() == 4) {
+			// is cue
+			int32 start = base::fromStr<int32>(result[2].str());
+			int32 end = base::fromStr<int32>(result[3].str());
+			AudioFormatReader *tr = fm.createReaderFor(File(result[1].str()));
+			r = new AudioSubsectionReader(tr, start, end - start, true);
+		}
+		else {
+			// regular file
+			r = fm.createReaderFor(File(fname->s));
+		}
+
 		if (r) {
 			frs = new AudioFormatReaderSource(r, true);
 			ts.setSource(frs, 32768, &thread, r->sampleRate);
