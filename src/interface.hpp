@@ -279,8 +279,12 @@ public:
 				auto p = reinterpret_cast<playlist*>(e);
 				if (query->s == "id")
 					ret.push_back(cell(cell::typeString, p->getRowId(index->i)));
-				else if (query->s == "path")
-					ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
+				else if (query->s == "path") {
+					auto seek = p->getRowSeek(index->i);
+					if (!seek.empty())
+						ret.push_back(cell(cell::typeString, base::strs(p->getRowPath(index->i), ":", seek.toString())));
+					else ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
+				}
 				else return gl.nil();
 				return ret.end();
 			}, components, cell::list(3), cell::typeIdentifier, cell::typeInt, cell::typeIdentifier);

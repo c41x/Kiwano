@@ -20,6 +20,8 @@ struct seekRange {
 	int32 end;
 	seekRange() : start(0), end(0) {}
 	seekRange(int32 _start, int32 _end) : start(_start), end(_end) {}
+	bool empty() const { return start == 0 && end == 0; }
+	base::string toString() const { return base::strs(start, ':', end); }
 };
 
 namespace granite { namespace base {
@@ -35,7 +37,7 @@ template <> inline void stream::write(const seekRange &in) {
 }}
 
 class playlist : public Component, public FileDragAndDropTarget {
-    struct playlistModel : public TableListBoxModel {
+	struct playlistModel : public TableListBoxModel {
 		base::string paths, talbum, tartist, ttitle;
 		std::vector<seekRange> tseek;
 		std::vector<uint32> tyear, ttrack;
@@ -64,7 +66,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 					tartist.append(r.getItemArtist(i));
 					ttitle.append(r.getItemTitle(i));
 					tyear.push_back(r.getItemYear(i));
-					tseek.push_back(r.getItemSeekCUE(i));
+					tseek.push_back(r.getItemSeek(i));
 					ttrack.push_back(r.getItemTrack(i));
 					paths_i.push_back(paths.size());
 					talbum_i.push_back(talbum.size());
@@ -243,7 +245,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			return tyear[index];
 		}
 
-		seekRange getItemSeekCUE(size_t index) const {
+		seekRange getItemSeek(size_t index) const {
 			return tseek[index];
 		}
 
@@ -271,9 +273,9 @@ class playlist : public Component, public FileDragAndDropTarget {
 			return paths_i.size() - 1;
 		}
 
-        int getNumRows() override {
-            return getItemsCount();
-        }
+		int getNumRows() override {
+			return getItemsCount();
+		}
 
 		// This is overloaded from TableListBoxModel, and should fill in the background of the whole row
 		void paintRowBackground(Graphics& g, int rowNumber, int /*width*/, int /*height*/, bool rowIsSelected) override {
@@ -326,7 +328,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 			g.setColour(Colours::black.withAlpha(0.2f));
 			g.fillRect(width - 1, 0, 1, height);
 		}
-    };
+	};
 
 	// progress dialog
 	class progress : public ThreadWithProgressWindow {
@@ -382,9 +384,9 @@ class playlist : public Component, public FileDragAndDropTarget {
 		}
 	};
 
-    TableListBox box;
-    playlistModel model;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
+	TableListBox box;
+	playlistModel model;
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
 	void init() {
 		box.setModel(&model);
@@ -396,7 +398,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 	}
 
 public:
-    playlist() : box("playlist-box", nullptr) {
+	playlist() : box("playlist-box", nullptr) {
 		model.init();
 		init();
 	}
@@ -407,7 +409,7 @@ public:
 		init();
 	}
 
-    void resized() override {
+	void resized() override {
 		box.setBounds(getLocalBounds().reduced(0));
 	}
 
@@ -450,6 +452,7 @@ public:
 
 	base::string getRowPath(int32 i) const { return model.getItemPath(i); }
 	base::string getRowId(int32 i) const { return model.getItemId(i); }
+	seekRange getRowSeek(int32 i) const { return model.getItemSeek(i); }
 
 	int32 getItemsCount() const {
 		return model.getItemsCount();
