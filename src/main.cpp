@@ -19,9 +19,9 @@ public:
 class MainWindow : public DocumentWindow {
 	user_interface itf;
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainWindow);
-    LookAndFeel_V1 lookAndFeelV1;
-    LookAndFeel_V2 lookAndFeelV2;
-    LookAndFeel_V3 lookAndFeelV3;
+	LookAndFeel_V1 lookAndFeelV1;
+	LookAndFeel_V2 lookAndFeelV2;
+	LookAndFeel_V3 lookAndFeelV3;
 	base::rng<> r;
 	hotkeyProcessing hotkeyProcess;
 	std::map<int, base::string> keyMap;
@@ -338,31 +338,31 @@ public:
 };
 
 class KiwanoApplication : public JUCEApplication {
-    ScopedPointer<MainWindow> mainWindow;
+	ScopedPointer<MainWindow> mainWindow;
 
 public:
-    KiwanoApplication() {}
+	KiwanoApplication() {}
 
-    const String getApplicationName() override { return ProjectInfo::projectName; }
-    const String getApplicationVersion() override { return ProjectInfo::versionString; }
-    bool moreThanOneInstanceAllowed() override { return false; }
+	const String getApplicationName() override { return ProjectInfo::projectName; }
+	const String getApplicationVersion() override { return ProjectInfo::versionString; }
+	bool moreThanOneInstanceAllowed() override { return false; }
 
-    void initialise(const String& commandLine) override {
-        mainWindow = new MainWindow(getApplicationName());
-    }
+	void initialise(const String& commandLine) override {
+		mainWindow = new MainWindow(getApplicationName());
+	}
 
-    void shutdown() override {
-        mainWindow = nullptr;
-    }
+	void shutdown() override {
+		mainWindow = nullptr;
+	}
 
-    void systemRequestedQuit() override {
+	void systemRequestedQuit() override {
 		mainWindow->gl.eval(base::strs("(", mainWindow->onExit, ")"));
 		mainWindow->cleanup();
-        quit();
-    }
+		quit();
+	}
 
-    void anotherInstanceStarted(const String& commandLine) override {
-    }
+	void anotherInstanceStarted(const String& commandLine) override {
+	}
 };
 
 START_JUCE_APPLICATION(KiwanoApplication);
@@ -375,7 +375,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: get-cpu-usage
 // TODO: consider fully manual audio settings (as additional interface or replace current one)
 // TODO: audio buffer size settings load/store
-// TODO: CUE support
 // TODO: playlist configuration
 // TODO: playlist groups
 // TODO: playlist image

@@ -11,7 +11,7 @@
   (playlist-add-column id "artist" 'artist 200 150 1000)
   (playlist-add-column id "title" 'title 200 150 1000)
   (playlist-add-column id "year" 'year 70 50 1000)
-  (playlist-add-column id "count" 'aaaaaaaaaaaaa 50 20 1000)
+  (playlist-add-column id "count" '0 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
 						   selected-row-id
 						   selected-row-index
@@ -143,9 +143,9 @@
 	  (if current-value
 		(ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
 	    (ctags-set current-id 0 1)) ;; init value
-	  (ctags-set current-id 3 (current-date)) ;; set timestamp
+	  (ctags-set current-id 3 (current-time)) ;; set timestamp
 	  (if (not first-play)
-	      (ctags-set current-id 2 (current-date))) ;; set first play date
+	      (ctags-set current-id 2 (current-time))) ;; set first play date
 	  ;;(message-box "playback-changed callback" "playback finished")
 	  ;;(message-box "Current info" (strs current-playlist " : " current-index))
 	  (on-next)
@@ -216,7 +216,7 @@
 
 ;; ;; filtered playlist test
 ;; (create-filtered-playlist 'playlist_0 'ppp
-;; 			  (input-box "Search for:" "Enter query: " ""))
+;;			  (input-box "Search for:" "Enter query: " ""))
 ;; (playlist-add-column 'ppp "track" 'track 50 20 1000)
 ;; (playlist-add-column 'ppp "album" 'album 200 150 1000)
 ;; (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
