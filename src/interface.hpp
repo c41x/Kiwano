@@ -310,7 +310,7 @@ public:
 			}, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
 	}
 
-	// (playlist-add-column (id)playlist (string)caption (id)content (int)width (int)minWidth (int)maxWidth)
+	// (playlist-add-column (id)playlist (string)caption (string)content (int)width (int)minWidth (int)maxWidth)
 	base::cell_t playlist_add_column(base::cell_t c, base::cells_t &) {
 		using namespace base;
 		return fxValidateAccess("playlist-add-column", c, [c, this](Component *e) -> auto {
@@ -322,7 +322,7 @@ public:
 				auto p = reinterpret_cast<playlist*>(e);
 				p->addColumn(caption->s, content->s, width->i, minWidth->i, maxWidth->i);
 				return gl.t();
-			}, components, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
+			}, components, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeString,
 			cell::typeInt, cell::typeInt, cell::typeInt);
 	}
 
