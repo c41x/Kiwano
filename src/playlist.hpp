@@ -144,10 +144,6 @@ class playlist : public Component, public FileDragAndDropTarget {
 									if (title == nullptr) title = "?";
 									if (date == nullptr) date = "?";
 
-									logInfo(base::strs("adding: ", defaultArtist, ", ", defaultTitle, ", ", defaultDate,
-													   ", ", tracks, ", ", path, ", ", artist, ", ", title, ", ",
-													   start, ", ", length, ", ", date));
-
 									paths.append(path); // prevent duplicates?
 									paths_i.push_back(paths.size());
 									talbum.append(defaultTitle);
@@ -313,14 +309,21 @@ class playlist : public Component, public FileDragAndDropTarget {
 				else if (c == "year")
 					g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
 				else {
-					// TODO: custom tag
-					// search in ctags
-					base::string hash = getItemId(rowNumber);
-					//auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
-					auto t = customTags::getCustomTag(hash, 0);
-					g.drawText(base::toStr(t.i), 5, 0, width, height, Justification::centredLeft, true);
-					if (!t.isNil()) {
-						//g.drawText(t.s, 5, 0, width, height, Justification::centredLeft, true);
+					// custom tag
+					if (base::strIs<int>(c)) {
+						// search in ctags
+						base::string hash = getItemId(rowNumber);
+						std::cout << "c is integer: " << base::fromStr<int>(c) << std::endl;
+						auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
+						if (!t.isNil()) {
+							g.drawText(t.getStr(), 5, 0, width, height, Justification::centredLeft, true);
+						}
+						else {
+							std::cout << "t is nil" << std::endl;
+						}
+					}
+					else {
+						std::cout << c << " is not integer" << std::endl;
 					}
 				}
 			}
