@@ -2,7 +2,10 @@
 #include "includes.hpp"
 
 // generic listener to pass events to lisp interpreter
-class listener : public MouseListener, public Slider::Listener, public Timer {
+class listener : public MouseListener,
+				 public Slider::Listener,
+				 public Timer,
+				 public ModalComponentManager::Callback {
 protected:
 	void call() {
 		base::string lispArgs = "";
@@ -18,9 +21,10 @@ public:
 	Component *c; // just to identyfy ownership
 	std::vector<std::function<base::string()>> args;
 
-	// this are pure virtual, so i must override them here
+	// these are pure virtual, so i must override them here
 	void sliderValueChanged(Slider*) override {}
 	void timerCallback() override {}
+	void modalStateFinished(int) override {}
 };
 
 // mouse listeners for Component class
@@ -66,4 +70,21 @@ class timerListener : public listener {
 public:
 	timerListener(base::lisp &interp, base::string fxId) : listener(interp, fxId, nullptr) {}
 	void timerCallback() override { call(); }
+};
+
+// Async Alert window
+class alertWindowListener : public listener, public AlertWindow {
+public:
+	alertWindowListener(base::lisp &interp, base::string fxId,
+						std::string caption, std::string text)
+			: listener(interp, fxId, nullptr),
+			  AlertWindow(caption, text, AlertWindow::QuestionIcon) {
+		args.push_back([this]() {
+				return getTextEditorContents("text").toStdString();
+			});
+	}
+
+	void modalStateFinished(int) override {
+		call();
+	}
 };
