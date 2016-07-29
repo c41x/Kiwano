@@ -313,17 +313,10 @@ class playlist : public Component, public FileDragAndDropTarget {
 					if (base::strIs<int>(c)) {
 						// search in ctags
 						base::string hash = getItemId(rowNumber);
-						std::cout << "c is integer: " << base::fromStr<int>(c) << std::endl;
 						auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
 						if (!t.isNil()) {
 							g.drawText(t.getStr(), 5, 0, width, height, Justification::centredLeft, true);
 						}
-						else {
-							std::cout << "t is nil" << std::endl;
-						}
-					}
-					else {
-						std::cout << c << " is not integer" << std::endl;
 					}
 				}
 			}
