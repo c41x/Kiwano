@@ -37,7 +37,7 @@ class user_interface : public Component {
 
 public:
 	user_interface(base::lisp &glisp) : mainComponent(nullptr), gl(glisp), idAudioSettings("#audio-settings#"),
-										asListener(std::make_unique<audioSettingsChangeListener>()){ }
+										asListener(std::make_unique<audioSettingsChangeListener>()) { }
 	~user_interface() { }
 
 	void resized() override {
@@ -824,37 +824,21 @@ public:
 			}, base::cell::list(2), base::cell::typeString, base::cell::typeString);
 	}
 
-	// (input-box (string)caption (string)text (string)input-value) -> nil | string
+	// (input-box (string)caption (string)text (string)input-value (id)callback) -> nil | string
 	base::cell_t input_box(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
 		return fxValidate("input-box", c, [c, &ret, this]() -> auto {
 				const auto &caption = c + 1;
 				const auto &text = c + 2;
 				const auto &input = c + 3;
-				AlertWindow w(caption->s, text->s, AlertWindow::QuestionIcon);
-				w.addTextEditor("text", input->s, "text field:");
-				w.addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
+				const auto &callback = c + 4;
 
-				// TODO: hack until GLISP gets proper multithread eval
-				std::vector<int> intervals(timers.size());
-				for (auto e = timers.begin(); e != timers.end(); e++) {
-					intervals.push_back(e->second->getTimerInterval());
-					e->second->stopTimer();
-				}
-				auto reviveTimers = [this, &intervals]() {
-					int i = 0;
-					for (auto e = timers.begin(); e != timers.end(); e++) {
-						e->second->startTimer(intervals[i++]);
-					}
-				};
+				auto w = new alertWindowListener(gl, callback->s, caption->s, text->s); // juce's ModalComponentManager deletes automatically this instance
+				w->addTextEditor("text", input->s, "text field:");
+				w->addButton("OK", 0, KeyPress(KeyPress::returnKey, 0, 0));
+				w->enterModalState(true, w, false);
 
-				if (w.runModalLoop() == 0) { // wait for OK
-					ret.push_back(cell(w.getTextEditorContents("text").toStdString()));
-					reviveTimers();
-					return ret.end();
-				}
-				reviveTimers();
 				return gl.nil();
-			}, cell::list(3), cell::typeString, cell::typeString, cell::typeString);
+			}, cell::list(4), cell::typeString, cell::typeString, cell::typeString, cell::typeIdentifier);
 	}
 };

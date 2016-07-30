@@ -79,12 +79,11 @@ public:
 						std::string caption, std::string text)
 			: listener(interp, fxId, nullptr),
 			  AlertWindow(caption, text, AlertWindow::QuestionIcon) {
-		args.push_back([this]() {
-				return getTextEditorContents("text").toStdString();
-			});
 	}
 
 	void modalStateFinished(int) override {
+		std::string value = base::strs("\"", getTextEditorContents("text").toStdString(), "\"");
+		args.push_back([value]() { return value; });
 		call();
 	}
 };
