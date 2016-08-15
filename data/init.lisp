@@ -6,12 +6,12 @@
 (defun init-playlist (id)
   ;;(message-box (strs "creating playlist: " id) "asdf")
   (create-playlist id)
-  (playlist-add-column id "track" 'track 50 20 1000)
-  (playlist-add-column id "album" 'album 200 150 1000)
-  (playlist-add-column id "artist" 'artist 200 150 1000)
-  (playlist-add-column id "title" 'title 200 150 1000)
-  (playlist-add-column id "year" 'year 70 50 1000)
-  (playlist-add-column id "count" '0 50 20 1000)
+  (playlist-add-column id "track" "track" 50 20 1000)
+  (playlist-add-column id "album" "album" 200 150 1000)
+  (playlist-add-column id "artist" "artist" 200 150 1000)
+  (playlist-add-column id "title" "title" 200 150 1000)
+  (playlist-add-column id "year" "year" 70 50 1000)
+  (playlist-add-column id "count" "0" 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
 						   selected-row-id
 						   selected-row-index
