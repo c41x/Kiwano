@@ -88,7 +88,6 @@ public:
 		// playlist
 		gl.addProcedure("create-playlist", std::bind(&user_interface::create_playlist, &itf, _1, _2));
 		gl.addProcedure("create-filtered-playlist", std::bind(&user_interface::create_filtered_playlist, &itf, _1, _2));
-		gl.addProcedure("playlist-get-selected", std::bind(&user_interface::playlist_get_selected, &itf, _1, _2));
 		gl.addProcedure("playlist-select", std::bind(&user_interface::playlist_select, &itf, _1, _2));
 		gl.addProcedure("playlist-load", std::bind(&user_interface::playlist_load, &itf, _1, _2));
 		gl.addProcedure("playlist-save", std::bind(&user_interface::playlist_save, &itf, _1, _2));

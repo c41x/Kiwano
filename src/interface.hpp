@@ -246,14 +246,6 @@ public:
 			}, components, base::cell::list(3), base::cell::typeIdentifier, base::cell::typeIdentifier, base::cell::typeString);
 	}
 
-	base::cell_t playlist_get_selected(base::cell_t c, base::cells_t &ret) {
-		return fxValidateAccess("playlist-get-selected", c, [&ret](Component *e) -> auto {
-				auto p = reinterpret_cast<playlist*>(e);
-				ret.push_back(base::cell(base::cell::typeString, p->getSelectedRowPath()));
-				return ret.end();
-			}, components, base::cell::list(1), base::cell::typeIdentifier);
-	}
-
 	base::cell_t playlist_select(base::cell_t c, base::cells_t &) {
 		return fxValidateAccess("playlist-select", c, [c, this](Component *e) -> auto {
 				const auto &row = c + 2;
@@ -273,18 +265,16 @@ public:
 
 	base::cell_t playlist_get(base::cell_t c, base::cells_t &ret) {
 		using namespace base;
-		return fxValidateAccess("playlist-get-selected", c, [&ret, this, c](Component *e) -> auto {
+		return fxValidateAccess("playlist-get", c, [&ret, this, c](Component *e) -> auto {
 				const auto &index = c + 2;
 				const auto &query = c + 3;
 				auto p = reinterpret_cast<playlist*>(e);
 				if (query->s == "id")
 					ret.push_back(cell(cell::typeString, p->getRowId(index->i)));
-				else if (query->s == "path") {
-					auto seek = p->getRowSeek(index->i);
-					if (!seek.empty())
-						ret.push_back(cell(cell::typeString, base::strs(p->getRowPath(index->i), ":", seek.toString())));
-					else ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
-				}
+				else if (query->s == "path")
+					ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
+				else if (query->s == "path-raw")
+					ret.push_back(cell(cell::typeString, p->getRowPathRaw(index->i)));
 				else return gl.nil();
 				return ret.end();
 			}, components, cell::list(3), cell::typeIdentifier, cell::typeInt, cell::typeIdentifier);

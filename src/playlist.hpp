@@ -99,6 +99,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 		void addItem(const String &path) {
 			base::string gpath = path.toStdString();
+			base::string basePath = base::extractFilePath(gpath);
 			if (base::extractExt(gpath) == "cue") {
 				base::stream s = base::fs::load(gpath);
 				if (s.size() > 0) {
@@ -119,7 +120,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 									cdtext = track_get_cdtext(track);
 									const char *artist = nullptr;
 									const char *title = nullptr;
-									int trackIndex = 0;
+									int trackIndex = -1;
 									int start = 0;
 									int length = 0;
 									const char *date = nullptr;
@@ -144,16 +145,22 @@ class playlist : public Component, public FileDragAndDropTarget {
 									if (title == nullptr) title = "?";
 									if (date == nullptr) date = "?";
 
-									paths.append(path); // prevent duplicates?
+									// TODO: cue 0 length (to end) support
+
+									paths.append(base::strs(basePath, GE_DIR_SEPARATOR, path)); // prevent duplicates?
 									paths_i.push_back(paths.size());
 									talbum.append(defaultTitle);
 									tartist.append(artist);
 									ttitle.append(title);
 									if (base::strIs<int>(date))
 										tyear.push_back(base::fromStr<int>(date));
+									else if (base::strIs<int>(defaultDate))
+										tyear.push_back(base::fromStr<int>(defaultDate));
 									else tyear.push_back(0);
 									tseek.push_back({start, start + length});
-									ttrack.push_back(trackIndex);
+									if (trackIndex < 0)
+										ttrack.push_back(i);
+									else ttrack.push_back(trackIndex + 1);
 									talbum_i.push_back(talbum.size());
 									tartist_i.push_back(tartist.size());
 									ttitle_i.push_back(ttitle.size());
@@ -431,6 +438,10 @@ public:
 	}
 
 	base::string getSelectedRowPath() const {
+		return getRowPath(box.getSelectedRow());
+	}
+
+	base::string getSelectedRowPathRaw() const {
 		return model.getItemPath(box.getSelectedRow());
 	}
 
@@ -446,8 +457,21 @@ public:
 		box.selectRow(row);
 	}
 
-	base::string getRowPath(int32 i) const { return model.getItemPath(i); }
+	// gets path with cue timestamps
+	base::string getRowPath(int32 i) const {
+		auto seek = getRowSeek(i);
+
+		if (!seek.empty())
+			return base::strs(getRowPathRaw(i), ":", seek.toString());
+
+		return getRowPathRaw(i);
+	}
+
+	// gets file path only
+	base::string getRowPathRaw(int32 i) const { return model.getItemPath(i); }
+
 	base::string getRowId(int32 i) const { return model.getItemId(i); }
+
 	seekRange getRowSeek(int32 i) const { return model.getItemSeek(i); }
 
 	int32 getItemsCount() const {
