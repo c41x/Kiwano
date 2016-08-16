@@ -53,7 +53,6 @@ base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
 		ts.stop();
 		ts.setSource(nullptr);
 		frs = nullptr;
-
 		AudioFormatReader *r;
 
 		// ectract CUE information (if any)
@@ -64,8 +63,22 @@ base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
 			// is cue
 			int32 start = base::fromStr<int32>(result[2].str());
 			int32 end = base::fromStr<int32>(result[3].str());
+			int32 duration = end - start;
+
 			AudioFormatReader *tr = fm.createReaderFor(File(result[1].str()));
-			r = new AudioSubsectionReader(tr, start, end - start, true);
+
+			// start, end are in frames (1 frame = 1/75 second) - convert to sample
+			float samplesInOneSecond = tr->sampleRate; // AudioSubsectionReader will handle channels count
+			float startSecond = (float)start / 75.0f;
+			float durationSecond = (float)duration / 75.0f;
+			float startSample = startSecond * samplesInOneSecond;
+			float durationSamples = durationSecond * samplesInOneSecond;
+
+			// some CUE may have 0 length (play to end)
+			if (end <= start)
+				durationSamples = tr->lengthInSamples;
+
+			r = new AudioSubsectionReader(tr, (int)startSample, (int)durationSamples, true);
 		}
 		else {
 			// regular file
@@ -186,5 +199,4 @@ base::cell_t unbind_playback(base::lisp &gl, base::cell_t, base::cells_t &) {
 
 }
 
-// TODO: cue files
 // TODO: save playback settings

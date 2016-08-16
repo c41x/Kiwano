@@ -15,6 +15,7 @@ extern "C" {
 	#endif
 }
 
+// seek in frames (1 = 75 frames per second)
 struct seekRange {
 	int32 start;
 	int32 end;
@@ -144,8 +145,6 @@ class playlist : public Component, public FileDragAndDropTarget {
 									if (artist == nullptr) artist = "?";
 									if (title == nullptr) title = "?";
 									if (date == nullptr) date = "?";
-
-									// TODO: cue 0 length (to end) support
 
 									paths.append(base::strs(basePath, GE_DIR_SEPARATOR, path)); // prevent duplicates?
 									paths_i.push_back(paths.size());
@@ -548,3 +547,5 @@ public:
 // TODO: clear-columns
 // TODO: get-columns
 // TODO: custom drawing functions
+// TODO: CUE - do not add CUEd files
+// TODO: deleting subsection
