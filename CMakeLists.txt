@@ -19,7 +19,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 include_directories("${PROJECT_SOURCE_DIR}/JUCE")
-include_directories("${PROJECT_SOURCE_DIR}/sqlite")
 if(NOT WIN32)
   include_directories(${FREETYPE_INCLUDE_DIRS})
   include_directories(${OPENGL_INCLUDE_DIRS})
@@ -60,7 +59,6 @@ add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_basics/juce_audio_basics.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_utils/juce_audio_utils.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_formats/juce_audio_formats.cpp"
-  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp"
-  "${PROJECT_SOURCE_DIR}/sqlite/sqlite3.c")
+  "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp")
 
 install(TARGETS kiwano DESTINATION bin)
