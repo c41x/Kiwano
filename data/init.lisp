@@ -13,9 +13,9 @@
   (playlist-add-column id "year" "year" 70 50 1000)
   (playlist-add-column id "count" "0" 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
-						   selected-row-id
-						   selected-row-index
-						   component-name))
+                                                   selected-row-id
+                                                   selected-row-index
+                                                   component-name))
   id)
 
 (defun create-playlist-tabs ()
@@ -61,8 +61,8 @@
 (defun spawn-audio-options ()
   (if (not (tabs-index 'playlist-tabs "Audio Options"))
       (progn
-	(tabs-add-component 'playlist-tabs (audio-settings) "Audio Options" |0.9 0.5 0.5 0.9|)
-	(tabs-index 'playlist-tabs "Audio Options"))))
+        (tabs-add-component 'playlist-tabs (audio-settings) "Audio Options" |0.9 0.5 0.5 0.9|)
+        (tabs-index 'playlist-tabs "Audio Options"))))
 
 (defun get-interpreter ()
   (if (has-component 'interpreter)
@@ -72,15 +72,18 @@
 (defun spawn-interpreter ()
   (if (not (tabs-index 'playlist-tabs "Interpreter"))
       (progn
-	(tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
-	(tabs-index 'playlist-tabs "Interpreter"))))
+        (tabs-add-component 'playlist-tabs (get-interpreter) "Interpreter" |0.5 0.9 0.5 0.9|)
+        (tabs-index 'playlist-tabs "Interpreter"))))
+
+(defun create-new-playlist (name)
+  (tabs-add-component 'playlist-tabs
+                      (init-playlist (unique-id "playlist"))
+                      name
+                      |0.5 0.5 0.5 0.9|)
+  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
 
 (defun on-new-playlist ()
-  (tabs-add-component 'playlist-tabs
-		      (init-playlist (unique-id "playlist"))
-		      (input-box "Playlist Name" "Enter new playlist name: " "New Playlist")
-		      |0.5 0.5 0.5 0.9|)
-  (tabs-index 'playlist-tabs (- (tabs-count 'playlist-tabs) 1)))
+  (input-box "Playlist Name" "Enter new playlist name: " "New Playlist" 'create-new-playlist))
 
 (defun on-stop ()
   (playback-stop)
@@ -112,16 +115,16 @@
 (defun on-next ()
   (if (< (+ 1 current-index) (playlist-items-count current-playlist))
       (progn (setq current-index (+ 1 current-index))
-	     (play-selected))))
+             (play-selected))))
 
 (defun on-prev ()
   (if (>= (- current-index 1) 0)
       (progn (setq current-index (- current-index 1))
-	     (play-selected))))
+             (play-selected))))
 
 (defun on-rand ()
   (progn (setq current-index (rand (playlist-items-count current-playlist)))
-	 (play-selected)))
+         (play-selected)))
 
 (defun on-playlist-click (item-str item-id item-index playlist-name)
   (playback-set-file item-str)
@@ -137,19 +140,19 @@
       (start-timer 'update-slider 100)
     (stop-timer 'update-slider)
     (if (playback-finished)
-	(progn
-	  (defvar current-value (ctags-get current-id 0))
-	  (defvar first-play (ctags-get current-id 2))
-	  (if current-value
-		(ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
-	    (ctags-set current-id 0 1)) ;; init value
-	  (ctags-set current-id 3 (current-time)) ;; set timestamp
-	  (if (not first-play)
-	      (ctags-set current-id 2 (current-time))) ;; set first play date
-	  ;;(message-box "playback-changed callback" "playback finished")
-	  ;;(message-box "Current info" (strs current-playlist " : " current-index))
-	  (on-next)
-	  (repaint-component current-playlist)))))
+        (progn
+          (defvar current-value (ctags-get current-id 0))
+          (defvar first-play (ctags-get current-id 2))
+          (if current-value
+                (ctags-set current-id 0 (+ 1 (ctags-get current-id 0))) ;; increase value
+            (ctags-set current-id 0 1)) ;; init value
+          (ctags-set current-id 3 (current-time)) ;; set timestamp
+          (if (not first-play)
+              (ctags-set current-id 2 (current-time))) ;; set first play date
+          ;;(message-box "playback-changed callback" "playback finished")
+          ;;(message-box "Current info" (strs current-playlist " : " current-index))
+          (on-next)
+          (repaint-component current-playlist)))))
 
 (defun on-slider-up (time)
   (playback-seek time))
@@ -183,15 +186,19 @@
 (setq current-id (or (settings-get "current-index") 0))
 (setq current-playlist (or (settings-get "current-playlist") nil))
 (dolist e (or (settings-get "playlist-tabs") '())
-	;;(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
-	(tabs-add-component 'playlist-tabs
-			    (init-playlist (nth 0 e))
-			    (nth 1 e) |0.5 0.5 0.5 0.9|)
-	(playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
+        ;;(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
+        (tabs-add-component 'playlist-tabs
+                            (init-playlist (nth 0 e))
+                            (nth 1 e) |0.5 0.5 0.5 0.9|)
+        (playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
 
 ;; restore window layout and position
 (if (settings-get "main-wnd-state")
     (main-window-state (settings-get "main-wnd-state")))
+
+;; load volume
+(if (settings-get "volume")
+    (slider-value 'sl-gain (settings-get "volume")))
 
 ;; init audio settings
 (audio-settings)
@@ -200,11 +207,12 @@
 (defun on-exit ()
   (defvar tabs (tabs-get-components 'playlist-tabs 'playlist))
   (dolist e tabs
-	  (playlist-save (nth 0 e) (strs "playlists/" (nth 0 e))))
+          (playlist-save (nth 0 e) (strs "playlists/" (nth 0 e))))
   (settings-set "playlist-tabs" tabs)
   (settings-set "current-index" current-index)
   (settings-set "current-playlist" current-playlist)
   (settings-set "main-wnd-state" (main-window-state))
+  (settings-set "volume" (slider-value 'sl-gain))
   (ctags-save "playback-stats")
   (settings-save "settings")
   ;;(message-box "Exiting" "just exiting")
@@ -216,7 +224,7 @@
 
 ;; ;; filtered playlist test
 ;; (create-filtered-playlist 'playlist_0 'ppp
-;;			  (input-box "Search for:" "Enter query: " ""))
+;;                        (input-box "Search for:" "Enter query: " ""))
 ;; (playlist-add-column 'ppp "track" 'track 50 20 1000)
 ;; (playlist-add-column 'ppp "album" 'album 200 150 1000)
 ;; (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
@@ -227,17 +235,17 @@
 ;; (window-set-main-component 'search-window 'ppp)
 
 ;; TODO: replace current-playlist
-(defun on-f3 ()
-  (if (playlist-filter-enabled current-playlist)
-      (playlist-disable-filter current-playlist)
-    (playlist-enable-filter current-playlist (input-box "Quick search" "Query: " ""))))
+;; (defun on-f3 ()
+;;   (if (playlist-filter-enabled current-playlist)
+;;       (playlist-disable-filter current-playlist)
+;;     (playlist-enable-filter current-playlist (input-box "Quick search" "Query: " ""))))
 
-(defun on-n ()
-  (if (playlist-filter-enabled current-playlist)
-      (playlist-filter-next current-playlist)))
+;; (defun on-n ()
+;;   (if (playlist-filter-enabled current-playlist)
+;;       (playlist-filter-next current-playlist)))
 
-(bind-key "F3" 'on-f3)
-(bind-key "F4" 'on-n)
+;; (bind-key "F3" 'on-f3)
+;; (bind-key "F4" 'on-n)
 
 ;; make things visible
 (set-main-component 'l-main)
