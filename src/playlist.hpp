@@ -412,7 +412,7 @@ public:
     }
 
     void resized() override {
-        box.setBounds(getLocalBounds().reduced(0));
+        box.setBounds(getLocalBounds());
     }
 
     bool isInterestedInFileDrag(const StringArray& /*files*/) override {

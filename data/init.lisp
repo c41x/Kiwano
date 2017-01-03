@@ -55,7 +55,7 @@
 
 (create-layout 'l-main nil)
 (layout-add-component 'l-main (create-button-page) 20.0 20.0 20.0)
-(layout-add-component 'l-main (create-playlist-tabs) -1.0 -1.0 -1.0)
+(layout-add-component 'l-main (create-playlist-tabs) 200.0 -1.0 -1.0)
 
 ;; callbacks
 (defun spawn-audio-options ()
