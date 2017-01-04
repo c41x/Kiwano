@@ -61,4 +61,9 @@ add_executable(kiwano WIN32
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_formats/juce_audio_formats.cpp"
   "${PROJECT_SOURCE_DIR}/JUCE/modules/juce_audio_processors/juce_audio_processors.cpp")
 
+# copy configuration file to home settings when build
+add_custom_command(TARGET kiwano PRE_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_SOURCE_DIR}/data/init.lisp "~/.kiwano/init.lisp")
+
 install(TARGETS kiwano DESTINATION bin)
