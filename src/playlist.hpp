@@ -272,7 +272,7 @@ class playlist : public Component, public FileDragAndDropTarget {
 
         // GUI
         int getItemsCount() const {
-            return paths_i.size() - 1;
+            return paths_i.size() - 1 + 2;
         }
 
         int getNumRows() override {
@@ -301,11 +301,26 @@ class playlist : public Component, public FileDragAndDropTarget {
             g.setColour(Colours::black);
             g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
 
+            if (rowNumber == 3 || rowNumber == 20) {
+                g.setColour(Colours::black.withAlpha(0.2f));
+                g.fillRect(0, height / 2 - 1, width, 2);
+                return;
+            }
+
+            if (rowNumber > 20) {
+                rowNumber--;
+                rowNumber--;
+            }
+            else if (rowNumber > 3) {
+                rowNumber--;
+            }
+
             if (columnId < (int)columns.size() &&
-                rowNumber < getNumRows()) {
+                rowNumber < (getNumRows() - 2)) {
                 auto &c = columns[columnId];
                 if (c == "track")
-                    g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+                    //g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+                    g.drawText(base::toStr(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
                 else if (c == "album")
                     g.drawText(getItemAlbum(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
                 else if (c == "artist")
@@ -330,6 +345,47 @@ class playlist : public Component, public FileDragAndDropTarget {
             g.setColour(Colours::black.withAlpha(0.2f));
             g.fillRect(width - 1, 0, 1, height);
         }
+
+        class ttt : public ImageComponent {
+        public:
+            void resized() override {
+                std::cout << getLocalBounds().toString() << std::endl;
+            }
+
+            void paint (Graphics& g) override {
+                g.setOpacity (1.0f);
+                g.setImageResamplingQuality(Graphics::highResamplingQuality);
+                g.drawImageWithin (getImage(), 0, 0, getWidth(), getHeight(), getImagePlacement(), false);
+                //std::cout << getImagePlacement().toString() << std::endl;
+                std::cout << getWidth() << "/" << getHeight() << std::endl;
+                std::cout << "clip bounds: " << g.getClipBounds().toString() << std::endl;
+            }
+        };
+
+        Component* refreshComponentForCell(int rowNumber, int columnId, bool /*isRowSelected*/,
+                                           Component* existingComponentToUpdate) override {
+            return 0;
+            if (rowNumber == 4 && columns[columnId] == "cover") {
+                ttt *img = (ttt*)existingComponentToUpdate;
+
+                if (img == 0) {
+                    img = new ttt();
+                    img->setImage(ImageCache::getFromFile(File("/home/calx/Downloads/front.jpg")));
+                }
+
+                return img;
+            }
+
+            return 0;
+        }
+
+        ImageComponent *img;
+        TableListBox *box;
+        void listWasScrolled() override {
+            auto cp = box->getCellPosition(0, 4, true);
+            img->setTopLeftPosition(cp.getX(), cp.getY());
+        }
+
     };
 
     // progress dialog
@@ -355,8 +411,45 @@ class playlist : public Component, public FileDragAndDropTarget {
                 || fname.endsWith(".cue");
         }
 
+        void rscan(const String &fileName) {
+            std::cout << "> " << fileName << std::endl;
+            // scan for files in current directory
+            DirectoryIterator fi(File(fileName), false, "*", File::findFiles);
+            while (fi.next()) {
+                std::cout << "+ " << fi.getFile().getFullPathName() << std::endl;
+            }
+
+            // scan for subdirectories
+            DirectoryIterator di(File(fileName), false, "*", File::findDirectories);
+            while (di.next()) {
+                rscan(di.getFile().getFullPathName());
+            }
+        }
+
         void run() override {
             setProgress(-1.0);
+
+            // files first
+            for (auto &fileName : files) {
+                if (!File(fileName).isDirectory()) {
+                    if (isFileSupported(fileName)) {
+                        std::cout << "+ " << fileName << std::endl;
+                    }
+                }
+            }
+
+            // TODO: database must track directories separately (just sorting would be ok)
+            // TODO: make sorters
+
+            // then directories
+            for (auto &fileName : files) {
+                if (File(fileName).isDirectory()) {
+                    rscan(fileName);
+                }
+            }
+
+
+            /*
             int nth = 0;
             for (auto &fileName : files) {
                 if (File(fileName).isDirectory()) {
@@ -377,6 +470,8 @@ class playlist : public Component, public FileDragAndDropTarget {
                         m.addItem(fileName);
                 }
             }
+            */
+
             setStatusMessage("Done.");
         }
 
@@ -398,11 +493,20 @@ class playlist : public Component, public FileDragAndDropTarget {
         box.setRowHeight(18.0f); // TODO: LISP
         addAndMakeVisible(box);
     }
-
+    ImageComponent *img;
 public:
     playlist() : box("playlist-box", nullptr) {
         model.init();
         init();
+
+        this->addColumn("cover", "cover", 150, 150, 150);
+
+        img = new ImageComponent();
+        img->setImage(ImageCache::getFromFile(File("/home/calx/Downloads/front.jpg")));
+        img->setBounds(0, 150, 140, 140);
+        addAndMakeVisible(img);
+        model.img = img;
+        model.box = &box;
     }
 
     playlist(playlist &r, const base::string &filter)
