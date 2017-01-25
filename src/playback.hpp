@@ -67,6 +67,11 @@ base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
 
             AudioFormatReader *tr = fm.createReaderFor(File(result[1].str()));
 
+            if (tr == nullptr) {
+                gl.signalError(base::strs("file not found: ", fname->s));
+                return gl.nil();
+            }
+
             // start, end are in frames (1 frame = 1/75 second) - convert to sample
             float samplesInOneSecond = tr->sampleRate; // AudioSubsectionReader will handle channels count
             float startSecond = (float)start / 75.0f;
@@ -90,6 +95,7 @@ base::cell_t set_file(base::lisp &gl, base::cell_t c, base::cells_t &) {
             ts.setSource(frs, 32768, &thread, r->sampleRate);
             return gl.t();
         }
+
         gl.signalError(base::strs("file not found or file format not supported: ", fname->s));
         return gl.nil();
     }
