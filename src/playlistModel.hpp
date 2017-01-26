@@ -2,6 +2,7 @@
 #include "includes.hpp"
 #include "seekRange.hpp"
 #include "supportedFormats.hpp"
+#include "utils.hpp"
 
 #define TAGLIB_STATIC
 #include <taglib/fileref.h>
@@ -98,16 +99,25 @@ struct playlistModel : public TableListBoxModel {
             addItem(e, groupInfo);
         }
 
+        // sort by track
+        std::sort(std::begin(groupInfo), std::end(groupInfo),
+                  [](const itemInfo &a, const itemInfo &b) {
+                      return a.track < b.track;
+                  });
+
         // add results to database
         for (const auto &e : groupInfo) {
-            std::cout << "  " << e.path << std::endl;
-            std::cout << "  " << e.track << std::endl;
-            std::cout << "  " << e.album << std::endl;
-            std::cout << "  " << e.artist << std::endl;
-            std::cout << "  " << e.title << std::endl;
-            //std::cout << "  " << e.year << std::endl;
-            std::cout << "  " << e.seek.start << "-" << e.seek.end << std::endl;
-            std::cout << std::endl;
+            paths.append(e.path);
+            paths_i.push_back(paths.size());
+            talbum.append(e.album);
+            tartist.append(e.artist);
+            ttitle.append(e.title);
+            tyear.push_back(e.year);
+            tseek.push_back(e.seek);
+            ttrack.push_back(e.track);
+            talbum_i.push_back(talbum.size());
+            tartist_i.push_back(tartist.size());
+            ttitle_i.push_back(ttitle.size());
         }
     }
 
@@ -208,19 +218,10 @@ struct playlistModel : public TableListBoxModel {
                                         ii.track = track;
                                         ii.year = year;
                                         groupInfo.push_back(ii);
-                                        std::cout << "adding, cue: " << fname << " " << foundWithDifferentSeek << "/" << track << std::endl;
                                     }
                                     else {
-                                        std::cout << "refining, cue: " << fname << "/" << track << std::endl;
                                         // try to refine info
                                         itemInfo &ii = *item;
-
-                                        // TODO: move somewhere
-                                        auto longest = [](const base::string &a, const base::string &b) {
-                                            if (a.size() > b.size())
-                                                return a;
-                                            return b;
-                                        };
 
                                         // it is the same item, weird... duplicated CUE? refining info (the more entrophy - the better)
                                         ii.album = longest(ii.album, defaultTitle);
@@ -229,24 +230,6 @@ struct playlistModel : public TableListBoxModel {
                                         ii.track = std::max(ii.track, track);
                                         ii.year = std::max(ii.year, year);
                                     }
-
-                                    // paths.append(fname); // prevent duplicates?
-                                    // paths_i.push_back(paths.size());
-                                    // talbum.append(defaultTitle);
-                                    // tartist.append(artist);
-                                    // ttitle.append(title);
-                                    // if (base::strIs<int>(date))
-                                    //     tyear.push_back(base::fromStr<int>(date));
-                                    // else if (base::strIs<int>(defaultDate))
-                                    //     tyear.push_back(base::fromStr<int>(defaultDate));
-                                    // else tyear.push_back(0);
-                                    // tseek.push_back({start, start + length});
-                                    // if (trackIndex < 0)
-                                    //     ttrack.push_back(i);
-                                    // else ttrack.push_back(trackIndex + 1);
-                                    // talbum_i.push_back(talbum.size());
-                                    // tartist_i.push_back(tartist.size());
-                                    // ttitle_i.push_back(ttitle.size());
                                 }
                             }
                         }
@@ -278,20 +261,12 @@ struct playlistModel : public TableListBoxModel {
                 track = 0;
             }
 
-            // TODO: move somewhere
-            auto longest = [](const base::string &a, const base::string &b) {
-                if (a.size() > b.size())
-                    return a;
-                return b;
-            };
-
             auto item = std::find_if(std::begin(groupInfo), std::end(groupInfo),
                                      [&gpath](const itemInfo &it) {
                                          return gpath == it.path;
                                      });
 
             if (item != groupInfo.end()) {
-                std::cout << "refine file " << std::endl;
                 // refine (same as above)
                 itemInfo &ii = *item;
                 ii.album = longest(ii.album, album);
@@ -301,7 +276,6 @@ struct playlistModel : public TableListBoxModel {
                 ii.year = std::max(ii.year, year);
             }
             else {
-                std::cout << "add file " << std::endl;
                 itemInfo ii;
                 ii.path = gpath;
                 ii.album = album;

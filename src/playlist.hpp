@@ -19,8 +19,6 @@ class playlist : public Component, public FileDragAndDropTarget {
         addAndMakeVisible(box);
     }
 
-    ImageComponent *img;
-
 public:
 
     playlist() : box("playlist-box", nullptr) {
@@ -170,6 +168,5 @@ public:
 // TODO: clear-columns
 // TODO: get-columns
 // TODO: custom drawing functions
-// TODO: CUE - do not add CUEd files
 // TODO: deleting subsection
 // TODO: make sorters
