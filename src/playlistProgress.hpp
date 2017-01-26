@@ -32,7 +32,7 @@ public:
         while (fi.next()) {
             if (isFileSupported(fi.getFile().getFileName())) {
                 directoryContents.push_back(fi.getFile().getFullPathName());
-                std::cout << fi.getFile().getFullPathName() << std::endl;
+                std::cout << fi.getFile().getFullPathName().toStdString() << std::endl;
                 ++nth;
             }
         }

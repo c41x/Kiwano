@@ -1,6 +1,7 @@
 #pragma once
 #include "includes.hpp"
 #include "seekRange.hpp"
+#include "supportedFormats.hpp"
 
 #define TAGLIB_STATIC
 #include <taglib/fileref.h>
@@ -75,13 +76,42 @@ struct playlistModel : public TableListBoxModel {
         ttitle_i.push_back(0);
     }
 
+    struct itemInfo {
+        base::string album, artist, title, path;
+        seekRange seek;
+        uint32 year, track;
+    };
+
     void addItemGroup(const std::vector<String> &group) {
+        std::vector<itemInfo> groupInfo;
+
+        // cues first
+        std::vector<size_t> addedByCue;
+        for (const auto &f : group) {
+            if (f.endsWith(".cue")) {
+                addItem(f, groupInfo);
+            }
+        }
+
+        // then separate files, if not added by cue already
         for (const auto &e : group) {
-            addItem(e);
+            addItem(e, groupInfo);
+        }
+
+        // add results to database
+        for (const auto &e : groupInfo) {
+            std::cout << "  " << e.path << std::endl;
+            std::cout << "  " << e.track << std::endl;
+            std::cout << "  " << e.album << std::endl;
+            std::cout << "  " << e.artist << std::endl;
+            std::cout << "  " << e.title << std::endl;
+            //std::cout << "  " << e.year << std::endl;
+            std::cout << "  " << e.seek.start << "-" << e.seek.end << std::endl;
+            std::cout << std::endl;
         }
     }
 
-    void addItem(const String &path) {
+    void addItem(const String &path, std::vector<itemInfo> &groupInfo) {
         base::string gpath = path.toStdString();
         base::string basePath = base::extractFilePath(gpath);
         if (base::extractExt(gpath) == "cue") {
@@ -129,25 +159,96 @@ struct playlistModel : public TableListBoxModel {
                                 if (title == nullptr) title = "?";
                                 if (date == nullptr) date = "?";
 
-                                paths.append(base::strs(basePath, GE_DIR_SEPARATOR, path)); // prevent duplicates?
-                                paths_i.push_back(paths.size());
-                                talbum.append(defaultTitle);
-                                tartist.append(artist);
-                                ttitle.append(title);
-                                if (base::strIs<int>(date))
-                                    tyear.push_back(base::fromStr<int>(date));
-                                else if (base::strIs<int>(defaultDate))
-                                    tyear.push_back(base::fromStr<int>(defaultDate));
-                                else tyear.push_back(0);
-                                tseek.push_back({start, start + length});
-                                if (trackIndex < 0)
-                                    ttrack.push_back(i);
-                                else ttrack.push_back(trackIndex + 1);
-                                talbum_i.push_back(talbum.size());
-                                tartist_i.push_back(tartist.size());
-                                ttitle_i.push_back(ttitle.size());
+                                // search for valid path. often CUEs have invalid file extension (output from ExactAudioCopy)
+                                bool fileFound = true;
+                                auto fname = base::strs(basePath, GE_DIR_SEPARATOR, path);
+                                if (!base::fs::exists(fname)) {
+                                    fileFound = false;
+                                    for (const auto &f : supportedFormats::formats) {
+                                        fname = base::changeExt(fname, f);
+                                        if (base::fs::exists(fname)) {
+                                            fileFound = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (fileFound) {
+                                    uint32 track = trackIndex < 0 ? i : (trackIndex + 1);
+                                    uint32 year;
+                                    if (base::strIs<int>(date))
+                                        year = base::fromStr<int>(date);
+                                    else if (base::strIs<int>(defaultDate))
+                                        year = base::fromStr<int>(defaultDate);
+                                    else year = 0;
+
+                                    bool foundWithTheSamePath = false;
+                                    std::vector<itemInfo>::iterator item = groupInfo.end();
+                                    for (size_t j = 0; j < groupInfo.size(); ++j) {
+                                        if (fname == groupInfo[j].path) {
+                                            foundWithTheSamePath = true;
+
+                                            if (groupInfo[j].seek.start == start &&
+                                                groupInfo[j].seek.end == start + length) {
+                                                item = groupInfo.begin() + j;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    bool foundWithDifferentSeek = item == groupInfo.end();
+
+                                    if (!foundWithTheSamePath || foundWithDifferentSeek) {
+                                        itemInfo ii;
+                                        ii.path = fname;
+                                        ii.album = defaultTitle;
+                                        ii.artist = artist;
+                                        ii.seek = {start, start + length};
+                                        ii.title = title;
+                                        ii.track = track;
+                                        ii.year = year;
+                                        groupInfo.push_back(ii);
+                                        std::cout << "adding, cue: " << fname << " " << foundWithDifferentSeek << "/" << track << std::endl;
+                                    }
+                                    else {
+                                        std::cout << "refining, cue: " << fname << "/" << track << std::endl;
+                                        // try to refine info
+                                        itemInfo &ii = *item;
+
+                                        // TODO: move somewhere
+                                        auto longest = [](const base::string &a, const base::string &b) {
+                                            if (a.size() > b.size())
+                                                return a;
+                                            return b;
+                                        };
+
+                                        // it is the same item, weird... duplicated CUE? refining info (the more entrophy - the better)
+                                        ii.album = longest(ii.album, defaultTitle);
+                                        ii.artist = longest(ii.artist, artist);
+                                        ii.title = longest(ii.title, title);
+                                        ii.track = std::max(ii.track, track);
+                                        ii.year = std::max(ii.year, year);
+                                    }
+
+                                    // paths.append(fname); // prevent duplicates?
+                                    // paths_i.push_back(paths.size());
+                                    // talbum.append(defaultTitle);
+                                    // tartist.append(artist);
+                                    // ttitle.append(title);
+                                    // if (base::strIs<int>(date))
+                                    //     tyear.push_back(base::fromStr<int>(date));
+                                    // else if (base::strIs<int>(defaultDate))
+                                    //     tyear.push_back(base::fromStr<int>(defaultDate));
+                                    // else tyear.push_back(0);
+                                    // tseek.push_back({start, start + length});
+                                    // if (trackIndex < 0)
+                                    //     ttrack.push_back(i);
+                                    // else ttrack.push_back(trackIndex + 1);
+                                    // talbum_i.push_back(talbum.size());
+                                    // tartist_i.push_back(tartist.size());
+                                    // ttitle_i.push_back(ttitle.size());
+                                }
                             }
-                            return;
                         }
                     }
                 }
@@ -158,27 +259,59 @@ struct playlistModel : public TableListBoxModel {
             }
         }
         else {
-            paths.append(gpath);
-            paths_i.push_back(paths.size());
+            base::string album, artist, title;
+            uint32 track, year;
 
-            // read tags from file
             TagLib::FileRef file(path.toRawUTF8());
             if (!file.isNull() && file.tag()) {
-                talbum.append(file.tag()->album().toCString());
-                tartist.append(file.tag()->artist().toCString());
-                ttitle.append(file.tag()->title().toCString());
-                tyear.push_back(file.tag()->year());
-                tseek.push_back(seekRange());
-                ttrack.push_back(file.tag()->track());
+                album = file.tag()->album().toCString();
+                artist = file.tag()->artist().toCString();
+                title = file.tag()->title().toCString();
+                year = file.tag()->year();
+                track = file.tag()->track();
             }
             else {
-                tyear.push_back(0);
-                tseek.push_back(seekRange());
-                ttrack.push_back(0);
+                album = "";
+                artist = "";
+                title = "";
+                year = 0;
+                track = 0;
             }
-            talbum_i.push_back(talbum.size());
-            tartist_i.push_back(tartist.size());
-            ttitle_i.push_back(ttitle.size());
+
+            // TODO: move somewhere
+            auto longest = [](const base::string &a, const base::string &b) {
+                if (a.size() > b.size())
+                    return a;
+                return b;
+            };
+
+            auto item = std::find_if(std::begin(groupInfo), std::end(groupInfo),
+                                     [&gpath](const itemInfo &it) {
+                                         return gpath == it.path;
+                                     });
+
+            if (item != groupInfo.end()) {
+                std::cout << "refine file " << std::endl;
+                // refine (same as above)
+                itemInfo &ii = *item;
+                ii.album = longest(ii.album, album);
+                ii.artist = longest(ii.artist, artist);
+                ii.title = longest(ii.title, title);
+                ii.track = std::max(ii.track, track);
+                ii.year = std::max(ii.year, year);
+            }
+            else {
+                std::cout << "add file " << std::endl;
+                itemInfo ii;
+                ii.path = gpath;
+                ii.album = album;
+                ii.artist = artist;
+                ii.seek = seekRange();
+                ii.title = title;
+                ii.track = track;
+                ii.year = year;
+                groupInfo.push_back(ii);
+            }
         }
     }
 
@@ -218,8 +351,12 @@ struct playlistModel : public TableListBoxModel {
     }
 
     base::string getItemPath(size_t index) const {
-        return base::string(paths.begin() + paths_i[index],
-                            paths.begin() + paths_i[index + 1]);
+        return getItemPathR(index).str();
+    }
+
+    base::stringRange getItemPathR(size_t index) const {
+        return base::stringRange(paths.begin() + paths_i[index],
+                                 paths.begin() + paths_i[index + 1]);
     }
 
     uint getItemTrack(size_t index) const {

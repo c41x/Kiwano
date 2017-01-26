@@ -18,8 +18,11 @@ class playlist : public Component, public FileDragAndDropTarget {
         box.setRowHeight(18.0f); // TODO: LISP
         addAndMakeVisible(box);
     }
+
     ImageComponent *img;
+
 public:
+
     playlist() : box("playlist-box", nullptr) {
         model.init();
         init();
