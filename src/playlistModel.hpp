@@ -84,6 +84,9 @@ struct playlistModel : public TableListBoxModel {
     };
 
     void addItemGroup(const std::vector<String> &group) {
+        if (group.size() == 0)
+            return;
+
         std::vector<itemInfo> groupInfo;
 
         // cues first
@@ -99,25 +102,54 @@ struct playlistModel : public TableListBoxModel {
             addItem(e, groupInfo);
         }
 
-        // sort by track
-        std::sort(std::begin(groupInfo), std::end(groupInfo),
-                  [](const itemInfo &a, const itemInfo &b) {
-                      return a.track < b.track;
-                  });
+        if (groupInfo.size() > 0) {
+            // sort by track
+            std::sort(std::begin(groupInfo), std::end(groupInfo),
+                      [](const itemInfo &a, const itemInfo &b) {
+                          return a.track < b.track;
+                      });
 
-        // add results to database
-        for (const auto &e : groupInfo) {
-            paths.append(e.path);
+            // initialize group, first determine group name, then add dummy item mark
+            base::string *albumName = &groupInfo[0].album;
+
+            // check if all items have the same album
+            for (const auto &e : groupInfo) {
+                if (*albumName != e.album)
+                    albumName = nullptr;
+            }
+
+            // fallback name (directory name)
+            String folderName;
+            if (albumName == nullptr) {
+                folderName = group[0].upToLastOccurrenceOf("/", false, false).fromLastOccurrenceOf("/", false, false);
+            }
+
+            // adding dummy item (group mark)
             paths_i.push_back(paths.size());
-            talbum.append(e.album);
-            tartist.append(e.artist);
-            ttitle.append(e.title);
-            tyear.push_back(e.year);
-            tseek.push_back(e.seek);
-            ttrack.push_back(e.track);
+            if (albumName == nullptr)
+                talbum.append(folderName.toStdString());
+            else talbum.append(*albumName);
             talbum_i.push_back(talbum.size());
+            tyear.push_back(0);
+            tseek.push_back(seekRange());
+            ttrack.push_back(0);
             tartist_i.push_back(tartist.size());
             ttitle_i.push_back(ttitle.size());
+
+            // add results to database
+            for (const auto &e : groupInfo) {
+                paths.append(e.path);
+                paths_i.push_back(paths.size());
+                talbum.append(e.album);
+                tartist.append(e.artist);
+                ttitle.append(e.title);
+                tyear.push_back(e.year);
+                tseek.push_back(e.seek);
+                ttrack.push_back(e.track);
+                talbum_i.push_back(talbum.size());
+                tartist_i.push_back(tartist.size());
+                ttitle_i.push_back(ttitle.size());
+            }
         }
     }
 
@@ -366,7 +398,7 @@ struct playlistModel : public TableListBoxModel {
 
     // GUI
     int getItemsCount() const {
-        return paths_i.size() - 1 + 2;
+        return paths_i.size() - 1;
     }
 
     int getNumRows() override {
@@ -395,42 +427,36 @@ struct playlistModel : public TableListBoxModel {
         g.setColour(Colours::black);
         g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
 
-        if (rowNumber == 3 || rowNumber == 20) {
-            g.setColour(Colours::black.withAlpha(0.2f));
-            g.fillRect(0, height / 2 - 1, width, 2);
-            return;
-        }
-
-        if (rowNumber > 20) {
-            rowNumber--;
-            rowNumber--;
-        }
-        else if (rowNumber > 3) {
-            rowNumber--;
-        }
-
-        if (columnId < (int)columns.size() &&
-            rowNumber < (getNumRows() - 2)) {
-            auto &c = columns[columnId];
-            if (c == "track")
-                //g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
-                g.drawText(base::toStr(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-            else if (c == "album")
-                g.drawText(getItemAlbum(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-            else if (c == "artist")
-                g.drawText(getItemArtist(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-            else if (c == "title")
-                g.drawText(getItemTitle(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
-            else if (c == "year")
-                g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+        if (columnId < (int)columns.size() && rowNumber < getNumRows()) {
+            // group begin
+            if (getItemPath(rowNumber).empty()) {
+                g.setColour(juce::Colour((uint8)210, 210, 210, (uint8)255));
+                g.fillRect(0, 0, width, height);
+                g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred); // TODO: empty?
+                return;
+            }
             else {
-                // custom tag
-                if (base::strIs<int>(c)) {
-                    // search in ctags
-                    base::string hash = getItemId(rowNumber);
-                    auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
-                    if (!t.isNil()) {
-                        g.drawText(t.getStr(), 5, 0, width, height, Justification::centredLeft, true);
+                // item
+                auto &c = columns[columnId];
+                if (c == "track")
+                    g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+                else if (c == "album")
+                    g.drawText(getItemAlbum(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+                else if (c == "artist")
+                    g.drawText(getItemArtist(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+                else if (c == "title")
+                    g.drawText(getItemTitle(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
+                else if (c == "year")
+                    g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+                else {
+                    // custom tag
+                    if (base::strIs<int>(c)) {
+                        // search in ctags
+                        base::string hash = getItemId(rowNumber);
+                        auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
+                        if (!t.isNil()) {
+                            g.drawText(t.getStr(), 5, 0, width, height, Justification::centredLeft, true);
+                        }
                     }
                 }
             }
