@@ -275,6 +275,11 @@ public:
                     ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
                 else if (query->s == "path-raw")
                     ret.push_back(cell(cell::typeString, p->getRowPathRaw(index->i)));
+                else if (query->s == "is-track") {
+                    if (p->isTrack(index->i))
+                        return gl.t();
+                    return gl.nil();
+                }
                 else return gl.nil();
                 return ret.end();
             }, components, cell::list(3), cell::typeIdentifier, cell::typeInt, cell::typeIdentifier);

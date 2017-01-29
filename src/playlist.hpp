@@ -94,6 +94,8 @@ public:
 
     seekRange getRowSeek(int32 i) const { return model.getItemSeek(i); }
 
+    bool isTrack(int32 i) const { return model.isTrack(i); }
+
     int32 getItemsCount() const {
         return model.getItemsCount();
     }

@@ -365,6 +365,10 @@ struct playlistModel : public TableListBoxModel {
                                  paths.begin() + paths_i[index + 1]);
     }
 
+    bool isTrack(size_t index) const {
+        return getItemPathR(index).count() != 0;
+    }
+
     uint getItemTrack(size_t index) const {
         return ttrack[index];
     }
@@ -424,20 +428,27 @@ struct playlistModel : public TableListBoxModel {
     // components.
     void paintCell(Graphics& g, int rowNumber, int columnId,
                    int width, int height, bool /*rowIsSelected*/) override {
-        g.setColour(Colours::black);
-        g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
 
         if (columnId < (int)columns.size() && rowNumber < getNumRows()) {
+            auto &c = columns[columnId];
+
             // group begin
-            if (getItemPath(rowNumber).empty()) {
-                g.setColour(juce::Colour((uint8)210, 210, 210, (uint8)255));
+            if (!isTrack(rowNumber)) {
+                g.setColour(Colour((uint8)210, 210, 210, (uint8)255));
+                g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::bold));
                 g.fillRect(0, 0, width, height);
-                g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred); // TODO: empty?
+
+                if (c == "album") {
+                    g.setColour(Colours::black);
+                    g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred, true);
+                }
                 return;
             }
             else {
+                g.setColour(Colours::black);
+                g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
+
                 // item
-                auto &c = columns[columnId];
                 if (c == "track")
                     g.drawText(base::toStr(getItemTrack(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
                 else if (c == "album")
