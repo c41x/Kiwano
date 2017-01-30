@@ -168,6 +168,8 @@ public:
         gl.addProcedure("unbind-key", std::bind(&MainWindow::unbind_key, this, _1, _2));
         gl.addProcedure("main-window-state", std::bind(&MainWindow::main_window_state, this, _1, _2));
         gl.addProcedure("copy-file", std::bind(&MainWindow::copy_file, this, _1, _2));
+        gl.addProcedure("show-directory-in-explorer", std::bind(&MainWindow::show_directory_in_explorer, this, _1, _2));
+        gl.addProcedure("extract-file-path", std::bind(&MainWindow::extract_file_path, this, _1, _2));
 
         // exit handler
         gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
@@ -304,6 +306,7 @@ public:
             }, base::cell::listRange(0, 1), base::cell::typeString);
     }
 
+    // (copy-file (string)from (string)to)
     base::cell_t copy_file(base::cell_t c, base::cells_t &) {
         return fxValidateSkeleton(gl, "copy-file", c, [this, c]() -> auto {
                 const auto &from = c + 1;
@@ -311,6 +314,30 @@ public:
                 base::fs::store(to->s, base::fs::load(from->s));
                 return gl.t();
             }, base::cell::list(2), base::cell::typeString, base::cell::typeString);
+    }
+
+    // (show-directory-in-explorer (string)dir)
+    base::cell_t show_directory_in_explorer(base::cell_t c, base::cells_t &) {
+        return fxValidateSkeleton(gl, "show-directory-in-explorer", c, [this, c]() -> auto {
+                const auto &path = c + 1;
+                #if defined(GE_PLATFORM_LINUX)
+                std::system(base::strs("xdg-open \"", path->s, "\"").c_str());
+                #elif defined(GE_PLATFORM_WINDOWS)
+                ShellExecute(NULL, "open", path->s.c_str(), NULL, NULL, SW_SHOWMINIMIZED);
+                #else
+                #error "platform not supported"
+                #endif
+                return gl.t();
+            }, base::cell::list(1), base::cell::typeString);
+    }
+
+    // (extract-file-path (string)dir)
+    base::cell_t extract_file_path(base::cell_t c, base::cells_t &ret) {
+        return fxValidateSkeleton(gl, "extract-file-path", c, [this, c, &ret]() -> auto {
+                const auto &path = c + 1;
+                ret.push_back(base::cell(base::extractFilePath(path->s)));
+                return ret.end();
+            }, base::cell::list(1), base::cell::typeString);
     }
 
     void cleanup() {
@@ -376,7 +403,6 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: consider fully manual audio settings (as additional interface or replace current one)
 // TODO: audio buffer size settings load/store
 // TODO: playlist configuration
-// TODO: playlist groups
 // TODO: playlist image
 // TODO: remove playlist-get-selected?
 // TODO: copy-file with new name
@@ -394,4 +420,3 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: sorting
 // TODO: crashfix on close (could not reproduce)
 // TODO: rename playlist tab
-// TODO: open directory at point
