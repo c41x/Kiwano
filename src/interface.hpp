@@ -582,7 +582,7 @@ public:
                     return index;
                 }
 
-                // for string
+                // for string (tab string caption)
                 int ii = t->selectTabByName(index->s);
                 if (ii != -1) {
                     ret.push_back(cell(ii));
@@ -590,6 +590,32 @@ public:
                 }
                 return gl.nil();
             }, components, cell::listRange(1, 2), cell::typeIdentifier, cell::anyOf(cell::typeInt, cell::typeString));
+    }
+
+    // (tabs-index-component (id)tabs (id|optional)index)
+    base::cell_t tabs_index_component(base::cell_t c, base::cells_t &ret) {
+        using namespace base;
+        return fxValidateAccess("tabs-index-component", c, [c, this, &ret](Component *e) -> auto {
+                tabs *t = reinterpret_cast<tabs*>(e);
+
+                // getter
+                if (c->listSize() == 1) {
+                    ret.push_back(cell(cell::typeIdentifier, t->getTabContentComponent(t->getCurrentTabIndex())->getComponentID().toStdString()));
+                    return ret.end();
+                }
+
+                // setter
+                const auto &id = c + 2;
+                for (int i = 0; i < t->getNumTabs(); ++i) {
+                    auto tt = t->getTabContentComponent(i);
+                    if (tt->getComponentID() == id->s) {
+                        t->setCurrentTabIndex(i);
+                        return gl.t();
+                    }
+                }
+
+                return gl.nil();
+            }, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeIdentifier);
     }
 
     // (tabs-count (id)tabs)

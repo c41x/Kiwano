@@ -128,6 +128,7 @@ public:
         gl.addProcedure("tabs-get-components", std::bind(&user_interface::tabs_get_components, &itf, _1, _2));
         gl.addProcedure("tabs-remove", std::bind(&user_interface::tabs_remove, &itf, _1, _2));
         gl.addProcedure("tabs-index", std::bind(&user_interface::tabs_index, &itf, _1, _2));
+        gl.addProcedure("tabs-index-component", std::bind(&user_interface::tabs_index_component, &itf, _1, _2));
 
         // window
         gl.addProcedure("create-window", std::bind(&user_interface::create_window, &itf, _1, _2));

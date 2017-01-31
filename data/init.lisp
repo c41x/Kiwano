@@ -1,4 +1,4 @@
-(defvar current-id "")
+(defvar current-id "") ;; item unique ID (you may wish to use it to tracks unique ID key)
 (defvar current-index 0)
 (defvar current-playlist nil)
 
@@ -126,6 +126,9 @@
   (progn (setq current-index (rand (playlist-items-count current-playlist)))
          (play-selected)))
 
+(defun test-is-track ()
+  (playlist-get current-playlist current-index 'is-track))
+
 (defun on-playlist-click (item-str item-id item-index playlist-name)
   (playback-set-file item-str)
   (setq current-id item-id)
@@ -134,6 +137,8 @@
   (slider-range 'sl-seek 0.0 (playback-length))
   (component-enabled 'sl-seek t)
   (playback-start))
+
+;; show explorer test (show-directory-in-explorer (extract-file-path "/home/calx/Downloads/somefile.png"))
 
 (defun playback-changed ()
   (if (playback-is-playing)
@@ -183,7 +188,7 @@
 (settings-load "settings")
 
 ;; load playlist from settings
-(setq current-id (or (settings-get "current-index") 0))
+(setq current-index (or (settings-get "current-index") 0))
 (setq current-playlist (or (settings-get "current-playlist") nil))
 (dolist e (or (settings-get "playlist-tabs") '())
         ;;(message-box "playlist element: " (strs (nth 0 e) " / " (nth 1 e)))
@@ -191,6 +196,12 @@
                             (init-playlist (nth 0 e))
                             (nth 1 e) |0.5 0.5 0.5 0.9|)
         (playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
+
+;; restore playlist tab and index
+(if current-playlist
+    (progn
+      (tabs-index-component 'playlist-tabs current-playlist)
+      (playlist-select current-playlist current-index)))
 
 ;; restore window layout and position
 (if (settings-get "main-wnd-state")
@@ -222,30 +233,39 @@
 ;; bind hotkeys
 (bind-hotkey "Pause" "" 'toggle-playback)
 
-;; ;; filtered playlist test
-;; (create-filtered-playlist 'playlist_0 'ppp
-;;                        (input-box "Search for:" "Enter query: " ""))
-;; (playlist-add-column 'ppp "track" 'track 50 20 1000)
-;; (playlist-add-column 'ppp "album" 'album 200 150 1000)
-;; (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
-;; (playlist-add-column 'ppp "title" 'title 200 150 1000)
-;; (playlist-add-column 'ppp "year" 'year 70 50 1000)
-;; (playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
-;; (create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
-;; (window-set-main-component 'search-window 'ppp)
+;; filtered playlist test
+(defun search (query)
+  (create-filtered-playlist current-playlist 'ppp query)
+  (playlist-add-column 'ppp "track" "track" 50 20 1000)
+  (playlist-add-column 'ppp "album" "album" 200 150 1000)
+  (playlist-add-column 'ppp "artist" "artist" 200 150 1000)
+  (playlist-add-column 'ppp "title" "title" 200 150 1000)
+  (playlist-add-column 'ppp "year" "year" 70 50 1000)
+  (playlist-add-column 'ppp "count" "0" 50 20 1000)
+  ;;(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
+  (create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
+  (window-set-main-component 'search-window 'ppp))
+
+(defun qqq ()
+  (input-box "Search for:" "Enter query: " "" 'search))
+
+;;(bind-key "F4" 'qqq)
 
 ;; TODO: replace current-playlist
-;; (defun on-f3 ()
-;;   (if (playlist-filter-enabled current-playlist)
-;;       (playlist-disable-filter current-playlist)
-;;     (playlist-enable-filter current-playlist (input-box "Quick search" "Query: " ""))))
+(defun enable-filter (query)
+  (playlist-enable-filter current-playlist query))
 
-;; (defun on-n ()
-;;   (if (playlist-filter-enabled current-playlist)
-;;       (playlist-filter-next current-playlist)))
+(defun on-f3 ()
+  (if (playlist-filter-enabled current-playlist)
+      (playlist-disable-filter current-playlist)
+    (input-box "Quick search" "Query: " "" 'enable-filter)))
 
-;; (bind-key "F3" 'on-f3)
-;; (bind-key "F4" 'on-n)
+(defun on-n ()
+  (if (playlist-filter-enabled current-playlist)
+      (playlist-filter-next current-playlist)))
+
+(bind-key "F3" 'on-f3)
+(bind-key "F4" 'on-n)
 
 ;; make things visible
 (set-main-component 'l-main)
