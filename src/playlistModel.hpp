@@ -28,30 +28,27 @@ struct playlistModel : public TableListBoxModel {
     base::string filterQuery;
     bool filterEnabled;
 
-    playlistModel(playlistModel &r, const base::string &filter) {
+    playlistModel(playlistModel &r, const base::string &filter) : filterEnabled(false) {
         // reset
-        paths_i = {0};
-        talbum_i = {0};
-        tartist_i = {0};
-        ttitle_i = {0};
         init();
 
         // fill (filter)
         const int items = r.getItemsCount();
-        base::string f = base::lowerCase(filter);
         for (int i = 0; i < items; ++i) {
-            if (filterMatch(i, f)) {
-                paths.append(r.getItemPath(i));
-                talbum.append(r.getItemAlbum(i));
-                tartist.append(r.getItemArtist(i));
-                ttitle.append(r.getItemTitle(i));
-                tyear.push_back(r.getItemYear(i));
-                tseek.push_back(r.getItemSeek(i));
-                ttrack.push_back(r.getItemTrack(i));
-                paths_i.push_back(paths.size());
-                talbum_i.push_back(talbum.size());
-                tartist_i.push_back(tartist.size());
-                ttitle_i.push_back(ttitle.size());
+            if (r.isTrack(i)) {
+                if (r.filterMatch(i, filter)) {
+                    paths.append(r.getItemPath(i));
+                    talbum.append(r.getItemAlbum(i));
+                    tartist.append(r.getItemArtist(i));
+                    ttitle.append(r.getItemTitle(i));
+                    tyear.push_back(r.getItemYear(i));
+                    tseek.push_back(r.getItemSeek(i));
+                    ttrack.push_back(r.getItemTrack(i));
+                    paths_i.push_back(paths.size());
+                    talbum_i.push_back(talbum.size());
+                    tartist_i.push_back(tartist.size());
+                    ttitle_i.push_back(ttitle.size());
+                }
             }
         }
     }
@@ -460,6 +457,7 @@ struct playlistModel : public TableListBoxModel {
                 else if (c == "year")
                     g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
                 else {
+                    // TODO: eval on paint event on lisp side
                     // custom tag
                     if (base::strIs<int>(c)) {
                         // search in ctags
