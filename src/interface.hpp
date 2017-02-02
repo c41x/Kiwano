@@ -555,10 +555,12 @@ public:
                 const auto &caption = c + 3;
                 const auto &color = c + 4;
                 tabs *ptabs = reinterpret_cast<tabs*>(tab);
+                tabContentWrapper *cc = new tabContentWrapper();
+                cc->addAndMakeVisible(com);
                 ptabs->addTab(caption->s, Colour::fromFloatRGBA(color->v4[0],
                                                                 color->v4[1],
                                                                 color->v4[2],
-                                                                color->v4[3]), com, false);
+                                                                color->v4[3]), cc, true);
                 return gl.t();
             }, components, cell::list(4), cell::typeIdentifier, cell::typeIdentifier, cell::typeString, cell::typeVector);
     }
@@ -618,6 +620,19 @@ public:
             }, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeIdentifier);
     }
 
+    // (tabs-set-component (id)tabs (id)component (int)index)
+    base::cell_t tabs_set_component(base::cell_t c, base::cells_t &ret) {
+        using namespace base;
+        return fxValidateAccess2("tabs-set-component", c, [c, this](Component *tab, Component *com) -> auto {
+                const auto &index = c + 3;
+                tabs *ptabs = reinterpret_cast<tabs*>(tab);
+                ptabs->getTabContentComponent(index->i)->removeAllChildren();
+                ptabs->getTabContentComponent(index->i)->addAndMakeVisible(com);
+                ptabs->getTabContentComponent(index->i)->resized();
+                return gl.t();
+            }, components, cell::list(3), cell::typeIdentifier, cell::typeIdentifier, cell::typeInt);
+    }
+
     // (tabs-count (id)tabs)
     base::cell_t tabs_count(base::cell_t c, base::cells_t &ret) {
         return fxValidateAccess("tabs-count", c, [&ret, this](Component *e) -> auto {
@@ -637,7 +652,8 @@ public:
                 auto &head = ret.back();
                 auto tabNames = t->getTabNames();
                 for (int i = 0; i < t->getNumTabs(); ++i) {
-                    auto tt = t->getTabContentComponent(i);
+                    auto ttt = t->getTabContentComponent(i);
+                    auto tt = ttt->getChildComponent(0);
                     if (tt->getName() == type->s) {
                         ret.push_back(cell::list(2));
                         ret.push_back(cell(cell::typeIdentifier, tt->getComponentID().toStdString()));

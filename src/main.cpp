@@ -129,6 +129,7 @@ public:
         gl.addProcedure("tabs-remove", std::bind(&user_interface::tabs_remove, &itf, _1, _2));
         gl.addProcedure("tabs-index", std::bind(&user_interface::tabs_index, &itf, _1, _2));
         gl.addProcedure("tabs-index-component", std::bind(&user_interface::tabs_index_component, &itf, _1, _2));
+        gl.addProcedure("tabs-set-component", std::bind(&user_interface::tabs_set_component, &itf, _1, _2));
 
         // window
         gl.addProcedure("create-window", std::bind(&user_interface::create_window, &itf, _1, _2));
@@ -406,10 +407,9 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: playlist configuration
 // TODO: playlist image
 // TODO: remove playlist-get-selected?
-// TODO: copy-file with new name
 // TODO: file manipulation?
-// TODO: repaint-row?
-// TODO: global keybinding
+// TODO: repaint-row? (for what?)
+// TODO: global keybinding (application wise)
 // TODO: bug: de/serialization of playlists when audio options or interpreters are open
 // TODO: stop timer when no binds (need update granite API)
 // TODO: windows positioning (center screen) (bounds-center-screen w h)

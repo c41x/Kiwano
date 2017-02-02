@@ -2,9 +2,18 @@
 #include "includes.hpp"
 #include "playlist.hpp"
 
+class tabContentWrapper : public Component {
+public:
+    void resized() override {
+        getChildComponent(0)->setBounds(getLocalBounds());
+    }
+};
+
 class tabs : public TabbedComponent {
 public:
     tabs(TabbedButtonBar::Orientation o) : TabbedComponent(o) {}
+
+    // TODO: tab by id
 
     int selectTabByName(const base::string &name) {
         StringArray captions = getTabNames();
