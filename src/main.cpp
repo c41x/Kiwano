@@ -2,6 +2,7 @@
 #include "interface.hpp"
 #include "customTags.hpp"
 #include "settings.hpp"
+#include "graphics.hpp"
 
 namespace ProjectInfo {
 const char* const projectName = "Kiwano";
@@ -175,6 +176,9 @@ public:
 
         // exit handler
         gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
+
+        // graphics
+        gl.addProcedure("g-draw-text", std::bind(&graphics::drawText, std::ref(gl), _1, _2));
 
         // prepare settings folder
         base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
@@ -396,7 +400,6 @@ public:
 
 START_JUCE_APPLICATION(KiwanoApplication);
 
-// TODO: load default config
 // TODO: lisp include
 // TODO: shortcut to open interpreter
 // TODO: error log/console window (only for lisp?)

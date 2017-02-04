@@ -3,6 +3,7 @@
 #include "seekRange.hpp"
 #include "supportedFormats.hpp"
 #include "utils.hpp"
+#include "graphics.hpp"
 
 #define TAGLIB_STATIC
 #include <taglib/fileref.h>
@@ -28,7 +29,11 @@ struct playlistModel : public TableListBoxModel {
     base::string filterQuery;
     bool filterEnabled;
 
-    playlistModel(playlistModel &r, const base::string &filter) : filterEnabled(false) {
+    base::lisp &gl;
+
+    playlistModel(playlistModel &r, const base::string &filter, base::lisp &_gl) :
+            filterEnabled(false),
+            gl(_gl) {
         // reset
         init();
 
@@ -53,7 +58,7 @@ struct playlistModel : public TableListBoxModel {
         }
     }
 
-    playlistModel() : filterEnabled(false) {}
+    playlistModel(base::lisp &_gl) : filterEnabled(false), gl(_gl) {}
     ~playlistModel() {}
 
     void init() {
@@ -457,16 +462,13 @@ struct playlistModel : public TableListBoxModel {
                 else if (c == "year")
                     g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
                 else {
-                    // TODO: eval on paint event on lisp side
-                    // custom tag
-                    if (base::strIs<int>(c)) {
-                        // search in ctags
-                        base::string hash = getItemId(rowNumber);
-                        auto t = customTags::getCustomTag(hash, base::fromStr<int>(c));
-                        if (!t.isNil()) {
-                            g.drawText(t.getStr(), 5, 0, width, height, Justification::centredLeft, true);
-                        }
-                    }
+                    // bind graphics
+                    graphics::g = &g;
+
+                    // custom code (pass gl here?, graphics bind)
+                    gl.eval(base::strs("(", c, " ", rowNumber, " ", width, " ", height, ")"));
+
+                    graphics::g = nullptr;
                 }
             }
         }

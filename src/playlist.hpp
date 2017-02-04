@@ -8,6 +8,7 @@
 class playlist : public Component, public FileDragAndDropTarget {
     TableListBox box;
     playlistModel model;
+    base::lisp &gl;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
     void init() {
@@ -21,14 +22,15 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 public:
 
-    playlist() : box("playlist-box", nullptr) {
+    playlist(base::lisp &_gl) : box("playlist-box", nullptr), model(_gl), gl(_gl) {
         model.init();
         init();
     }
 
-    playlist(playlist &r, const base::string &filter)
+    playlist(playlist &r, const base::string &filter, base::lisp &_gl)
             : box("playlist-box", nullptr),
-              model(r.model, filter) {
+              model(r.model, filter, _gl),
+              gl(_gl) {
         init();
     }
 

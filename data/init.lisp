@@ -2,16 +2,26 @@
 (defvar current-index 0)
 (defvar current-playlist nil)
 
+(defun playlist-column-count (row width height)
+  (defvar id (playlist-get current-playlist row 'id))
+  (defvar play-count (ctags-get id 0))
+  (defvar rank (ctags-get id 1))
+  (defvar date (ctags-get id 2))
+  (if (or play-count rank)
+      (g-draw-text (strs "count: " (if play-count play-count "?")
+                         " rank: " (if rank rank "?")
+                         " " (if date (time-format date "%H:%M:%S %e-%m-%Y") "")) 0 0 width height)))
+
 ;; for given id returns new playlist
 (defun init-playlist (id)
   ;;(message-box (strs "creating playlist: " id) "asdf")
   (create-playlist id)
-  (playlist-add-column id "track" "track" 50 20 1000)
-  (playlist-add-column id "album" "album" 200 150 1000)
-  (playlist-add-column id "artist" "artist" 200 150 1000)
-  (playlist-add-column id "title" "title" 200 150 1000)
-  (playlist-add-column id "year" "year" 70 50 1000)
-  (playlist-add-column id "count" "0" 50 20 1000)
+  (playlist-add-column id "track" 'track 50 20 1000)
+  (playlist-add-column id "album" 'album 200 150 1000)
+  (playlist-add-column id "artist" 'artist 200 150 1000)
+  (playlist-add-column id "title" 'title 200 150 1000)
+  (playlist-add-column id "year" 'year 70 50 1000)
+  (playlist-add-column id "count" 'playlist-column-count 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
                                                    selected-row-id
                                                    selected-row-index
@@ -197,16 +207,6 @@
                             (nth 1 e) |0.5 0.5 0.5 0.9|)
         (playlist-load (nth 0 e) (strs "playlists/" (nth 0 e))))
 
-;; restore playlist tab and index
-(if current-playlist
-    (progn
-      (tabs-index-component 'playlist-tabs current-playlist)
-      (playlist-select current-playlist current-index)))
-
-;; restore window layout and position
-(if (settings-get "main-wnd-state")
-    (main-window-state (settings-get "main-wnd-state")))
-
 ;; load volume
 (if (settings-get "volume")
     (slider-value 'sl-gain (settings-get "volume")))
@@ -236,20 +236,22 @@
 ;; filtered playlist test
 (defun search (query)
   (create-filtered-playlist current-playlist 'ppp query)
-  (playlist-add-column 'ppp "track" "track" 50 20 1000)
-  (playlist-add-column 'ppp "album" "album" 200 150 1000)
-  (playlist-add-column 'ppp "artist" "artist" 200 150 1000)
-  (playlist-add-column 'ppp "title" "title" 200 150 1000)
-  (playlist-add-column 'ppp "year" "year" 70 50 1000)
-  (playlist-add-column 'ppp "count" "0" 50 20 1000)
+  (playlist-add-column 'ppp "track" 'track 50 20 1000)
+  (playlist-add-column 'ppp "album" 'album 200 150 1000)
+  (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
+  (playlist-add-column 'ppp "title" 'title 200 150 1000)
+  (playlist-add-column 'ppp "year" 'year 70 50 1000)
+  ;;(playlist-add-column 'ppp "count" "0" 50 20 1000)
   ;;(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
-  (create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
-  (window-set-main-component 'search-window 'ppp))
+  ;;(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
+  ;;(window-set-main-component 'search-window 'ppp)
+  (tabs-set-component 'playlist-tabs 'ppp 0)
+  )
 
 (defun qqq ()
   (input-box "Search for:" "Enter query: " "" 'search))
 
-;;(bind-key "F4" 'qqq)
+(bind-key "F4" 'qqq)
 
 ;; TODO: replace current-playlist
 (defun enable-filter (query)
@@ -264,9 +266,19 @@
   (if (playlist-filter-enabled current-playlist)
       (playlist-filter-next current-playlist)))
 
-(bind-key "F3" 'on-f3)
-(bind-key "F4" 'on-n)
+;; (bind-key "F3" 'on-f3)
+;; (bind-key "F4" 'on-n)
 
 ;; make things visible
 (set-main-component 'l-main)
 (refresh-interface)
+
+;; restore playlist tab and index
+(if current-playlist
+    (progn
+      (tabs-index-component 'playlist-tabs current-playlist)
+      (playlist-select current-playlist current-index)))
+
+;; restore window layout and position
+(if (settings-get "main-wnd-state")
+    (main-window-state (settings-get "main-wnd-state")))
