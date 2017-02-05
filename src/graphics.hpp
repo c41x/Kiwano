@@ -17,6 +17,18 @@ base::cell_t drawText(base::lisp &gl, base::cell_t c, base::cells_t &) {
             return gl.t();
         }, base::cell::list(5), base::cell::typeString,
         base::cell::typeInt, base::cell::typeInt, base::cell::typeInt, base::cell::typeInt);
+    // TODO: justification (bit operations for glisp?)
+}
+
+base::cell_t setColor(base::lisp &gl, base::cell_t c, base::cells_t &) {
+    return fxValidateSkeleton(gl, "g-set-color", c, [&gl, c]() -> auto {
+            const auto &color = c + 1;
+            g->setColour(Colour((uint8)(color->v4[0] * 255.0f),
+                                (uint8)(color->v4[1] * 255.0f),
+                                (uint8)(color->v4[2] * 255.0f),
+                                (uint8)(color->v4[3] * 255.0f)));
+            return gl.t();
+        }, base::cell::list(1), base::cell::typeVector);
 }
 
 }

@@ -7,6 +7,7 @@
   (defvar play-count (ctags-get id 0))
   (defvar rank (ctags-get id 1))
   (defvar date (ctags-get id 2))
+  (g-set-color |1.0 0.4 0.0 1.0|)
   (if (or play-count rank)
       (g-draw-text (strs "count: " (if play-count play-count "?")
                          " rank: " (if rank rank "?")

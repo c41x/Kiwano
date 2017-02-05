@@ -179,6 +179,7 @@ public:
 
         // graphics
         gl.addProcedure("g-draw-text", std::bind(&graphics::drawText, std::ref(gl), _1, _2));
+        gl.addProcedure("g-set-color", std::bind(&graphics::setColor, std::ref(gl), _1, _2));
 
         // prepare settings folder
         base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
