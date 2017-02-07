@@ -13,11 +13,12 @@ base::cell_t drawText(base::lisp &gl, base::cell_t c, base::cells_t &) {
             const auto &y = c + 3;
             const auto &w = c + 4;
             const auto &h = c + 5;
-            g->drawText(str->s, x->i, y->i, w->i, h->i, Justification::centredLeft, true);
+            const auto &just = c + 6;
+            g->drawText(str->s, x->i, y->i, w->i, h->i, just->i, true);
             return gl.t();
-        }, base::cell::list(5), base::cell::typeString,
-        base::cell::typeInt, base::cell::typeInt, base::cell::typeInt, base::cell::typeInt);
-    // TODO: justification (bit operations for glisp?)
+        }, base::cell::list(6), base::cell::typeString,
+        base::cell::typeInt, base::cell::typeInt, base::cell::typeInt, base::cell::typeInt,
+        base::cell::typeInt);
 }
 
 base::cell_t setColor(base::lisp &gl, base::cell_t c, base::cells_t &) {

@@ -181,6 +181,15 @@ public:
         gl.addProcedure("g-draw-text", std::bind(&graphics::drawText, std::ref(gl), _1, _2));
         gl.addProcedure("g-set-color", std::bind(&graphics::setColor, std::ref(gl), _1, _2));
 
+        // constants
+        gl.addVariable("justification-left", base::cell((int32)Justification::left));
+        gl.addVariable("justification-right", base::cell((int32)Justification::right));
+        gl.addVariable("justification-horizontally-centred", base::cell((int32)Justification::horizontallyCentred));
+        gl.addVariable("justification-top", base::cell((int32)Justification::top));
+        gl.addVariable("justification-bottom", base::cell((int32)Justification::bottom));
+        gl.addVariable("justification-vertically-centred", base::cell((int32)Justification::verticallyCentred));
+        gl.addVariable("justification-horizontally-centred", base::cell((int32)Justification::horizontallyCentred));
+
         // prepare settings folder
         base::string appPath = base::fs::getUserDirectory() + "/.kiwano";
         base::fs::createFolderTree(appPath);
