@@ -11,7 +11,8 @@
   (if (or play-count rank)
       (g-draw-text (strs "count: " (if play-count play-count "?")
                          " rank: " (if rank rank "?")
-                         " " (if date (time-format date "%H:%M:%S %e-%m-%Y") "")) 0 0 width height)))
+                         " " (if date (time-format date "%H:%M:%S %e-%m-%Y") ""))
+                   0 0 width height justification-right)))
 
 ;; for given id returns new playlist
 (defun init-playlist (id)
