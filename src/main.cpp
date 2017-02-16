@@ -434,3 +434,5 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: sorting
 // TODO: crashfix on close (could not reproduce)
 // TODO: rename playlist tab
+// TODO: serialize time in playlist
+// TODO: if no tags in file - grab filename

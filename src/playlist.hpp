@@ -22,15 +22,17 @@ class playlist : public Component, public FileDragAndDropTarget {
 
 public:
 
-    playlist(base::lisp &_gl) : box("playlist-box", nullptr), model(_gl), gl(_gl) {
+    playlist(base::lisp &_gl, base::string name) : box("playlist-box", nullptr), model(_gl, name), gl(_gl) {
         model.init();
+        setComponentID(name);
         init();
     }
 
-    playlist(playlist &r, const base::string &filter, base::lisp &_gl)
+    playlist(playlist &r, const base::string &filter, base::lisp &_gl, const base::string &name)
             : box("playlist-box", nullptr),
-              model(r.model, filter, _gl),
+              model(r.model, filter, _gl, name),
               gl(_gl) {
+        setComponentID(name);
         init();
     }
 

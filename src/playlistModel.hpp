@@ -30,10 +30,12 @@ struct playlistModel : public TableListBoxModel {
     bool filterEnabled;
 
     base::lisp &gl;
+    base::string playlistId;
 
-    playlistModel(playlistModel &r, const base::string &filter, base::lisp &_gl) :
+    playlistModel(playlistModel &r, const base::string &filter, base::lisp &_gl, const base::string &_playlistId) :
             filterEnabled(false),
-            gl(_gl) {
+            gl(_gl),
+            playlistId(_playlistId) {
         // reset
         init();
 
@@ -58,7 +60,10 @@ struct playlistModel : public TableListBoxModel {
         }
     }
 
-    playlistModel(base::lisp &_gl) : filterEnabled(false), gl(_gl) {}
+    playlistModel(base::lisp &_gl, const base::string &_playlistId) :
+            filterEnabled(false),
+            gl(_gl),
+            playlistId(_playlistId) {}
     ~playlistModel() {}
 
     void init() {
@@ -116,8 +121,10 @@ struct playlistModel : public TableListBoxModel {
 
             // check if all items have the same album
             for (const auto &e : groupInfo) {
-                if (*albumName != e.album)
+                if (*albumName != e.album) {
                     albumName = nullptr;
+                    break;
+                }
             }
 
             // fallback name (directory name)
@@ -466,7 +473,7 @@ struct playlistModel : public TableListBoxModel {
                     graphics::g = &g;
 
                     // custom code (pass gl here?, graphics bind)
-                    gl.eval(base::strs("(", c, " ", rowNumber, " ", width, " ", height, ")"));
+                    gl.eval(base::strs("(", c, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
 
                     graphics::g = nullptr;
                 }

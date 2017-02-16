@@ -227,9 +227,8 @@ public:
     base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
         return fxValidateCreate("create-playlist", c, [c, this]() -> auto {
                 const auto &name = c + 1;
-                auto &p = components[name->s] = std::make_unique<playlist>(gl);
+                auto &p = components[name->s] = std::make_unique<playlist>(gl, name->s);
                 p->setName("playlist");
-                p->setComponentID(name->s);
                 return name;
             }, components, base::cell::list(1), base::cell::typeIdentifier);
     }
@@ -239,9 +238,8 @@ public:
         return fxValidateAccessCreate("create-filtered-playlist", c, [this, c](Component *com) -> auto {
                 const auto &name = c + 2;
                 const auto &filter = c + 3;
-                auto &p = components[name->s] = std::make_unique<playlist>(*((playlist*)com), filter->s, gl);
+                auto &p = components[name->s] = std::make_unique<playlist>(*((playlist*)com), filter->s, gl, name->s);
                 p->setName("playlist");
-                p->setComponentID(name->s);
                 return name;
             }, components, base::cell::list(3), base::cell::typeIdentifier, base::cell::typeIdentifier, base::cell::typeString);
     }

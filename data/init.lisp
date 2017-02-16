@@ -2,8 +2,8 @@
 (defvar current-index 0)
 (defvar current-playlist nil)
 
-(defun playlist-column-count (row width height)
-  (defvar id (playlist-get current-playlist row 'id))
+(defun playlist-column-count (playlist-name row width height)
+  (defvar id (playlist-get playlist-name row 'id))
   (defvar play-count (ctags-get id 0))
   (defvar rank (ctags-get id 1))
   (defvar date (ctags-get id 2))
