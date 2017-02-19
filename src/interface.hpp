@@ -309,14 +309,15 @@ public:
         return fxValidateAccess("playlist-add-column", c, [c, this](Component *e) -> auto {
                 const auto &caption = c + 2;
                 const auto &content = c + 3;
-                const auto &width = c + 4;
-                const auto &minWidth = c + 5;
-                const auto &maxWidth = c + 6;
+                const auto &contentGroup = c + 4;
+                const auto &width = c + 5;
+                const auto &minWidth = c + 6;
+                const auto &maxWidth = c + 7;
                 auto p = reinterpret_cast<playlist*>(e);
-                p->addColumn(caption->s, content->s, width->i, minWidth->i, maxWidth->i);
+                p->addColumn(caption->s, content->s, contentGroup->isNil() ? "" : contentGroup->s, width->i, minWidth->i, maxWidth->i);
                 return gl.t();
-            }, components, cell::list(6), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
-            cell::typeInt, cell::typeInt, cell::typeInt);
+            }, components, cell::list(7), cell::typeIdentifier, cell::typeString, cell::typeIdentifier,
+            cell::typeIdentifier, cell::typeInt, cell::typeInt, cell::typeInt);
     }
 
     base::cell_t playlist_enable_filter(base::cell_t c, base::cells_t &) {

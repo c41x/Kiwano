@@ -24,6 +24,7 @@ struct playlistModel : public TableListBoxModel {
     std::vector<uint32> tyear, ttrack;
     std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
     std::vector<base::string> columns;
+    std::vector<base::string> columnsGroup;
 
     // filtering
     base::string filterQuery;
@@ -440,6 +441,7 @@ struct playlistModel : public TableListBoxModel {
 
         if (columnId < (int)columns.size() && rowNumber < getNumRows()) {
             auto &c = columns[columnId];
+            auto &cg = columnsGroup[columnId];
 
             // group begin
             if (!isTrack(rowNumber)) {
@@ -447,9 +449,14 @@ struct playlistModel : public TableListBoxModel {
                 g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::bold));
                 g.fillRect(0, 0, width, height);
 
-                if (c == "album") {
+                if (cg == "album") {
                     g.setColour(Colours::black);
                     g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred, true);
+                }
+                else if (!cg.empty()) {
+                    graphics::g = &g;
+                    gl.eval(base::strs("(", cg, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
+                    graphics::g = nullptr;
                 }
                 return;
             }
@@ -472,7 +479,7 @@ struct playlistModel : public TableListBoxModel {
                     // bind graphics
                     graphics::g = &g;
 
-                    // custom code (pass gl here?, graphics bind)
+                    // custom code
                     gl.eval(base::strs("(", c, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
 
                     graphics::g = nullptr;

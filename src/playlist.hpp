@@ -105,10 +105,11 @@ public:
     }
 
     void addColumn(const base::string &caption, const base::string &content,
-                   int width, int widthMin, int widthMax) {
+                   const base::string &contentGroup, int width, int widthMin, int widthMax) {
         box.getHeader().addColumn(caption, (int)model.columns.size(),
                                   width, widthMin, widthMax, TableHeaderComponent::defaultFlags);
         model.columns.push_back(content);
+        model.columnsGroup.push_back(contentGroup);
     }
 
     void filterEnable(const base::string &query) {

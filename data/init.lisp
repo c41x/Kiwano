@@ -2,6 +2,10 @@
 (defvar current-index 0)
 (defvar current-playlist nil)
 
+(defun playlist-column-count-group (playlist-name row width height)
+  (g-set-color |0.0 0.9 0.1 1.0|)
+  (g-draw-text "test" 0 0 width height justification-left))
+
 (defun playlist-column-count (playlist-name row width height)
   (defvar id (playlist-get playlist-name row 'id))
   (defvar play-count (ctags-get id 0))
@@ -18,12 +22,12 @@
 (defun init-playlist (id)
   ;;(message-box (strs "creating playlist: " id) "asdf")
   (create-playlist id)
-  (playlist-add-column id "track" 'track 50 20 1000)
-  (playlist-add-column id "album" 'album 200 150 1000)
-  (playlist-add-column id "artist" 'artist 200 150 1000)
-  (playlist-add-column id "title" 'title 200 150 1000)
-  (playlist-add-column id "year" 'year 70 50 1000)
-  (playlist-add-column id "count" 'playlist-column-count 50 20 1000)
+  (playlist-add-column id "track" 'track nil 50 20 1000)
+  (playlist-add-column id "album" 'album 'album 200 150 1000)
+  (playlist-add-column id "artist" 'artist nil 200 150 1000)
+  (playlist-add-column id "title" 'title nil 200 150 1000)
+  (playlist-add-column id "year" 'year nil 70 50 1000)
+  (playlist-add-column id "count" 'playlist-column-count 'playlist-column-count-group 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
                                                    selected-row-id
                                                    selected-row-index
@@ -238,11 +242,11 @@
 ;; filtered playlist test
 (defun search (query)
   (create-filtered-playlist current-playlist 'ppp query)
-  (playlist-add-column 'ppp "track" 'track 50 20 1000)
-  (playlist-add-column 'ppp "album" 'album 200 150 1000)
-  (playlist-add-column 'ppp "artist" 'artist 200 150 1000)
-  (playlist-add-column 'ppp "title" 'title 200 150 1000)
-  (playlist-add-column 'ppp "year" 'year 70 50 1000)
+  (playlist-add-column 'ppp "track" 'track nil 50 20 1000)
+  (playlist-add-column 'ppp "album" 'album nil 200 150 1000)
+  (playlist-add-column 'ppp "artist" 'artist nil 200 150 1000)
+  (playlist-add-column 'ppp "title" 'title nil 200 150 1000)
+  (playlist-add-column 'ppp "year" 'year nil 70 50 1000)
   ;;(playlist-add-column 'ppp "count" "0" 50 20 1000)
   ;;(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
   ;;(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
