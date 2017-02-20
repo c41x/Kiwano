@@ -21,7 +21,7 @@ extern "C" {
 struct playlistModel : public TableListBoxModel {
     base::string paths, talbum, tartist, ttitle;
     std::vector<seekRange> tseek;
-    std::vector<uint32> tyear, ttrack;
+    std::vector<uint32> tyear, ttrack, tlength;
     std::vector<uint32> paths_i, talbum_i, tartist_i, ttitle_i;
     std::vector<base::string> columns;
     std::vector<base::string> columnsGroup;
@@ -50,6 +50,7 @@ struct playlistModel : public TableListBoxModel {
                     tartist.append(r.getItemArtist(i));
                     ttitle.append(r.getItemTitle(i));
                     tyear.push_back(r.getItemYear(i));
+                    tlength.push_back(r.getItemLength(i));
                     tseek.push_back(r.getItemSeek(i));
                     ttrack.push_back(r.getItemTrack(i));
                     paths_i.push_back(paths.size());
@@ -74,6 +75,7 @@ struct playlistModel : public TableListBoxModel {
         talbum.clear();
         tartist.clear();
         tyear.clear();
+        tlength.clear();
         tseek.clear();
         ttitle.clear();
         ttrack.clear();
@@ -88,7 +90,7 @@ struct playlistModel : public TableListBoxModel {
     struct itemInfo {
         base::string album, artist, title, path;
         seekRange seek;
-        uint32 year, track;
+        uint32 year, track, length;
     };
 
     void addItemGroup(const std::vector<String> &group) {
@@ -141,6 +143,7 @@ struct playlistModel : public TableListBoxModel {
             else talbum.append(*albumName);
             talbum_i.push_back(talbum.size());
             tyear.push_back(0);
+            tlength.push_back(0);
             tseek.push_back(seekRange());
             ttrack.push_back(0);
             tartist_i.push_back(tartist.size());
@@ -154,6 +157,7 @@ struct playlistModel : public TableListBoxModel {
                 tartist.append(e.artist);
                 ttitle.append(e.title);
                 tyear.push_back(e.year);
+                tlength.push_back(e.length);
                 tseek.push_back(e.seek);
                 ttrack.push_back(e.track);
                 talbum_i.push_back(talbum.size());
@@ -259,6 +263,7 @@ struct playlistModel : public TableListBoxModel {
                                         ii.title = title;
                                         ii.track = track;
                                         ii.year = year;
+                                        ii.length = (length * 1000) / 75; // frames to milliseconds
                                         groupInfo.push_back(ii);
                                     }
                                     else {
@@ -271,6 +276,7 @@ struct playlistModel : public TableListBoxModel {
                                         ii.title = longest(ii.title, title);
                                         ii.track = std::max(ii.track, track);
                                         ii.year = std::max(ii.year, year);
+                                        ii.length = std::max(ii.length, (uint32)(length * 1000) / 75);
                                     }
                                 }
                             }
@@ -285,7 +291,7 @@ struct playlistModel : public TableListBoxModel {
         }
         else {
             base::string album, artist, title;
-            uint32 track, year;
+            uint32 track, year, length;
 
             TagLib::FileRef file(path.toRawUTF8());
             if (!file.isNull() && file.tag()) {
@@ -303,6 +309,14 @@ struct playlistModel : public TableListBoxModel {
                 track = 0;
             }
 
+            if (!file.isNull() && file.audioProperties()) {
+                // TODO: lengthInMilliseconds in future taglib API
+                length = file.audioProperties()->length() * 1000;
+            }
+            else {
+                length = 0;
+            }
+
             auto item = std::find_if(std::begin(groupInfo), std::end(groupInfo),
                                      [&gpath](const itemInfo &it) {
                                          return gpath == it.path;
@@ -316,6 +330,7 @@ struct playlistModel : public TableListBoxModel {
                 ii.title = longest(ii.title, title);
                 ii.track = std::max(ii.track, track);
                 ii.year = std::max(ii.year, year);
+                ii.length = std::max(ii.length, length);
             }
             else {
                 itemInfo ii;
@@ -326,6 +341,7 @@ struct playlistModel : public TableListBoxModel {
                 ii.title = title;
                 ii.track = track;
                 ii.year = year;
+                ii.length = length;
                 groupInfo.push_back(ii);
             }
         }
@@ -387,6 +403,10 @@ struct playlistModel : public TableListBoxModel {
         return tyear[index];
     }
 
+    uint32 getItemLength(size_t index) const {
+        return tlength[index];
+    }
+
     seekRange getItemSeek(size_t index) const {
         return tseek[index];
     }
@@ -434,6 +454,30 @@ struct playlistModel : public TableListBoxModel {
         }
     }
 
+    base::string formatTime(int milliseconds) {
+        int secondsTotal = milliseconds / 1000;
+        int seconds = secondsTotal % 60;
+        int minutes = (secondsTotal / 60) % 60;
+        int hours = secondsTotal / 60 / 60;
+
+        base::string ret;
+        ret.reserve(15);
+        if (hours > 0) {
+            ret += base::toStr(hours);
+            if (minutes < 10)
+                ret += ":0";
+            else ret += ":";
+        }
+
+        ret += base::toStr(minutes);
+        if (seconds < 10)
+            ret += ":0";
+        else ret += ":";
+        ret += base::toStr(seconds);
+
+        return ret;
+    }
+
     // This is overloaded from TableListBoxModel, and must paint any cells that aren't using custom
     // components.
     void paintCell(Graphics& g, int rowNumber, int columnId,
@@ -475,6 +519,8 @@ struct playlistModel : public TableListBoxModel {
                     g.drawText(getItemTitle(rowNumber), 5, 0, width, height, Justification::centredLeft, true);
                 else if (c == "year")
                     g.drawText(base::toStr(getItemYear(rowNumber)), 5, 0, width, height, Justification::centredLeft, true);
+                else if (c == "length")
+                    g.drawText(formatTime(getItemLength(rowNumber)), 0, 0, width - 5, height, Justification::centredRight, true);
                 else {
                     // bind graphics
                     graphics::g = &g;

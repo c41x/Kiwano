@@ -145,6 +145,7 @@ public:
         s.write(model.tyear);
         s.write(model.tseek);
         s.write(model.ttrack);
+        s.write(model.tlength);
         s.write(model.paths_i);
         s.write(model.talbum_i);
         s.write(model.tartist_i);
@@ -161,6 +162,7 @@ public:
             && s.read(model.tyear) > 0
             && s.read(model.tseek) > 0
             && s.read(model.ttrack) > 0
+            && s.read(model.tlength) > 0
             && s.read(model.paths_i) > 0
             && s.read(model.talbum_i) > 0
             && s.read(model.tartist_i) > 0
@@ -174,6 +176,5 @@ public:
 // TODO: remove-column
 // TODO: clear-columns
 // TODO: get-columns
-// TODO: custom drawing functions
 // TODO: deleting subsection
 // TODO: make sorters

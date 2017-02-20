@@ -434,6 +434,7 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: sorting
 // TODO: crashfix on close (could not reproduce)
 // TODO: rename playlist tab
-// TODO: serialize time in playlist
 // TODO: if no tags in file - grab filename
 // TODO: information pooling for groups (total time played, total album time etc)
+// TODO: wv, in-file cueing
+// TODO: length in cue in last track sometimes yields 0
