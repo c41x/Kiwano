@@ -190,7 +190,7 @@ struct playlistModel : public TableListBoxModel {
                                 cdtext = track_get_cdtext(track);
                                 const char *artist = nullptr;
                                 const char *title = nullptr;
-                                int trackIndex = -1;
+                                //int trackIndex = -1;
                                 int start = 0;
                                 int length = 0;
                                 const char *date = nullptr;
@@ -198,7 +198,7 @@ struct playlistModel : public TableListBoxModel {
                                 if (cdtext != nullptr) {
                                     artist = cdtext_get(PTI_PERFORMER, cdtext);
                                     title = cdtext_get(PTI_TITLE, cdtext);
-                                    trackIndex = track_get_index(track, i);
+                                    //trackIndex = track_get_index(track, i);
                                     start = track_get_start(track);
                                     length = track_get_length(track);
                                 }
@@ -230,7 +230,8 @@ struct playlistModel : public TableListBoxModel {
                                 }
 
                                 if (fileFound) {
-                                    uint32 track = trackIndex < 0 ? i : (trackIndex + 1);
+                                    // trackIndex is in frames (it is *not* track index)
+                                    uint32 track = i; //trackIndex < 0 ? i : (trackIndex + 1);
                                     uint32 year;
                                     if (base::strIs<int>(date))
                                         year = base::fromStr<int>(date);
@@ -264,6 +265,15 @@ struct playlistModel : public TableListBoxModel {
                                         ii.track = track;
                                         ii.year = year;
                                         ii.length = (length * 1000) / 75; // frames to milliseconds
+
+                                        // 0 length cue -> last track maybe - try to extract info from file
+                                        if (length <= 0) {
+                                            TagLib::FileRef file(fname.c_str());
+                                            if (!file.isNull() && file.audioProperties()) {
+                                                ii.length = file.audioProperties()->length() * 1000 - ((start * 1000) / 75);
+                                            }
+                                        }
+
                                         groupInfo.push_back(ii);
                                     }
                                     else {
@@ -274,9 +284,7 @@ struct playlistModel : public TableListBoxModel {
                                         ii.album = longest(ii.album, defaultTitle);
                                         ii.artist = longest(ii.artist, artist);
                                         ii.title = longest(ii.title, title);
-                                        ii.track = std::max(ii.track, track);
                                         ii.year = std::max(ii.year, year);
-                                        ii.length = std::max(ii.length, (uint32)(length * 1000) / 75);
                                     }
                                 }
                             }
@@ -323,14 +331,7 @@ struct playlistModel : public TableListBoxModel {
                                      });
 
             if (item != groupInfo.end()) {
-                // refine (same as above)
-                itemInfo &ii = *item;
-                ii.album = longest(ii.album, album);
-                ii.artist = longest(ii.artist, artist);
-                ii.title = longest(ii.title, title);
-                ii.track = std::max(ii.track, track);
-                ii.year = std::max(ii.year, year);
-                ii.length = std::max(ii.length, length);
+                // do not refine info
             }
             else {
                 itemInfo ii;
