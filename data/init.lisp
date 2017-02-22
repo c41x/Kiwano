@@ -27,6 +27,7 @@
   (playlist-add-column id "artist" 'artist nil 200 150 1000)
   (playlist-add-column id "title" 'title nil 200 150 1000)
   (playlist-add-column id "year" 'year nil 70 50 1000)
+  (playlist-add-column id "length" 'length nil 70 50 1000)
   (playlist-add-column id "count" 'playlist-column-count 'playlist-column-count-group 50 20 1000)
   (bind-mouse-double-click id 'on-playlist-click '(selected-row
                                                    selected-row-id
