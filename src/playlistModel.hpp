@@ -168,12 +168,10 @@ struct playlistModel : public TableListBoxModel {
     }
 
     void addItem(const String &path, std::vector<itemInfo> &groupInfo) {
-        base::string gpath = path.toStdString();
-        base::string basePath = base::extractFilePath(gpath);
-        if (base::extractExt(gpath) == "cue") {
-            base::stream s = base::fs::load(gpath);
-            if (s.size() > 0) {
-                Cd *cd = cue_parse_string((const char*)s.data());
+        auto processCue = [&groupInfo](const char *data,
+                                       const base::string &basePath,
+                                       const base::string &gpath) {{
+                Cd *cd = cue_parse_string(data);
                 if (cd != nullptr) {
                     Rem *rem = cd_get_rem(cd);
                     if (rem != nullptr) {
@@ -293,6 +291,16 @@ struct playlistModel : public TableListBoxModel {
                 }
                 logInfo(base::strs("CUE: could not parse / syntax error in: ", gpath));
             }
+        };
+
+        base::string gpath = path.toStdString();
+        base::string basePath = base::extractFilePath(gpath);
+
+        if (base::extractExt(gpath) == "cue") {
+            base::stream s = base::fs::load(gpath);
+            if (s.size() > 0) {
+                processCue((const char*)s.data(), basePath, gpath);
+            }
             else {
                 logInfo(base::strs("could not load CUE - empty file: ", gpath));
             }
@@ -302,48 +310,63 @@ struct playlistModel : public TableListBoxModel {
             uint32 track, year, length;
 
             TagLib::FileRef file(path.toRawUTF8());
-            if (!file.isNull() && file.tag()) {
-                album = file.tag()->album().toCString();
-                artist = file.tag()->artist().toCString();
-                title = file.tag()->title().toCString();
-                year = file.tag()->year();
-                track = file.tag()->track();
-            }
-            else {
-                album = "";
-                artist = "";
-                title = "";
-                year = 0;
-                track = 0;
+
+            // search for embeeded CUE
+            bool cueLoaded = false;
+            TagLib::PropertyMap tags = file.file()->properties();
+            for (TagLib::PropertyMap::ConstIterator i = tags.begin(); i != tags.end(); ++i) {
+                for (TagLib::StringList::ConstIterator j = i->second.begin(); j != i->second.end(); ++j) {
+                    if (base::lowerCase(i->first.to8Bit()) == "cuesheet") {
+                        // processCue(j->toCString(), basePath, gpath);
+                        //cueLoaded = true;
+                    }
+                }
             }
 
-            if (!file.isNull() && file.audioProperties()) {
-                // TODO: lengthInMilliseconds in future taglib API
-                length = file.audioProperties()->length() * 1000;
-            }
-            else {
-                length = 0;
-            }
+            if (!cueLoaded) {
+                if (!file.isNull() && file.tag()) {
+                    album = file.tag()->album().toCString();
+                    artist = file.tag()->artist().toCString();
+                    title = file.tag()->title().toCString();
+                    year = file.tag()->year();
+                    track = file.tag()->track();
+                }
+                else {
+                    album = "";
+                    artist = "";
+                    title = "";
+                    year = 0;
+                    track = 0;
+                }
 
-            auto item = std::find_if(std::begin(groupInfo), std::end(groupInfo),
-                                     [&gpath](const itemInfo &it) {
-                                         return gpath == it.path;
-                                     });
+                if (!file.isNull() && file.audioProperties()) {
+                    // TODO: lengthInMilliseconds in future taglib API
+                    length = file.audioProperties()->length() * 1000;
+                }
+                else {
+                    length = 0;
+                }
 
-            if (item != groupInfo.end()) {
-                // do not refine info
-            }
-            else {
-                itemInfo ii;
-                ii.path = gpath;
-                ii.album = album;
-                ii.artist = artist;
-                ii.seek = seekRange();
-                ii.title = title;
-                ii.track = track;
-                ii.year = year;
-                ii.length = length;
-                groupInfo.push_back(ii);
+                auto item = std::find_if(std::begin(groupInfo), std::end(groupInfo),
+                                         [&gpath](const itemInfo &it) {
+                                             return gpath == it.path;
+                                         });
+
+                if (item != groupInfo.end()) {
+                    // do not refine info
+                }
+                else {
+                    itemInfo ii;
+                    ii.path = gpath;
+                    ii.album = album;
+                    ii.artist = artist;
+                    ii.seek = seekRange();
+                    ii.title = title;
+                    ii.track = track;
+                    ii.year = year;
+                    ii.length = length;
+                    groupInfo.push_back(ii);
+                }
             }
         }
     }

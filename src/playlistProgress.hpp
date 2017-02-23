@@ -22,6 +22,7 @@ public:
             || fname.endsWith(".flac")
             || fname.endsWith(".ogg")
             || fname.endsWith(".ape")
+            || fname.endsWith(".wv")
             || fname.endsWith(".cue");
     }
 
