@@ -114,6 +114,7 @@ namespace juce
 #include "codecs/juce_WavAudioFormat.cpp"
 #include "codecs/juce_LAMEEncoderAudioFormat.cpp"
 #include "codecs/juce_WavPackAudioFormat.cpp"
+#include "codecs/juce_FFmpegAudioFormat.cpp"
 
 #if JUCE_WINDOWS && JUCE_USE_WINDOWS_MEDIA_FORMAT
  #include "codecs/juce_WindowsMediaAudioFormat.cpp"

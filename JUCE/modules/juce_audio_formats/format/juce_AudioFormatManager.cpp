@@ -77,6 +77,10 @@ void AudioFormatManager::registerBasicFormats()
    #if JUCE_USE_WAVPACK
     registerFormat (new WavPackAudioFormat(), false);
    #endif
+
+   #if JUCE_USE_FFMPEG
+    registerFormat (new FFmpegAudioFormat(), false);
+   #endif
 }
 
 void AudioFormatManager::clearFormats()

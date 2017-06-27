@@ -48,11 +48,20 @@
 
 /** Config: JUCE_USE_WAVPACK
     Enables the WavPack audio codec classes (available on all platforms).
-    If your app doesn't need to read Ogg-Vorbis files, you might want to disable this to
+    If your app doesn't need to read WavPack files, you might want to disable this to
     reduce the size of your codebase and build time.
 */
 #ifndef JUCE_USE_WAVPACK
  #define JUCE_USE_WAVPACK 1
+#endif
+
+/** Config: JUCE_USE_FFMPEG
+    Enables the all audio codecs supported by FFmpeg.
+    If your app doesn't need to read these files, you might want to disable this to
+    reduce the size of your codebase and build time.
+*/
+#ifndef JUCE_USE_FFMPEG
+ #define JUCE_USE_FFMPEG 1
 #endif
 
 /** Config: JUCE_USE_MP3AUDIOFORMAT
@@ -113,6 +122,7 @@ class AudioFormat;
 #include "codecs/juce_WavAudioFormat.h"
 #include "codecs/juce_WindowsMediaAudioFormat.h"
 #include "codecs/juce_WavPackAudioFormat.h"
+#include "codecs/juce_FFmpegAudioFormat.h"
 #include "sampler/juce_Sampler.h"
 
 }
