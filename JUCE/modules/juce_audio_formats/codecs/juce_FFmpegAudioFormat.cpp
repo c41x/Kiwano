@@ -27,9 +27,67 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-namespace FFmpegNamespace
-{
-// TODO: include ffmpeg
+namespace FFmpegNamespace {
+
+extern "C" {
+#include <libavutil/opt.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libswresample/swresample.h>
+}
+
+class customAVCOntext {
+    InputStream *is;
+    unsigned char *buffer;
+    AVIOContext *ctx;
+
+    customAVCOntext(customAVCOntext const &);
+    customAVCOntext &operator=(customAVCOntext const &);
+
+public:
+
+    customAVCOntext(InputStream *_is)
+            : is(_is),
+              buffer(static_cast<unsigned char*>(av_malloc(4 * 1024))) {
+        ctx = avio_alloc_context(buffer,
+                                 4 * 1024, 0, this,
+                                 &customAVCOntext::read, NULL,
+                                 &customAVCOntext::seek);
+    }
+
+    ~customAVCOntext() {
+        av_free(ctx);
+        av_free(buffer);
+    }
+
+    void reset_inner_context() {
+        ctx = NULL;
+        buffer = NULL;
+    }
+
+    static int read(void *opaque, unsigned char *buf, int buf_size) {
+        customAVCOntext* h = static_cast<customAVCOntext*>(opaque);
+        return h->is->read(buf, buf_size);
+    }
+
+    static int64_t seek(void *opaque, int64_t offset, int whence) {
+        customAVCOntext* h = static_cast<customAVCOntext*>(opaque);
+
+        if (whence == AVSEEK_SIZE)
+            return h->is->getTotalLength();
+        else if (whence == SEEK_CUR)
+            return h->is->setPosition(h->is->getPosition() + offset);
+        else if (whence == SEEK_END)
+            return h->is->setPosition(h->is->getTotalLength() + offset);
+
+        return h->is->setPosition(offset);
+    }
+
+    AVIOContext *getAVIO() {
+        return ctx;
+    }
+};
 }
 
 //==============================================================================
@@ -41,6 +99,7 @@ class FFmpegReader : public AudioFormatReader
 public:
     FFmpegReader (InputStream* const inp)
         : AudioFormatReader (inp, FFmpegFormatName),
+          ffmpegContext(inp),
           reservoirStart (0),
           samplesInReservoir (0),
           sampleBuffer (nullptr)
@@ -246,6 +305,7 @@ public:
 private:
     // WavPackNamespace::WavpackStreamReader wvReader;
     // WavPackNamespace::WavpackContext* wvContext;
+    FFmpegNamespace::customAVCOntext ffmpegContext;
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
     int reservoirStart, samplesInReservoir;
