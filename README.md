@@ -3,7 +3,7 @@ Kiwano - Configurable Portable Music Player
 Work in progress...
 
 Dependencies:
-* packages to install `libasound2-dev libfreetype (or libfreetype6-dev) zlib1g-dev flex bison`
+* packages to install `libasound2-dev libfreetype (or libfreetype6-dev) zlib1g-dev flex bison libavresample-dev libavcodec-dev libavformat-dev libavutil-dev`
 * libcue (https://github.com/lipnitsk/libcue)
   compile as static - remove `SHARED` from CMakeLists.txt
   ```cmake
