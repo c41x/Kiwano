@@ -57,13 +57,8 @@ public:
     }
 
     ~customAVCOntext() {
-        av_free(ctx);
+        // av_free(ctx); // context is freed in FFmpegReader
         av_free(buffer);
-    }
-
-    void reset_inner_context() {
-        ctx = NULL;
-        buffer = NULL;
     }
 
     static int read(void *opaque, unsigned char *buf, int buf_size) {
@@ -99,11 +94,68 @@ class FFmpegReader : public AudioFormatReader
 public:
     FFmpegReader (InputStream* const inp)
         : AudioFormatReader (inp, FFmpegFormatName),
-          ffmpegContext(inp),
           reservoirStart (0),
           samplesInReservoir (0),
           sampleBuffer (nullptr)
     {
+        using namespace FFmpegNamespace;
+
+        // register all ffmpeg formats (could be called many times)
+        av_register_all();
+
+        ffmpegContext = new customAVCOntext(inp);
+
+        format = avformat_alloc_context();
+        format->pb = ffmpegContext->getAVIO();
+
+        // get format from file
+        if (avformat_open_input(&format, "", NULL, NULL) == 0) {
+            std::cout << "open input ok" << std::endl;
+            if (avformat_find_stream_info(format, NULL) >= 0) {
+                std::cout << "find stream ok" << std::endl;
+
+                // find audio stream index
+                int audioIndex = -1;
+                for (unsigned int i = 0; i < format->nb_streams; ++i) {
+                    if (format->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
+                        audioIndex = i;
+                        // TODO: multiple streams?
+                        std::cout << "found audio stream" << std::endl;
+                        break;
+                    }
+                }
+
+                if (audioIndex != -1) {
+                    AVStream *stream = format->streams[audioIndex];
+                    codec = stream->codec;
+
+                    // find suitable codec
+                    if (avcodec_open2(codec, avcodec_find_decoder(codec->codec_id), NULL) >= 0) {
+                        std::cout << "found suitable codec for stream" << std::endl;
+                        swr = swr_alloc();
+                        av_opt_set_int(swr, "in_channel_count", codec->channels, 0);
+                        av_opt_set_int(swr, "out_channel_count", codec->channels, 0);
+                        av_opt_set_int(swr, "in_channel_layout", codec->channel_layout, 0);
+                        av_opt_set_int(swr, "out_channel_layout", codec->channel_layout, 0);
+                        av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
+                        av_opt_set_int(swr, "out_sample_rate", codec->sample_rate, 0);
+                        av_opt_set_sample_fmt(swr, "in_sample_fmt", codec->sample_fmt, 0);
+                        av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_FLT, 0);
+                        swr_init(swr);
+
+                        if (swr_is_initialized(swr)) {
+                            std::cout << "swr is initialized" << std::endl;
+                            lengthInSamples = (uint32)format->duration * format->samplerate / AV_TIME_BASE;
+                            numChannels = (unsigned int)codec->channels;
+                            bitsPerSample = 32;
+                            sampleRate = codec->sample_rate;
+                            usesFloatingPointData = true;
+                        }
+                    }
+                }
+            }
+        }
+
         // using namespace WavPackNamespace;
         // sampleRate = 0;
         // usesFloatingPointData = true;
@@ -131,6 +183,11 @@ public:
 
     ~FFmpegReader()
     {
+        using namespace FFmpegNamespace;
+        swr_free(&swr);
+        avcodec_close(codec);
+        avformat_free_context(format);
+        delete ffmpegContext;
         // using namespace WavPackNamespace;
         // WavpackCloseFile (wvContext);
     }
@@ -305,7 +362,11 @@ public:
 private:
     // WavPackNamespace::WavpackStreamReader wvReader;
     // WavPackNamespace::WavpackContext* wvContext;
-    FFmpegNamespace::customAVCOntext ffmpegContext;
+    FFmpegNamespace::customAVCOntext *ffmpegContext;
+    FFmpegNamespace::AVCodecContext *codec;
+    FFmpegNamespace::AVFormatContext *format;
+    FFmpegNamespace::SwrContext *swr;
+
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
     int reservoirStart, samplesInReservoir;
@@ -316,7 +377,7 @@ private:
 };
 
 //==============================================================================
-FFmpegAudioFormat::FFmpegAudioFormat()  : AudioFormat (wavPackFormatName, ".wv") // TODO: formats
+FFmpegAudioFormat::FFmpegAudioFormat()  : AudioFormat (wavPackFormatName, ".ape") // TODO: formats
 {
 }
 
