@@ -145,11 +145,32 @@ public:
 
                         if (swr_is_initialized(swr)) {
                             std::cout << "swr is initialized" << std::endl;
-                            lengthInSamples = (uint32)format->duration * format->samplerate / AV_TIME_BASE;
-                            numChannels = (unsigned int)codec->channels;
-                            bitsPerSample = 32;
-                            sampleRate = codec->sample_rate;
-                            usesFloatingPointData = true;
+
+                            av_init_packet(&packet);
+                            frame = av_frame_alloc();
+
+                            if (frame) {
+                                lengthInSamples = (uint32)format->duration;// * codec->sample_rate / AV_TIME_BASE;
+                                numChannels = (unsigned int)codec->channels;
+                                bitsPerSample = 32;
+                                sampleRate = codec->sample_rate;
+                                usesFloatingPointData = true;
+
+                                uint32 smp = (uint32)(av_q2d(format->streams[audioIndex]->time_base) *
+                                                      format->streams[audioIndex]->duration *
+                                                      codec->sample_rate);
+
+                                uint32 smp2 = (uint32)(av_q2d(format->streams[audioIndex]->time_base) *
+                                                       format->duration *
+                                                       codec->sample_rate);
+
+                                std::cout << "frame ok" << std::endl
+                                          << "samples: " << lengthInSamples << " or " << smp << " or " << smp2
+                                          << " channels: " << numChannels
+                                          << " format duration: " << format->duration
+                                          << " time base: " << AV_TIME_BASE
+                                          << " sample rate: " << sampleRate << std::endl;
+                            }
                         }
                     }
                 }
@@ -184,6 +205,7 @@ public:
     ~FFmpegReader()
     {
         using namespace FFmpegNamespace;
+        av_frame_free(&frame);
         swr_free(&swr);
         avcodec_close(codec);
         avformat_free_context(format);
@@ -196,7 +218,7 @@ public:
     bool readSamples (int** destSamples, int numDestChannels, int startOffsetInDestBuffer,
                       int64 startSampleInFile, int numSamples) override
     {
-        using namespace WavPackNamespace;
+        using namespace FFmpegNamespace;
         while (numSamples > 0)
         {
             const int numAvailable = (int) (reservoirStart + samplesInReservoir - startSampleInFile);
@@ -227,6 +249,10 @@ public:
                 reservoirStart = jmax (0, (int) startSampleInFile);
                 samplesInReservoir = reservoir.getNumSamples();
 
+                int64_t tm = reservoirStart * sampleRate / AV_TIME_BASE;
+                if (av_seek_frame(format, -1, tm, AVSEEK_FLAG_ANY) != 0) {
+                    std::cout << "~ seek frame" << std::endl;
+                }
                 // if (reservoirStart != (int) WavpackGetSampleIndex (wvContext))
                 //     WavpackSeekSample (wvContext, reservoirStart);
 
@@ -249,6 +275,53 @@ public:
                         delete []sampleBuffer;
                         sampleBuffer = new int32_t[sampleBufferSize];
                     }
+
+                    if (av_read_frame(format, &packet) != 0) {
+                        std::cout << "~ read frame" << std::endl;
+                        break;
+                    }
+
+                    int gotFrame = 0;
+                    if (avcodec_decode_audio4(codec, frame, &gotFrame, &packet) != 0) {
+                        std::cout << "~ decode audio" << std::endl;
+                        break;
+                    }
+
+                    if (!gotFrame) {
+                        std::cout << "~ !gotFrame" << std::endl;
+                        continue;
+                    }
+
+                    // resample frames
+                    float *buffer;
+                    av_samples_alloc((uint8_t**)&buffer, NULL, 1, frame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
+                    int frames = swr_convert(swr, (uint8_t**)&buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
+
+                    // fill buffers
+                    ///*data = (double*) realloc(*data, (*size + frame->nb_samples) * sizeof(double));
+                    ///memcpy(*data + *size, buffer, frames * sizeof(double));
+                    ///*size += frames;
+
+                    auto p1 = reservoir.getWritePointer (0, offset);
+                    auto p2 = reservoir.getWritePointer (1, offset);
+
+                    float *fp1 = p1;
+                    float *fp2 = p2;
+                    float *in = buffer;
+
+                    for (int i = 0; i < frames; ++i)
+                    {
+                        *fp1 = *in;
+                        in++;
+                        fp1++;
+
+                        *fp2 = *in;
+                        in++;
+                        fp2++;
+                    }
+
+                    numToRead -= frames;
+                    offset += frames;
 
                     // const long samps = WavpackUnpackSamples (wvContext, sampleBuffer, numToRead);
 
@@ -366,6 +439,8 @@ private:
     FFmpegNamespace::AVCodecContext *codec;
     FFmpegNamespace::AVFormatContext *format;
     FFmpegNamespace::SwrContext *swr;
+    FFmpegNamespace::AVPacket packet;
+    FFmpegNamespace::AVFrame *frame;
 
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
