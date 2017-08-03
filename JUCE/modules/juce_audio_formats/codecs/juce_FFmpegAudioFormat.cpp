@@ -95,8 +95,8 @@ public:
     FFmpegReader (InputStream* const inp)
         : AudioFormatReader (inp, FFmpegFormatName),
           reservoirStart (0),
-          samplesInReservoir (0),
-          sampleBuffer (nullptr)
+          samplesInReservoir (0)//,
+          //sampleBuffer (nullptr)
     {
         using namespace FFmpegNamespace;
 
@@ -115,7 +115,7 @@ public:
                 std::cout << "find stream ok" << std::endl;
 
                 // find audio stream index
-                int audioIndex = -1;
+                audioIndex = -1;
                 for (unsigned int i = 0; i < format->nb_streams; ++i) {
                     if (format->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
                         audioIndex = i;
@@ -126,7 +126,7 @@ public:
                 }
 
                 if (audioIndex != -1) {
-                    AVStream *stream = format->streams[audioIndex];
+                    stream = format->streams[audioIndex];
                     codec = stream->codec;
 
                     // find suitable codec
@@ -134,9 +134,9 @@ public:
                         std::cout << "found suitable codec for stream" << std::endl;
                         swr = swr_alloc();
                         av_opt_set_int(swr, "in_channel_count", codec->channels, 0);
-                        av_opt_set_int(swr, "out_channel_count", codec->channels, 0);
+                        av_opt_set_int(swr, "out_channel_count", 2, 0);
                         av_opt_set_int(swr, "in_channel_layout", codec->channel_layout, 0);
-                        av_opt_set_int(swr, "out_channel_layout", codec->channel_layout, 0);
+                        av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO, 0);
                         av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
                         av_opt_set_int(swr, "out_sample_rate", codec->sample_rate, 0);
                         av_opt_set_sample_fmt(swr, "in_sample_fmt", codec->sample_fmt, 0);
@@ -164,12 +164,16 @@ public:
                                                        format->duration *
                                                        codec->sample_rate);
 
+                                lengthInSamples = smp;
+
                                 std::cout << "frame ok" << std::endl
-                                          << "samples: " << lengthInSamples << " or " << smp << " or " << smp2
+                                          << "samples: " << lengthInSamples << " or " << smp << " or " << smp2 << " or " << stream->nb_frames
                                           << " channels: " << numChannels
                                           << " format duration: " << format->duration
                                           << " time base: " << AV_TIME_BASE
                                           << " sample rate: " << sampleRate << std::endl;
+
+                                reservoir.setSize ((int) numChannels, (int) jmin (lengthInSamples, (int64) 4096));
                             }
                         }
                     }
@@ -204,6 +208,7 @@ public:
 
     ~FFmpegReader()
     {
+        std::cout << "kill reader" << std::endl;
         using namespace FFmpegNamespace;
         av_frame_free(&frame);
         swr_free(&swr);
@@ -249,10 +254,21 @@ public:
                 reservoirStart = jmax (0, (int) startSampleInFile);
                 samplesInReservoir = reservoir.getNumSamples();
 
-                int64_t tm = reservoirStart * sampleRate / AV_TIME_BASE;
-                if (av_seek_frame(format, -1, tm, AVSEEK_FLAG_ANY) != 0) {
+
+                /*
+                int64_t tm = av_rescale_q((int64_t) (startSampleInFile / sampleRate) * AV_TIME_BASE,
+                                        AV_TIME_BASE_Q,
+                                        stream->time_base);
+
+                if (av_seek_frame(format, audioIndex, tm, AVSEEK_FLAG_BACKWARD) != 0) {
                     std::cout << "~ seek frame" << std::endl;
                 }
+                else {
+                    std::cout << "seek ok " << samplesInReservoir << std::endl;
+                }
+                */
+
+
                 // if (reservoirStart != (int) WavpackGetSampleIndex (wvContext))
                 //     WavpackSeekSample (wvContext, reservoirStart);
 
@@ -261,20 +277,20 @@ public:
 
                 while (numToRead > 0)
                 {
-                    // initialize buffer
-                    if (sampleBuffer == nullptr)
-                    {
-                        sampleBufferSize = numToRead * numChannels;
-                        sampleBuffer = new int32_t[numToRead * numChannels];
-                    }
+                    // // initialize buffer
+                    // if (sampleBuffer == nullptr)
+                    // {
+                    //     sampleBufferSize = numToRead * numChannels;
+                    //     sampleBuffer = new int32_t[numToRead * numChannels];
+                    // }
 
-                    // reallocate if buffer size is too small
-                    if (sampleBufferSize < numToRead * numChannels)
-                    {
-                        sampleBufferSize = numToRead * numChannels;
-                        delete []sampleBuffer;
-                        sampleBuffer = new int32_t[sampleBufferSize];
-                    }
+                    // // reallocate if buffer size is too small
+                    // if (sampleBufferSize < numToRead * numChannels)
+                    // {
+                    //     sampleBufferSize = numToRead * numChannels;
+                    //     delete []sampleBuffer;
+                    //     sampleBuffer = new int32_t[sampleBufferSize];
+                    // }
 
                     if (av_read_frame(format, &packet) != 0) {
                         std::cout << "~ read frame" << std::endl;
@@ -294,7 +310,7 @@ public:
 
                     // resample frames
                     float *buffer;
-                    av_samples_alloc((uint8_t**)&buffer, NULL, 1, frame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
+                    av_samples_alloc((uint8_t**)&buffer, NULL, 2, frame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
                     int frames = swr_convert(swr, (uint8_t**)&buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
 
                     // fill buffers
@@ -308,6 +324,8 @@ public:
                     float *fp1 = p1;
                     float *fp2 = p2;
                     float *in = buffer;
+
+                    std::cout << "frames read " << frames << std::endl;
 
                     for (int i = 0; i < frames; ++i)
                     {
@@ -362,6 +380,8 @@ public:
                     // numToRead -= samps;
                     // offset += samps;
                 }
+
+                std::cout << "--" << std::endl;
 
                 if (numToRead > 0)
                     reservoir.clear (offset, numToRead);
@@ -438,15 +458,17 @@ private:
     FFmpegNamespace::customAVCOntext *ffmpegContext;
     FFmpegNamespace::AVCodecContext *codec;
     FFmpegNamespace::AVFormatContext *format;
+    FFmpegNamespace::AVStream *stream;
     FFmpegNamespace::SwrContext *swr;
     FFmpegNamespace::AVPacket packet;
     FFmpegNamespace::AVFrame *frame;
+    int audioIndex;
 
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
     int reservoirStart, samplesInReservoir;
-    int32_t *sampleBuffer;
-    size_t sampleBufferSize;
+    //int32_t *sampleBuffer;
+    //size_t sampleBufferSize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFmpegReader)
 };
