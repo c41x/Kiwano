@@ -140,7 +140,7 @@ public:
                         av_opt_set_int(swr, "in_sample_rate", codec->sample_rate, 0);
                         av_opt_set_int(swr, "out_sample_rate", codec->sample_rate, 0);
                         av_opt_set_sample_fmt(swr, "in_sample_fmt", codec->sample_fmt, 0);
-                        av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_FLT, 0);
+                        av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_FLTP, 0);
                         swr_init(swr);
 
                         if (swr_is_initialized(swr)) {
@@ -219,11 +219,84 @@ public:
         // WavpackCloseFile (wvContext);
     }
 
+    int bufferPosition = 0;
+    int samplesInBuffer = 0;
+
     //==============================================================================
     bool readSamples (int** destSamples, int numDestChannels, int startOffsetInDestBuffer,
                       int64 startSampleInFile, int numSamples) override
     {
         using namespace FFmpegNamespace;
+
+        // destSamples - here goes samples, 2d array destSamples[0] - left, destSamples[1] - right etc.
+        // numDestChannels - how many channels (array first index there are)
+        // startOffsetInDestBuffer - where to write in output buffer
+        // startSampleInFile - where to read in file
+        // numSamples - how many samples to read
+
+        while (numSamples > 0) {
+            // update state
+            int samplesToCopy = jmin(numSamples, samplesInBuffer - bufferPosition);
+            if (samplesToCopy > 0) {
+                numSamples -= samplesToCopy;
+                bufferPosition += samplesToCopy;
+
+                std::cout << "copy " << samplesToCopy << " samples from buffer" << std::endl;
+
+                // always stereo
+                float *pleft = buffer[0] + bufferPosition;
+                float *pright = buffer[1] + bufferPosition + 1;
+                float *outleft = (float*)(destSamples[0] + startOffsetInDestBuffer);
+                float *outright = (float*)(destSamples[1] + startOffsetInDestBuffer);
+
+                // copy from buffer
+                while (samplesToCopy > 0) {
+                    *outleft = *pleft;
+                    *outright = *pright;
+                    outleft++;
+                    outright++;
+                    pleft++;
+                    pright++;
+                    samplesToCopy--;
+                }
+            }
+
+            // buffer is empty now - decode some more
+            if (numSamples > 0) {
+                if (av_read_frame(format, &packet) == 0) {
+                    std::cout << "~ read frame" << std::endl;
+
+                    int gotFrame = 0;
+                    if (avcodec_decode_audio4(codec, frame, &gotFrame, &packet) == 0) {
+                        std::cout << "~ decode audio" << std::endl;
+
+                        if (gotFrame != 0) {
+                            std::cout << "~ gotFrame " << frame->nb_samples << std::endl;
+
+                            // allocate buffer for samples
+                            int dstLinesize;
+                            av_samples_alloc((uint8_t**)&buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
+
+                            int frames = swr_convert(swr,
+                                                     (uint8_t**)buffer,
+                                                     frame->nb_samples,
+                                                     (const uint8_t**)frame->data,
+                                                     frame->nb_samples);
+                            frames = frame->nb_samples;
+                            bufferPosition = 0;
+                            samplesInBuffer = frames;
+
+                            std::cout << "read " << frames << " frames" << std::endl;
+                        }
+                    }
+                }
+            }
+            // return false?
+        }
+
+        return true;
+
+        // old method
         while (numSamples > 0)
         {
             const int numAvailable = (int) (reservoirStart + samplesInReservoir - startSampleInFile);
@@ -273,7 +346,7 @@ public:
                 //     WavpackSeekSample (wvContext, reservoirStart);
 
                 int offset = 0;
-                int numToRead = samplesInReservoir;
+                int numToRead = frame->nb_samples;
 
                 while (numToRead > 0)
                 {
@@ -309,9 +382,9 @@ public:
                     }
 
                     // resample frames
-                    float *buffer;
-                    av_samples_alloc((uint8_t**)&buffer, NULL, 2, frame->nb_samples, AV_SAMPLE_FMT_FLT, 0);
+                    //float *buffer;
                     int frames = swr_convert(swr, (uint8_t**)&buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
+                    frames = frame->nb_samples;
 
                     // fill buffers
                     ///*data = (double*) realloc(*data, (*size + frame->nb_samples) * sizeof(double));
@@ -323,7 +396,7 @@ public:
 
                     float *fp1 = p1;
                     float *fp2 = p2;
-                    float *in = buffer;
+                    float *in = nullptr;//buffer;
 
                     std::cout << "frames read " << frames << std::endl;
 
@@ -381,7 +454,7 @@ public:
                     // offset += samps;
                 }
 
-                std::cout << "--" << std::endl;
+                std::cout << "--" << frame->nb_samples << std::endl;
 
                 if (numToRead > 0)
                     reservoir.clear (offset, numToRead);
@@ -467,6 +540,7 @@ private:
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
     int reservoirStart, samplesInReservoir;
+    float **buffer;
     //int32_t *sampleBuffer;
     //size_t sampleBufferSize;
 
