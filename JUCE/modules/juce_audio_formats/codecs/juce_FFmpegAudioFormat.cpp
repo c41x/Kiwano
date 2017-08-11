@@ -174,6 +174,8 @@ public:
                                           << " sample rate: " << sampleRate << std::endl;
 
                                 reservoir.setSize ((int) numChannels, (int) jmin (lengthInSamples, (int64) 4096));
+
+                                buffer = new uint8_t*[2]; // alloc buffers for stereo planar data
                             }
                         }
                     }
@@ -234,20 +236,23 @@ public:
         // startSampleInFile - where to read in file
         // numSamples - how many samples to read
 
+        std::cout << "---" << std::endl;
+
         while (numSamples > 0) {
             // update state
             int samplesToCopy = jmin(numSamples, samplesInBuffer - bufferPosition);
             if (samplesToCopy > 0) {
-                numSamples -= samplesToCopy;
-                bufferPosition += samplesToCopy;
+                std::cout << "copy " << samplesToCopy << " samples from buffer (" << (samplesInBuffer - bufferPosition) << " left)" << std::endl;
 
-                std::cout << "copy " << samplesToCopy << " samples from buffer" << std::endl;
+                numSamples -= samplesToCopy;
 
                 // always stereo
-                float *pleft = buffer[0] + bufferPosition;
-                float *pright = buffer[1] + bufferPosition + 1;
+                float *pleft = ((float*)(buffer[0])) + bufferPosition;
+                float *pright = ((float*)(buffer[1])) + bufferPosition;
                 float *outleft = (float*)(destSamples[0] + startOffsetInDestBuffer);
                 float *outright = (float*)(destSamples[1] + startOffsetInDestBuffer);
+
+                bufferPosition += samplesToCopy;
 
                 // copy from buffer
                 while (samplesToCopy > 0) {
@@ -259,6 +264,8 @@ public:
                     pright++;
                     samplesToCopy--;
                 }
+
+                std::cout << "done copy" << std::endl;
             }
 
             // buffer is empty now - decode some more
@@ -275,18 +282,18 @@ public:
 
                             // allocate buffer for samples
                             int dstLinesize;
-                            av_samples_alloc((uint8_t**)&buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
+                            av_samples_alloc(buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
 
                             int frames = swr_convert(swr,
-                                                     (uint8_t**)buffer,
+                                                     buffer,
                                                      frame->nb_samples,
-                                                     (const uint8_t**)frame->data,
+                                                     (const uint8_t**)frame->extended_data,
                                                      frame->nb_samples);
                             frames = frame->nb_samples;
                             bufferPosition = 0;
                             samplesInBuffer = frames;
 
-                            std::cout << "read " << frames << " frames" << std::endl;
+                            std::cout << "read " << frames << " frames, line size: " << dstLinesize << std::endl;
                         }
                     }
                 }
@@ -540,7 +547,7 @@ private:
     char wvErrorBuffer[80];
     AudioSampleBuffer reservoir;
     int reservoirStart, samplesInReservoir;
-    float **buffer;
+    uint8_t **buffer;
     //int32_t *sampleBuffer;
     //size_t sampleBufferSize;
 
