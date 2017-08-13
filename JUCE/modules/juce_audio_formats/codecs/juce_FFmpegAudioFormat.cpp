@@ -151,7 +151,7 @@ public:
 
                             if (frame) {
                                 lengthInSamples = (uint32)format->duration;// * codec->sample_rate / AV_TIME_BASE;
-                                numChannels = (unsigned int)codec->channels;
+                                numChannels = 2;
                                 bitsPerSample = 32;
                                 sampleRate = codec->sample_rate;
                                 usesFloatingPointData = true;
@@ -236,7 +236,8 @@ public:
         // startSampleInFile - where to read in file
         // numSamples - how many samples to read
 
-        std::cout << "---" << std::endl;
+        std::cout << "--- offset dst: " << startOffsetInDestBuffer <<
+            " start sample in file " << startSampleInFile << std::endl;
 
         while (numSamples > 0) {
             // update state
@@ -249,10 +250,11 @@ public:
                 // always stereo
                 float *pleft = ((float*)(buffer[0])) + bufferPosition;
                 float *pright = ((float*)(buffer[1])) + bufferPosition;
-                float *outleft = (float*)(destSamples[0] + startOffsetInDestBuffer);
-                float *outright = (float*)(destSamples[1] + startOffsetInDestBuffer);
+                float *outleft = ((float*)(destSamples[0])) + startOffsetInDestBuffer;
+                float *outright = ((float*)(destSamples[1])) + startOffsetInDestBuffer;
 
                 bufferPosition += samplesToCopy;
+                startOffsetInDestBuffer += samplesToCopy;
 
                 // copy from buffer
                 while (samplesToCopy > 0) {
@@ -270,32 +272,18 @@ public:
 
             // buffer is empty now - decode some more
             if (numSamples > 0) {
-                if (av_read_frame(format, &packet) == 0) {
-                    std::cout << "~ read frame" << std::endl;
-
-                    int gotFrame = 0;
-                    if (avcodec_decode_audio4(codec, frame, &gotFrame, &packet) == 0) {
-                        std::cout << "~ decode audio" << std::endl;
-
-                        if (gotFrame != 0) {
-                            std::cout << "~ gotFrame " << frame->nb_samples << std::endl;
-
-                            // allocate buffer for samples
-                            int dstLinesize;
-                            av_samples_alloc(buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
-
-                            int frames = swr_convert(swr,
-                                                     buffer,
-                                                     frame->nb_samples,
-                                                     (const uint8_t**)frame->extended_data,
-                                                     frame->nb_samples);
-                            frames = frame->nb_samples;
-                            bufferPosition = 0;
-                            samplesInBuffer = frames;
-
-                            std::cout << "read " << frames << " frames, line size: " << dstLinesize << std::endl;
-                        }
+                if (packet.size > 0) {
+                    decodeFrame();
+                }
+                else {
+                    if (av_read_frame(format, &packet) == 0) {
+                        std::cout << "~ read frame" << std::endl;
+                        decodeFrame();
                     }
+                }
+
+                if (packet.size <= 0) {
+                    av_packet_unref(&packet);
                 }
             }
             // return false?
@@ -476,6 +464,40 @@ public:
         }
 
         return true;
+    }
+
+    void decodeFrame() {
+        using namespace FFmpegNamespace;
+        int gotFrame = 0;
+        int decodeSize = avcodec_decode_audio4(codec, frame, &gotFrame, &packet);
+        if (decodeSize >= 0) {
+            std::cout << "~ decode audio... " << packet.size << " size stream ID " << packet.stream_index<< std::endl;
+
+            if (gotFrame != 0) {
+                std::cout << "~ gotFrame " << frame->nb_samples << " decode size: " << decodeSize << std::endl;
+
+                // allocate buffer for samples
+                int dstLinesize;
+                av_samples_alloc(buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
+
+                int frames = swr_convert(swr,
+                                         buffer,
+                                         frame->nb_samples,
+                                         (const uint8_t**)frame->extended_data,
+                                         frame->nb_samples);
+                frames = frame->nb_samples;
+                bufferPosition = 0;
+                samplesInBuffer = frames;
+
+                std::cout << "read " << frames << " frames, line size: " << dstLinesize << std::endl;
+            }
+            else {
+                std::cout << " no frame !!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+            }
+        }
+
+        packet.size -= decodeSize;
+        packet.data += decodeSize;
     }
 
     //==============================================================================
