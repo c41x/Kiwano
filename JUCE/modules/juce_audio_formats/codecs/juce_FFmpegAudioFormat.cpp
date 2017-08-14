@@ -147,6 +147,7 @@ public:
                             std::cout << "swr is initialized" << std::endl;
 
                             av_init_packet(&packet);
+                            packet.size = 0;
                             frame = av_frame_alloc();
 
                             if (frame) {
