@@ -93,9 +93,7 @@ class FFmpegReader : public AudioFormatReader
 {
 public:
     FFmpegReader (InputStream* const inp)
-        : AudioFormatReader (inp, FFmpegFormatName),
-          reservoirStart (0),
-          samplesInReservoir (0)//,
+        : AudioFormatReader (inp, FFmpegFormatName)
           //sampleBuffer (nullptr)
     {
         using namespace FFmpegNamespace;
@@ -174,9 +172,9 @@ public:
                                           << " time base: " << AV_TIME_BASE
                                           << " sample rate: " << sampleRate << std::endl;
 
-                                reservoir.setSize ((int) numChannels, (int) jmin (lengthInSamples, (int64) 4096));
-
                                 buffer = new uint8_t*[2]; // alloc buffers for stereo planar data
+                                buffer[0] = nullptr;
+                                buffer[1] = nullptr;
                             }
                         }
                     }
@@ -213,6 +211,7 @@ public:
     {
         std::cout << "kill reader" << std::endl;
         using namespace FFmpegNamespace;
+        av_freep(&buffer[0]);
         av_frame_free(&frame);
         swr_free(&swr);
         avcodec_close(codec);
@@ -221,9 +220,6 @@ public:
         // using namespace WavPackNamespace;
         // WavpackCloseFile (wvContext);
     }
-
-    int bufferPosition = 0;
-    int samplesInBuffer = 0;
 
     //==============================================================================
     bool readSamples (int** destSamples, int numDestChannels, int startOffsetInDestBuffer,
@@ -478,9 +474,7 @@ public:
                 std::cout << "~ gotFrame " << frame->nb_samples << " decode size: " << decodeSize << std::endl;
 
                 // allocate buffer for samples
-                int dstLinesize;
-                av_samples_alloc(buffer, &dstLinesize, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
-
+                allocateBuffer();
                 int frames = swr_convert(swr,
                                          buffer,
                                          frame->nb_samples,
@@ -490,7 +484,7 @@ public:
                 bufferPosition = 0;
                 samplesInBuffer = frames;
 
-                std::cout << "read " << frames << " frames, line size: " << dstLinesize << std::endl;
+                std::cout << "read " << frames << " frames" << std::endl;
             }
             else {
                 std::cout << " no frame !!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
@@ -499,6 +493,15 @@ public:
 
         packet.size -= decodeSize;
         packet.data += decodeSize;
+    }
+
+    void allocateBuffer() {
+        using namespace FFmpegNamespace;
+        if (frame->nb_samples != bufferAllocatedSamples) {
+            av_freep(&buffer[0]);
+            av_samples_alloc(buffer, NULL, 2, frame->nb_samples, AV_SAMPLE_FMT_FLTP, 0);
+            bufferAllocatedSamples = frame->nb_samples;
+        }
     }
 
     //==============================================================================
@@ -573,6 +576,10 @@ private:
     uint8_t **buffer;
     //int32_t *sampleBuffer;
     //size_t sampleBufferSize;
+
+    int bufferPosition = 0;
+    int samplesInBuffer = 0;
+    int bufferAllocatedSamples = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFmpegReader)
 };
