@@ -250,19 +250,12 @@ public:
                 float *outleft = ((float*)(destSamples[0])) + startOffsetInDestBuffer;
                 float *outright = ((float*)(destSamples[1])) + startOffsetInDestBuffer;
 
+                memcpy(outleft, pleft, samplesToCopy * sizeof(float));
+                memcpy(outright, pright, samplesToCopy * sizeof(float));
+
                 bufferPosition += samplesToCopy;
                 startOffsetInDestBuffer += samplesToCopy;
-
-                // copy from buffer
-                while (samplesToCopy > 0) {
-                    *outleft = *pleft;
-                    *outright = *pright;
-                    outleft++;
-                    outright++;
-                    pleft++;
-                    pright++;
-                    samplesToCopy--;
-                }
+                samplesToCopy = 0;
 
                 std::cout << "done copy" << std::endl;
             }
