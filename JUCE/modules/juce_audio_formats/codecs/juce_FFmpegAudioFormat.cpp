@@ -175,6 +175,10 @@ public:
                                 buffer = new uint8_t*[2]; // alloc buffers for stereo planar data
                                 buffer[0] = nullptr;
                                 buffer[1] = nullptr;
+
+                                bufferPosition = 0;
+                                samplesInBuffer = 0;
+                                totalBufferPosition = 0;
                             }
                         }
                     }
@@ -233,10 +237,25 @@ public:
         // startSampleInFile - where to read in file
         // numSamples - how many samples to read
 
-        std::cout << "--- offset dst: " << startOffsetInDestBuffer <<
-            " start sample in file " << startSampleInFile << std::endl;
+        std::cout << "------- read from: " << startSampleInFile <<
+            " current ffmpeg sample " << totalBufferPosition << std::endl;
+
+        bool seeking = totalBufferPosition != startSampleInFile;
 
         while (numSamples > 0) {
+            // seeking
+            if (seeking) {
+                std::cout << "seek" << std::endl;
+                totalBufferPosition = startSampleInFile;
+                samplesInBuffer = 0;
+                int64_t seek = av_rescale_q((int64_t) (startSampleInFile / sampleRate) * AV_TIME_BASE,
+                                            AV_TIME_BASE_Q,
+                                            stream->time_base);
+                int seekResult = av_seek_frame(format, audioIndex, seek, AVSEEK_FLAG_BACKWARD);
+                avcodec_flush_buffers(codec);
+                seeking = false;
+            }
+
             // update state
             int samplesToCopy = jmin(numSamples, samplesInBuffer - bufferPosition);
             if (samplesToCopy > 0) {
@@ -254,6 +273,7 @@ public:
                 memcpy(outright, pright, samplesToCopy * sizeof(float));
 
                 bufferPosition += samplesToCopy;
+                totalBufferPosition += samplesToCopy;
                 startOffsetInDestBuffer += samplesToCopy;
                 samplesToCopy = 0;
 
@@ -474,6 +494,7 @@ public:
                                          (const uint8_t**)frame->extended_data,
                                          frame->nb_samples);
                 frames = frame->nb_samples;
+
                 bufferPosition = 0;
                 samplesInBuffer = frames;
 
@@ -571,6 +592,7 @@ private:
     //size_t sampleBufferSize;
 
     int bufferPosition = 0;
+    int64 totalBufferPosition = 0;
     int samplesInBuffer = 0;
     int bufferAllocatedSamples = 0;
 
