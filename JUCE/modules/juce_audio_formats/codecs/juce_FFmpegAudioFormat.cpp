@@ -58,7 +58,8 @@ public:
 
     ~customAVCOntext() {
         // av_free(ctx); // context is freed in FFmpegReader
-        av_free(buffer);
+        //av_free(buffer); // same as above, as documentation states
+        // this buffer could be freed internally by libavcodec
     }
 
     static int read(void *opaque, unsigned char *buf, int buf_size) {
@@ -94,7 +95,6 @@ class FFmpegReader : public AudioFormatReader
 public:
     FFmpegReader (InputStream* const inp)
         : AudioFormatReader (inp, FFmpegFormatName)
-          //sampleBuffer (nullptr)
     {
         using namespace FFmpegNamespace;
 
@@ -185,30 +185,6 @@ public:
                 }
             }
         }
-
-        // using namespace WavPackNamespace;
-        // sampleRate = 0;
-        // usesFloatingPointData = true;
-
-        // wvReader.read_bytes = &wv_read_bytes;
-        // wvReader.get_pos = &wv_get_pos;
-        // wvReader.set_pos_abs = &wv_set_pos_abs;
-        // wvReader.set_pos_rel = &wv_set_pos_rel;
-        // wvReader.get_length = &wv_get_length;
-        // wvReader.can_seek = &wv_can_seek;
-        // wvReader.push_back_byte = &wv_push_back_byte;
-
-        // wvContext = WavpackOpenFileInputEx (&wvReader, input, nullptr, wvErrorBuffer, OPEN_NORMALIZE, 0);
-
-        // if (wvContext != nullptr)
-        // {
-        //     lengthInSamples = (uint32) WavpackGetNumSamples(wvContext);
-        //     numChannels = (unsigned int) WavpackGetNumChannels(wvContext);
-        //     bitsPerSample = WavpackGetBitsPerSample(wvContext);
-        //     sampleRate = WavpackGetSampleRate(wvContext);
-
-        //     reservoir.setSize ((int) numChannels, (int) jmin (lengthInSamples, (int64) 4096));
-        // }
     }
 
     ~FFmpegReader()
@@ -221,8 +197,6 @@ public:
         avcodec_close(codec);
         avformat_free_context(format);
         delete ffmpegContext;
-        // using namespace WavPackNamespace;
-        // WavpackCloseFile (wvContext);
     }
 
     //==============================================================================
@@ -246,20 +220,27 @@ public:
             // seeking
             if (seeking) {
                 std::cout << "seek" << std::endl;
+                int64_t tm = av_rescale_q((int64_t)(startSampleInFile / sampleRate) * AV_TIME_BASE,
+                                          AV_TIME_BASE_Q,
+                                          stream->time_base);
                 totalBufferPosition = startSampleInFile;
                 samplesInBuffer = 0;
-                int64_t seek = av_rescale_q((int64_t) (startSampleInFile / sampleRate) * AV_TIME_BASE,
-                                            AV_TIME_BASE_Q,
-                                            stream->time_base);
-                int seekResult = av_seek_frame(format, audioIndex, seek, AVSEEK_FLAG_BACKWARD);
+                bufferPosition = 0;
+                av_packet_unref(&packet);
+                int seekResult = av_seek_frame(format, audioIndex, tm, AVSEEK_FLAG_ANY);
+                packet.size = 0;
                 avcodec_flush_buffers(codec);
                 seeking = false;
+
+                if (seekResult < 0) {
+                    // TODO: go to failsafe
+                }
             }
 
             // update state
             int samplesToCopy = jmin(numSamples, samplesInBuffer - bufferPosition);
             if (samplesToCopy > 0) {
-                std::cout << "copy " << samplesToCopy << " samples from buffer (" << (samplesInBuffer - bufferPosition) << " left)" << std::endl;
+                //std::cout << "copy " << samplesToCopy << " samples from buffer (" << (samplesInBuffer - bufferPosition) << " left)" << std::endl;
 
                 numSamples -= samplesToCopy;
 
@@ -277,7 +258,7 @@ public:
                 startOffsetInDestBuffer += samplesToCopy;
                 samplesToCopy = 0;
 
-                std::cout << "done copy" << std::endl;
+                //std::cout << "done copy" << std::endl;
             }
 
             // buffer is empty now - decode some more
@@ -286,9 +267,15 @@ public:
                     decodeFrame();
                 }
                 else {
-                    if (av_read_frame(format, &packet) == 0) {
-                        std::cout << "~ read frame" << std::endl;
+                    int fail = 0;
+                    if ((fail = av_read_frame(format, &packet)) == 0) {
+                        std::cout << "~ read frame: dts: " << packet.dts <<
+                            " pts: " << packet.pts <<
+                            " duration: " << packet.duration << std::endl;
                         decodeFrame();
+                    }
+                    else {
+                        std::cout << "failed read frame: " << fail << std::endl;
                     }
                 }
 
@@ -301,171 +288,8 @@ public:
 
         return true;
 
-        // old method
-        while (numSamples > 0)
-        {
-            const int numAvailable = (int) (reservoirStart + samplesInReservoir - startSampleInFile);
-
-            if (startSampleInFile >= reservoirStart && numAvailable > 0)
-            {
-                // got a few samples overlapping, so use them before seeking..
-                const int numToUse = jmin (numSamples, numAvailable);
-
-                for (int i = jmin (numDestChannels, reservoir.getNumChannels()); --i >= 0;)
-                    if (destSamples[i] != nullptr)
-                        memcpy (destSamples[i] + startOffsetInDestBuffer,
-                                reservoir.getReadPointer (i, (int) (startSampleInFile - reservoirStart)),
-                                sizeof (float) * (size_t) numToUse);
-
-                startSampleInFile += numToUse;
-                numSamples -= numToUse;
-                startOffsetInDestBuffer += numToUse;
-
-                if (numSamples == 0)
-                    break;
-            }
-
-            if (startSampleInFile < reservoirStart
-                || startSampleInFile + numSamples > reservoirStart + samplesInReservoir)
-            {
-                // buffer miss, so refill the reservoir
-                reservoirStart = jmax (0, (int) startSampleInFile);
-                samplesInReservoir = reservoir.getNumSamples();
-
-
-                /*
-                int64_t tm = av_rescale_q((int64_t) (startSampleInFile / sampleRate) * AV_TIME_BASE,
-                                        AV_TIME_BASE_Q,
-                                        stream->time_base);
-
-                if (av_seek_frame(format, audioIndex, tm, AVSEEK_FLAG_BACKWARD) != 0) {
-                    std::cout << "~ seek frame" << std::endl;
-                }
-                else {
-                    std::cout << "seek ok " << samplesInReservoir << std::endl;
-                }
-                */
-
-
-                // if (reservoirStart != (int) WavpackGetSampleIndex (wvContext))
-                //     WavpackSeekSample (wvContext, reservoirStart);
-
-                int offset = 0;
-                int numToRead = frame->nb_samples;
-
-                while (numToRead > 0)
-                {
-                    // // initialize buffer
-                    // if (sampleBuffer == nullptr)
-                    // {
-                    //     sampleBufferSize = numToRead * numChannels;
-                    //     sampleBuffer = new int32_t[numToRead * numChannels];
-                    // }
-
-                    // // reallocate if buffer size is too small
-                    // if (sampleBufferSize < numToRead * numChannels)
-                    // {
-                    //     sampleBufferSize = numToRead * numChannels;
-                    //     delete []sampleBuffer;
-                    //     sampleBuffer = new int32_t[sampleBufferSize];
-                    // }
-
-                    if (av_read_frame(format, &packet) != 0) {
-                        std::cout << "~ read frame" << std::endl;
-                        break;
-                    }
-
-                    int gotFrame = 0;
-                    if (avcodec_decode_audio4(codec, frame, &gotFrame, &packet) != 0) {
-                        std::cout << "~ decode audio" << std::endl;
-                        break;
-                    }
-
-                    if (!gotFrame) {
-                        std::cout << "~ !gotFrame" << std::endl;
-                        continue;
-                    }
-
-                    // resample frames
-                    //float *buffer;
-                    int frames = swr_convert(swr, (uint8_t**)&buffer, frame->nb_samples, (const uint8_t**)frame->data, frame->nb_samples);
-                    frames = frame->nb_samples;
-
-                    // fill buffers
-                    ///*data = (double*) realloc(*data, (*size + frame->nb_samples) * sizeof(double));
-                    ///memcpy(*data + *size, buffer, frames * sizeof(double));
-                    ///*size += frames;
-
-                    auto p1 = reservoir.getWritePointer (0, offset);
-                    auto p2 = reservoir.getWritePointer (1, offset);
-
-                    float *fp1 = p1;
-                    float *fp2 = p2;
-                    float *in = nullptr;//buffer;
-
-                    std::cout << "frames read " << frames << std::endl;
-
-                    for (int i = 0; i < frames; ++i)
-                    {
-                        *fp1 = *in;
-                        in++;
-                        fp1++;
-
-                        *fp2 = *in;
-                        in++;
-                        fp2++;
-                    }
-
-                    numToRead -= frames;
-                    offset += frames;
-
-                    // const long samps = WavpackUnpackSamples (wvContext, sampleBuffer, numToRead);
-
-                    // if (samps <= 0)
-                    //     break;
-
-                    // jassert (samps <= numToRead);
-
-                    // auto p1 = reservoir.getWritePointer (0, offset);
-                    // auto p2 = reservoir.getWritePointer (1, offset);
-
-                    // float *fp1 = p1;
-                    // float *fp2 = p2;
-                    // int32_t *in = sampleBuffer;
-
-                    // float maxF = 1.0f;
-                    // if (bitsPerSample == 16)
-                    //     maxF = 32767.0f;
-                    // else if (bitsPerSample == 24)
-                    //     maxF = 8388607.0f;
-                    // else if (bitsPerSample == 32)
-                    //     maxF = 32768.0f * 65536.0f;
-
-                    // if (WavpackGetMode(wvContext) & MODE_FLOAT)
-                    //     maxF = 1.0f;
-
-                    // for (int i = 0; i < samps; ++i)
-                    // {
-                    //     *fp1 = (float)*in / maxF;
-                    //     in++;
-                    //     fp1++;
-
-                    //     *fp2 = (float)*in / maxF;
-                    //     in++;
-                    //     fp2++;
-                    // }
-
-                    // numToRead -= samps;
-                    // offset += samps;
-                }
-
-                std::cout << "--" << frame->nb_samples << std::endl;
-
-                if (numToRead > 0)
-                    reservoir.clear (offset, numToRead);
-            }
-        }
-
+        // TODO: implement failsafe for ffmpeg seeking
+        // TODO: failsafe - fill buffer with 0's
         if (numSamples > 0)
         {
             for (int i = numDestChannels; --i >= 0;)
@@ -481,10 +305,10 @@ public:
         int gotFrame = 0;
         int decodeSize = avcodec_decode_audio4(codec, frame, &gotFrame, &packet);
         if (decodeSize >= 0) {
-            std::cout << "~ decode audio... " << packet.size << " size stream ID " << packet.stream_index<< std::endl;
+            //std::cout << "~ decode audio... " << packet.size << " size stream ID " << packet.stream_index<< std::endl;
 
             if (gotFrame != 0) {
-                std::cout << "~ gotFrame " << frame->nb_samples << " decode size: " << decodeSize << std::endl;
+                //std::cout << "~ gotFrame " << frame->nb_samples << " decode size: " << decodeSize << std::endl;
 
                 // allocate buffer for samples
                 allocateBuffer();
@@ -498,7 +322,8 @@ public:
                 bufferPosition = 0;
                 samplesInBuffer = frames;
 
-                std::cout << "read " << frames << " frames" << std::endl;
+
+                //std::cout << "read " << frames << " frames" << std::endl;
             }
             else {
                 std::cout << " no frame !!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
@@ -518,63 +343,7 @@ public:
         }
     }
 
-    //==============================================================================
-    // static int32_t wv_read_bytes (void *id, void *data, int32_t bcount)
-    // {
-    //     return (int32_t) (static_cast<InputStream*> (id)->read (data, (int) bcount));
-    // }
-
-    // static uint32_t wv_get_pos (void *id)
-    // {
-    //     InputStream* const in = static_cast<InputStream*> (id);
-    //     return in->getPosition ();
-    // }
-
-    // static int wv_set_pos_abs (void *id, uint32_t pos)
-    // {
-    //     InputStream* const in = static_cast<InputStream*> (id);
-    //     in->setPosition (pos);
-    //     return 0;
-    // }
-
-    // static int wv_push_back_byte (void *id, int c)
-    // {
-    //     InputStream* const in = static_cast<InputStream*> (id);
-
-    //     if (0 == in->setPosition (in->getPosition() - 1))
-    //     {
-    //         return EOF;
-    //     }
-
-    //     return c;
-    // }
-
-    // static int wv_set_pos_rel (void *id, int32_t delta, int mode)
-    // {
-    //     InputStream* const in = static_cast<InputStream*> (id);
-
-    //     if (mode == SEEK_CUR)
-    //         delta += in->getPosition();
-    //     else if (mode == SEEK_END)
-    //         delta += in->getTotalLength();
-
-    //     in->setPosition (delta);
-    //     return 0;
-    // }
-
-    // static uint32_t wv_get_length (void *id)
-    // {
-    //     return static_cast<InputStream*> (id)->getTotalLength ();
-    // }
-
-    // static int wv_can_seek (void *id)
-    // {
-    //     return 1;
-    // }
-
 private:
-    // WavPackNamespace::WavpackStreamReader wvReader;
-    // WavPackNamespace::WavpackContext* wvContext;
     FFmpegNamespace::customAVCOntext *ffmpegContext;
     FFmpegNamespace::AVCodecContext *codec;
     FFmpegNamespace::AVFormatContext *format;
@@ -584,13 +353,7 @@ private:
     FFmpegNamespace::AVFrame *frame;
     int audioIndex;
 
-    char wvErrorBuffer[80];
-    AudioSampleBuffer reservoir;
-    int reservoirStart, samplesInReservoir;
     uint8_t **buffer;
-    //int32_t *sampleBuffer;
-    //size_t sampleBufferSize;
-
     int bufferPosition = 0;
     int64 totalBufferPosition = 0;
     int samplesInBuffer = 0;
@@ -600,7 +363,7 @@ private:
 };
 
 //==============================================================================
-FFmpegAudioFormat::FFmpegAudioFormat()  : AudioFormat (wavPackFormatName, ".ape") // TODO: formats
+FFmpegAudioFormat::FFmpegAudioFormat()  : AudioFormat ("FFmpeg", {".ape", ".mp3"}) // TODO: formats
 {
 }
 
