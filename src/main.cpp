@@ -437,3 +437,4 @@ START_JUCE_APPLICATION(KiwanoApplication);
 // TODO: if no tags in file - grab filename
 // TODO: information pooling for groups (total time played, total album time etc)
 // TODO: wv, in-file cueing
+// TODO: when ffmpeg codec fails sample buffer is filled with silence - there should be message displayed that file could not be decoded

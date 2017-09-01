@@ -108,17 +108,17 @@ public:
 
         // get format from file
         if (avformat_open_input(&format, "", NULL, NULL) == 0) {
-            std::cout << "open input ok" << std::endl;
+            //std::cout << "open input ok" << std::endl;
             if (avformat_find_stream_info(format, NULL) >= 0) {
-                std::cout << "find stream ok" << std::endl;
+                //std::cout << "find stream ok" << std::endl;
 
                 // find audio stream index
                 audioIndex = -1;
                 for (unsigned int i = 0; i < format->nb_streams; ++i) {
                     if (format->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO) {
                         audioIndex = i;
-                        // TODO: multiple streams?
-                        std::cout << "found audio stream" << std::endl;
+                        // // TODO: multiple streams?
+                        // std::cout << "found audio stream" << std::endl;
                         break;
                     }
                 }
@@ -129,7 +129,7 @@ public:
 
                     // find suitable codec
                     if (avcodec_open2(codec, avcodec_find_decoder(codec->codec_id), NULL) >= 0) {
-                        std::cout << "found suitable codec for stream" << std::endl;
+                        //std::cout << "found suitable codec for stream" << std::endl;
                         swr = swr_alloc();
                         av_opt_set_int(swr, "in_channel_count", codec->channels, 0);
                         av_opt_set_int(swr, "out_channel_count", 2, 0);
@@ -142,7 +142,7 @@ public:
                         swr_init(swr);
 
                         if (swr_is_initialized(swr)) {
-                            std::cout << "swr is initialized" << std::endl;
+                            //std::cout << "swr is initialized" << std::endl;
 
                             av_init_packet(&packet);
                             packet.size = 0;
@@ -159,18 +159,18 @@ public:
                                                       format->streams[audioIndex]->duration *
                                                       codec->sample_rate);
 
-                                uint32 smp2 = (uint32)(av_q2d(format->streams[audioIndex]->time_base) *
-                                                       format->duration *
-                                                       codec->sample_rate);
+                                // uint32 smp2 = (uint32)(av_q2d(format->streams[audioIndex]->time_base) *
+                                //                        format->duration *
+                                //                        codec->sample_rate);
 
                                 lengthInSamples = smp;
 
-                                std::cout << "frame ok" << std::endl
-                                          << "samples: " << lengthInSamples << " or " << smp << " or " << smp2 << " or " << stream->nb_frames
-                                          << " channels: " << numChannels
-                                          << " format duration: " << format->duration
-                                          << " time base: " << AV_TIME_BASE
-                                          << " sample rate: " << sampleRate << std::endl;
+                                // std::cout << "frame ok" << std::endl
+                                //           << "samples: " << lengthInSamples << " or " << smp << " or " << smp2 << " or " << stream->nb_frames
+                                //           << " channels: " << numChannels
+                                //           << " format duration: " << format->duration
+                                //           << " time base: " << AV_TIME_BASE
+                                //           << " sample rate: " << sampleRate << std::endl;
 
                                 buffer = new uint8_t*[2]; // alloc buffers for stereo planar data
                                 buffer[0] = nullptr;
@@ -189,7 +189,7 @@ public:
 
     ~FFmpegReader()
     {
-        std::cout << "kill reader" << std::endl;
+        //std::cout << "kill reader" << std::endl;
         using namespace FFmpegNamespace;
         av_freep(&buffer[0]);
         av_frame_free(&frame);
@@ -211,15 +211,16 @@ public:
         // startSampleInFile - where to read in file
         // numSamples - how many samples to read
 
-        std::cout << "------- read from: " << startSampleInFile <<
-            " current ffmpeg sample " << totalBufferPosition << std::endl;
+        // std::cout << "------- read from: " << startSampleInFile <<
+        //     " current ffmpeg sample " << totalBufferPosition << std::endl;
 
         bool seeking = totalBufferPosition != startSampleInFile;
+        bool decodingDone = false;
 
-        while (numSamples > 0) {
+        while (numSamples > 0 && !decodingDone) {
             // seeking
             if (seeking) {
-                std::cout << "seek" << std::endl;
+                // std::cout << "seek" << std::endl;
                 int64_t tm = av_rescale_q((int64_t)(startSampleInFile / sampleRate) * AV_TIME_BASE,
                                           AV_TIME_BASE_Q,
                                           stream->time_base);
@@ -233,7 +234,8 @@ public:
                 seeking = false;
 
                 if (seekResult < 0) {
-                    // TODO: go to failsafe
+                    decodingDone = true;
+                    continue;
                 }
             }
 
@@ -264,18 +266,25 @@ public:
             // buffer is empty now - decode some more
             if (numSamples > 0) {
                 if (packet.size > 0) {
-                    decodeFrame();
+                    if (!decodeFrame()) {
+                        decodingDone = true;
+                        continue;
+                    }
                 }
                 else {
-                    int fail = 0;
-                    if ((fail = av_read_frame(format, &packet)) == 0) {
-                        std::cout << "~ read frame: dts: " << packet.dts <<
-                            " pts: " << packet.pts <<
-                            " duration: " << packet.duration << std::endl;
-                        decodeFrame();
+                    if (av_read_frame(format, &packet) == 0) {
+                        // std::cout << "~ read frame: dts: " << packet.dts <<
+                        //     " pts: " << packet.pts <<
+                        //     " duration: " << packet.duration << std::endl;
+                        if (!decodeFrame()) {
+                            decodingDone = true;
+                            continue;
+                        }
                     }
                     else {
-                        std::cout << "failed read frame: " << fail << std::endl;
+                        //std::cout << "failed read frame " << std::endl;
+                        decodingDone = true;
+                        continue;
                     }
                 }
 
@@ -283,24 +292,24 @@ public:
                     av_packet_unref(&packet);
                 }
             }
-            // return false?
         }
 
-        return true;
+        // release packet
+        if (packet.size <= 0) {
+            av_packet_unref(&packet);
+        }
 
-        // TODO: implement failsafe for ffmpeg seeking
-        // TODO: failsafe - fill buffer with 0's
-        if (numSamples > 0)
-        {
+        // fill with silence
+        if (numSamples > 0) {
             for (int i = numDestChannels; --i >= 0;)
                 if (destSamples[i] != nullptr)
-                    zeromem (destSamples[i] + startOffsetInDestBuffer, sizeof (int) * (size_t) numSamples);
+                    zeromem(destSamples[i] + startOffsetInDestBuffer, sizeof(int) * (size_t)numSamples);
         }
 
         return true;
     }
 
-    void decodeFrame() {
+    bool decodeFrame() {
         using namespace FFmpegNamespace;
         int gotFrame = 0;
         int decodeSize = avcodec_decode_audio4(codec, frame, &gotFrame, &packet);
@@ -321,17 +330,19 @@ public:
 
                 bufferPosition = 0;
                 samplesInBuffer = frames;
-
-
                 //std::cout << "read " << frames << " frames" << std::endl;
             }
             else {
-                std::cout << " no frame !!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+                return false;
             }
+        }
+        else {
+            return false;
         }
 
         packet.size -= decodeSize;
         packet.data += decodeSize;
+        return true;
     }
 
     void allocateBuffer() {
@@ -362,10 +373,47 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FFmpegReader)
 };
 
+
 //==============================================================================
-FFmpegAudioFormat::FFmpegAudioFormat()  : AudioFormat ("FFmpeg", {".ape", ".mp3"}) // TODO: formats
-{
-}
+FFmpegAudioFormat::FFmpegAudioFormat() :
+        AudioFormat ("FFmpeg", {
+                    ".ape",
+                    ".avi",
+                    ".caf",
+                    ".flv",
+                    ".m4v",
+                    ".matroska",
+                    ".webm",
+                    ".mov",
+                    ".mp4",
+                    ".3gp",
+                    ".3g2",
+                    ".mj2",
+                    ".mpc",
+                    ".mpc8",
+                    ".mpeg",
+                    ".tta",
+                    ".w64",
+                    ".xmv",
+                    ".xwma",
+                    ".aac",
+                    ".ac3",
+                    ".aif",
+                    ".aifc",
+                    ".aiff",
+                    ".amr",
+                    ".au",
+                    ".dts",
+                    ".m4a",
+                    ".mka",
+                    ".mp1",
+                    ".mp2",
+                    ".mp3",
+                    ".mpa",
+                    ".ra",
+                    ".snd",
+                    ".spx",
+                    ".wma"}) {}
 
 FFmpegAudioFormat::~FFmpegAudioFormat()
 {
@@ -406,11 +454,11 @@ AudioFormatReader* FFmpegAudioFormat::createReaderFor (InputStream* in, const bo
 }
 
 AudioFormatWriter* FFmpegAudioFormat::createWriterFor (OutputStream* out,
-                                                        double sampleRate,
-                                                        unsigned int numChannels,
-                                                        int bitsPerSample,
-                                                        const StringPairArray& metadataValues,
-                                                        int qualityOptionIndex)
+                                                       double sampleRate,
+                                                       unsigned int numChannels,
+                                                       int bitsPerSample,
+                                                       const StringPairArray& metadataValues,
+                                                       int qualityOptionIndex)
 {
     jassertfalse; // not yet implemented!
     return nullptr;
@@ -418,8 +466,7 @@ AudioFormatWriter* FFmpegAudioFormat::createWriterFor (OutputStream* out,
 
 StringArray FFmpegAudioFormat::getQualityOptions()
 {
-    // TODO: ?
-    static const char* options[] = { "fast", "high", "very high", 0 };
+    static const char* options[] = { 0 };
     return StringArray (options);
 }
 
