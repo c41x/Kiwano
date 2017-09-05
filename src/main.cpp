@@ -174,6 +174,11 @@ public:
         gl.addProcedure("show-directory-in-explorer", std::bind(&MainWindow::show_directory_in_explorer, this, _1, _2));
         gl.addProcedure("extract-file-path", std::bind(&MainWindow::extract_file_path, this, _1, _2));
 
+        // widgets
+        gl.addProcedure("create-image", std::bind(&user_interface::create_image, &itf, _1, _2));
+        gl.addProcedure("image-set-file", std::bind(&user_interface::image_set_file, &itf, _1, _2));
+        gl.addProcedure("image-set-placement", std::bind(&user_interface::image_set_placement, &itf, _1, _2));
+
         // exit handler
         gl.addProcedure("bind-exit", std::bind(&MainWindow::bind_exit, this, _1, _2));
 
@@ -189,6 +194,17 @@ public:
         gl.addVariable("justification-bottom", base::cell((int32)Justification::bottom));
         gl.addVariable("justification-vertically-centred", base::cell((int32)Justification::verticallyCentred));
         gl.addVariable("justification-horizontally-centred", base::cell((int32)Justification::horizontallyCentred));
+        gl.addVariable("rect-placement-x-left", base::cell((int32)RectanglePlacement::xLeft));
+        gl.addVariable("rect-placement-x-right", base::cell((int32)RectanglePlacement::xRight));
+        gl.addVariable("rect-placement-x-mid", base::cell((int32)RectanglePlacement::xMid));
+        gl.addVariable("rect-placement-y-top", base::cell((int32)RectanglePlacement::yTop));
+        gl.addVariable("rect-placement-y-bottom", base::cell((int32)RectanglePlacement::yBottom));
+        gl.addVariable("rect-placement-y-mid", base::cell((int32)RectanglePlacement::yMid));
+        gl.addVariable("rect-placement-stretch", base::cell((int32)RectanglePlacement::stretchToFit));
+        gl.addVariable("rect-placement-reduce", base::cell((int32)RectanglePlacement::onlyReduceInSize));
+        gl.addVariable("rect-placement-increase", base::cell((int32)RectanglePlacement::onlyIncreaseInSize));
+        gl.addVariable("rect-placement-no-resize", base::cell((int32)RectanglePlacement::doNotResize));
+        gl.addVariable("rect-placement-centred", base::cell((int32)RectanglePlacement::centred));
 
         // prepare settings folder
         base::string appPath = base::fs::getUserDirectory() + "/.kiwano";

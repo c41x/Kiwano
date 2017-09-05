@@ -273,6 +273,8 @@ public:
                     ret.push_back(cell(cell::typeString, p->getRowPath(index->i)));
                 else if (query->s == "path-raw")
                     ret.push_back(cell(cell::typeString, p->getRowPathRaw(index->i)));
+                else if (query->s == "length")
+                    ret.push_back(cell(cell::typeInt, p->getItemsCount()));
                 else if (query->s == "is-track") {
                     if (p->isTrack(index->i))
                         return gl.t();
@@ -352,6 +354,43 @@ public:
                     return gl.t();
                 return gl.nil();
             }, components, base::cell::list(1), base::cell::typeIdentifier);
+    }
+
+    //- image
+    // (create-image name (id)name) -> nil/id
+    base::cell_t create_image(base::cell_t c, base::cells_t &) {
+        using namespace base;
+        return fxValidateCreate("create-image", c, [c, this]() -> auto {
+                const auto &name = c + 1;
+                auto &i = components[name->s] = std::make_unique<ImageComponent>();
+                ImageComponent *img = (ImageComponent*)&i;
+                img->setName("image");
+                img->setComponentID(name->s);
+                return name;
+            }, components, cell::list(1), cell::typeIdentifier);
+    }
+
+    // (image-set-path (id)name (string)path) -> nil/t
+    base::cell_t image_set_file(base::cell_t c, base::cells_t &) {
+        return fxValidateAccess("image-set-file", c, [c, this](Component *e) -> auto {
+                auto img = reinterpret_cast<ImageComponent*>(e);
+                const auto &path = c + 2;
+                auto image = ImageCache::getFromFile(File(path->s));
+                if (image.isNull())
+                    return gl.nil();
+                img->setImage(image);
+                return gl.t();
+            }, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeString);
+    }
+
+    // (image-set-placement (id)name (id)placement)
+    base::cell_t image_set_placement(base::cell_t c, base::cells_t &) {
+        return fxValidateAccess("image-set-placement", c, [c, this](Component *e) -> auto {
+                auto img = reinterpret_cast<ImageComponent*>(e);
+                const auto &placement = c + 2;
+                img->setImagePlacement((juce::RectanglePlacement)placement->i);
+                return gl.t();
+            }, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeInt);
     }
 
     //- text button
