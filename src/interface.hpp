@@ -363,9 +363,8 @@ public:
         return fxValidateCreate("create-image", c, [c, this]() -> auto {
                 const auto &name = c + 1;
                 auto &i = components[name->s] = std::make_unique<ImageComponent>();
-                ImageComponent *img = (ImageComponent*)&i;
-                img->setName("image");
-                img->setComponentID(name->s);
+                i->setName("image");
+                i->setComponentID(name->s);
                 return name;
             }, components, cell::list(1), cell::typeIdentifier);
     }
