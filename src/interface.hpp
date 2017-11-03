@@ -8,6 +8,7 @@
 #include "slider.hpp"
 #include "window.hpp"
 #include "fxTemplates.hpp"
+#include "panel.hpp"
 
 // change listener
 class audioSettingsChangeListener : public ChangeListener {
@@ -788,6 +789,18 @@ public:
                 ret.push_back(base::cell((float)sl->getValue()));
                 return ret.end();
             }, components, cell::listRange(1, 2), cell::typeIdentifier, cell::typeFloat);
+    }
+
+    //- panel
+    // (create-panel (id)name (id)paint-function) -> nil/id
+    base::cell_t create_panel(base::cell_t c, base::cells_t &) {
+        return fxValidateCreate("create-panel", c, [c, this]() -> auto {
+                const auto &name = c + 1;
+                const auto &paintFn = c + 2;
+                auto &p = components[name->s] = std::make_unique<panel>(gl, paintFn->s);
+                p->setName("panel");
+                return name;
+            }, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeIdentifier);
     }
 
     //- bindings

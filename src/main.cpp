@@ -122,6 +122,9 @@ public:
         gl.addProcedure("bind-slider-drag-end", std::bind(&user_interface::bind_listener<sliderDragEndedListener>, &itf, _1, _2, &user_interface::add_slider_listener_fn));
         gl.addProcedure("unbind-slider", std::bind(&user_interface::unbind_listener, &itf, _1, _2, &user_interface::remove_slider_listener_fx));
 
+        // panel
+        gl.addProcedure("create-panel", std::bind(&user_interface::create_panel, &itf, _1, _2));
+
         // tabs
         gl.addProcedure("create-tabs", std::bind(&user_interface::create_tabs, &itf, _1, _2));
         gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
