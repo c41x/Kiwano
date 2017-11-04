@@ -188,6 +188,7 @@ public:
         // graphics
         gl.addProcedure("g-draw-text", std::bind(&graphics::drawText, std::ref(gl), _1, _2));
         gl.addProcedure("g-set-color", std::bind(&graphics::setColor, std::ref(gl), _1, _2));
+        gl.addProcedure("g-fill-all", std::bind(&graphics::fillAll, std::ref(gl), _1, _2));
 
         // constants
         gl.addVariable("justification-left", base::cell((int32)Justification::left));
