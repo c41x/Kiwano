@@ -100,6 +100,12 @@ public:
 
     bool isTrack(int32 i) const { return model.isTrack(i); }
 
+    base::string getRowAlbum(int32 i) const { return model.getItemAlbum(i); }
+    base::string getRowArtist(int32 i) const { return model.getItemArtist(i); }
+    base::string getRowTitle(int32 i) const { return model.getItemTitle(i); }
+    int32 getRowYear(int32 i) const { return model.getItemYear(i); }
+    int32 getRowTrack(int32 i) const { return model.getItemTrack(i); }
+
     int32 getItemsCount() const {
         return model.getItemsCount();
     }

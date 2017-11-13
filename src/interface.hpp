@@ -276,6 +276,16 @@ public:
                     ret.push_back(cell(cell::typeString, p->getRowPathRaw(index->i)));
                 else if (query->s == "length")
                     ret.push_back(cell(cell::typeInt, p->getItemsCount()));
+                else if (query->s == "album")
+                    ret.push_back(cell(cell::typeString, p->getRowAlbum(index->i)));
+                else if (query->s == "artist")
+                    ret.push_back(cell(cell::typeString, p->getRowArtist(index->i)));
+                else if (query->s == "title")
+                    ret.push_back(cell(cell::typeString, p->getRowTitle(index->i)));
+                else if (query->s == "year")
+                    ret.push_back(cell(cell::typeInt, p->getRowYear(index->i)));
+                else if (query->s == "track")
+                    ret.push_back(cell(cell::typeInt, p->getRowTrack(index->i)));
                 else if (query->s == "is-track") {
                     if (p->isTrack(index->i))
                         return gl.t();

@@ -44,4 +44,14 @@ base::cell_t fillAll(base::lisp &gl, base::cell_t c, base::cells_t &) {
         }, base::cell::list(1), base::cell::typeVector);
 }
 
+// TODO: bold/normal enum
+base::cell_t setFont(base::lisp &gl, base::cell_t c, base::cells_t &) {
+    return fxValidateSkeleton(gl, "g-set-font", c, [&gl, c]() -> auto {
+            const auto &face = c + 1;
+            const auto &height = c + 2;
+            g->setFont(juce::Font(face->s, height->f, juce::Font::plain));
+            return gl.t();
+        }, base::cell::list(2), base::cell::typeString, base::cell::typeFloat);
+}
+
 }
