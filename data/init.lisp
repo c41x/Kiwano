@@ -44,6 +44,24 @@
 (defun none ()
   (g-fill-all |0.2 0.2 0.2 1.0|))
 
+(defun play-item-get (what)
+  (playlist-get current-playlist current-index what))
+
+(defun draw-info-panel ()
+  (g-fill-all |0.7 0.7 0.7 1.0|)
+  (g-set-color |0.0 0.0 0.0 1.0|)
+  (g-set-font "Liberation Sans" 15.0)
+  (g-draw-text (if (playback-is-playing) "playing" "stopped") 10 0 100 20 justification-left)
+  (g-draw-text (if (playback-is-playing)
+                   (strs (play-item-get 'album) " - "
+                         (play-item-get 'artist) " - "
+                         (play-item-get 'title)
+                         (if (< (play-item-get 'year) 1800)
+                             ""
+                           (strs " (" (play-item-get 'year) ")")))
+                   "-")
+               10 20 600 20 justification-left))
+
 (defun create-buttons ()
   (create-layout 'l-btns t)
   (create-text-button 'b-play ">" "Play")
@@ -80,7 +98,7 @@
 
 (defun create-desc-info ()
   (create-layout 'l-desc-info nil)
-  (create-panel 'pan 'none)
+  (create-panel 'pan 'draw-info-panel)
   (create-text-button 'bb ">" "Test")
   (layout-add-component 'l-desc-info 'pan -0.1 -1.0 -1.0)
   (layout-add-component 'l-desc-info (create-buttons) 20.0 20.0 20.0)
@@ -148,6 +166,7 @@
     (on-play)))
 
 (defun play-selected ()
+  ;; TODO: check if selected item is playable (playlist-get with 'is-track)
   (setq current-id (playlist-get current-playlist current-index 'id))
   (playback-set-file (playlist-get current-playlist current-index 'path))
   (slider-range 'sl-seek 0.0 (playback-length)) ;; TODO: DRY
@@ -184,6 +203,7 @@
 ;; show explorer test (show-directory-in-explorer (extract-file-path "/home/calx/Downloads/somefile.png"))
 
 (defun playback-changed ()
+  (repaint-component 'pan)
   (if (playback-is-playing)
       (start-timer 'update-slider 100)
     (stop-timer 'update-slider)
