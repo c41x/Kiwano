@@ -11,21 +11,24 @@ class playlist : public Component, public FileDragAndDropTarget {
     base::lisp &gl;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(playlist);
 
-    void init() {
+    void init(float height = 18.0f) {
         box.setModel(&model);
         box.setMultipleSelectionEnabled(true);
         box.getHeader().setStretchToFitActive(true);
         box.setMultipleSelectionEnabled(true);
-        box.setRowHeight(18.0f); // TODO: LISP
+        box.setRowHeight(height);
         addAndMakeVisible(box);
     }
 
 public:
 
-    playlist(base::lisp &_gl, base::string name) : box("playlist-box", nullptr), model(_gl, name), gl(_gl) {
+    playlist(base::lisp &_gl, base::string name, float height)
+            : box("playlist-box", nullptr),
+              model(_gl, name),
+              gl(_gl) {
         model.init();
         setComponentID(name);
-        init();
+        init(height);
     }
 
     playlist(playlist &r, const base::string &filter, base::lisp &_gl, const base::string &name)
@@ -108,6 +111,10 @@ public:
 
     int32 getItemsCount() const {
         return model.getItemsCount();
+    }
+
+    bool setColor(const base::string &id, Colour color) {
+        return model.setColor(id, color);
     }
 
     void addColumn(const base::string &caption, const base::string &content,

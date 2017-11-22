@@ -6,13 +6,11 @@ namespace graphics {
 
 Graphics *g = nullptr;
 
-namespace {
 Colour glispVecToColour(base::cell_t c) {
     return Colour((uint8)(c->v4[0] * 255.0f),
                   (uint8)(c->v4[1] * 255.0f),
                   (uint8)(c->v4[2] * 255.0f),
                   (uint8)(c->v4[3] * 255.0f));
-}
 }
 
 base::cell_t drawText(base::lisp &gl, base::cell_t c, base::cells_t &) {

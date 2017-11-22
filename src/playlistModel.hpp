@@ -33,10 +33,27 @@ struct playlistModel : public TableListBoxModel {
     base::lisp &gl;
     base::string playlistId;
 
+    // colors
+    Colour clBackground;
+    Colour clBackgroundSelected;
+    Colour clBackgroundFilter;
+    Colour clBackgroundFilterSelected;
+    Colour clBackgroundGroup;
+    Colour clText;
+    Colour clTextSelected;
+    Colour clTextGroup;
+
     playlistModel(playlistModel &r, const base::string &filter, base::lisp &_gl, const base::string &_playlistId) :
             filterEnabled(false),
             gl(_gl),
-            playlistId(_playlistId) {
+            playlistId(_playlistId),
+            clBackground(Colour((uint8)33, 33, 33, (uint8)255)),
+            clBackgroundSelected(Colour((uint8)66, 66, 66, (uint8)255)),
+            clBackgroundFilter(Colour((uint8)255, 0, 0, (uint8)255)),
+            clBackgroundFilterSelected(Colour((uint8)255, 255, 0, (uint8)255)),
+            clBackgroundGroup(Colour((uint8)11, 11, 11, (uint8)255)),
+            clText(Colour((uint8)170, 170, 170, (uint8)255)),
+            clTextGroup(Colour((uint8)170, 170, 170, (uint8)255)) {
         // reset
         init();
 
@@ -65,7 +82,14 @@ struct playlistModel : public TableListBoxModel {
     playlistModel(base::lisp &_gl, const base::string &_playlistId) :
             filterEnabled(false),
             gl(_gl),
-            playlistId(_playlistId) {}
+            playlistId(_playlistId),
+            clBackground(Colour((uint8)33, 33, 33, (uint8)255)),
+            clBackgroundSelected(Colour((uint8)66, 66, 66, (uint8)255)),
+            clBackgroundFilter(Colour((uint8)255, 0, 0, (uint8)255)),
+            clBackgroundFilterSelected(Colour((uint8)255, 255, 0, (uint8)255)),
+            clBackgroundGroup(Colour((uint8)11, 11, 11, (uint8)255)),
+            clText(Colour((uint8)170, 170, 170, (uint8)255)),
+            clTextGroup(Colour((uint8)170, 170, 170, (uint8)255)) {}
     ~playlistModel() {}
 
     void init() {
@@ -463,18 +487,55 @@ struct playlistModel : public TableListBoxModel {
         return getItemsCount();
     }
 
+    bool setColor(const base::string &id, Colour color) {
+        if (id == "bg") {
+            clBackground = color;
+            return true;
+        }
+        else if (id == "bg-selected") {
+            clBackgroundSelected = color;
+            return true;
+        }
+        else if (id == "bg-filter") {
+            clBackgroundFilter = color;
+            return true;
+        }
+        else if (id == "bg-filter-selected") {
+            clBackgroundFilterSelected = color;
+            return true;
+        }
+        else if (id == "bg-group") {
+            clBackgroundGroup = color;
+            return true;
+        }
+        else if (id == "txt") {
+            clText = color;
+            return true;
+        }
+        else if (id == "txt-group") {
+            clTextGroup = color;
+            return true;
+        }
+        return false;
+    }
+
     // This is overloaded from TableListBoxModel, and should fill in the background of the whole row
     void paintRowBackground(Graphics& g, int rowNumber, int /*width*/, int /*height*/, bool rowIsSelected) override {
         if (filterEnabled && filterMatch(rowNumber, filterQuery)) {
             if (rowIsSelected)
-                g.fillAll(Colours::lightyellow);
-            else g.fillAll(Colours::lightgreen);
+                g.fillAll(clBackgroundFilterSelected);
+            else g.fillAll(clBackgroundFilter);
         }
         else if (rowIsSelected) {
-            g.fillAll(Colours::lightblue);
+            g.fillAll(clBackgroundSelected);
         }
-        else if (rowNumber % 2) {
-            g.fillAll(Colour(0xffeeeeee));
+        else {
+            if (rowNumber < getNumRows() && !isTrack(rowNumber)) {
+                g.fillAll(clBackgroundGroup);
+            }
+            else {
+                g.fillAll(clBackground);
+            }
         }
     }
 
@@ -513,12 +574,10 @@ struct playlistModel : public TableListBoxModel {
 
             // group begin
             if (!isTrack(rowNumber)) {
-                g.setColour(Colour((uint8)210, 210, 210, (uint8)255));
-                g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::bold));
-                g.fillRect(0, 0, width, height);
+                g.setFont(juce::Font("Ubuntu Condensed", height, juce::Font::plain));
 
                 if (cg == "album") {
-                    g.setColour(Colours::black);
+                    g.setColour(clTextGroup);
                     g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred, true);
                 }
                 else if (!cg.empty()) {
@@ -529,8 +588,8 @@ struct playlistModel : public TableListBoxModel {
                 return;
             }
             else {
-                g.setColour(Colours::black);
-                g.setFont(juce::Font("Ubuntu Condensed", height * 0.9f, juce::Font::plain));
+                g.setColour(clText);
+                g.setFont(juce::Font("Ubuntu Condensed", height, juce::Font::plain));
 
                 // item
                 if (c == "track")

@@ -224,14 +224,15 @@ public:
     }
 
     //- playlist
-    // (create-playlist name) -> nil/id
+    // (create-playlist name (float)row-height) -> nil/id
     base::cell_t create_playlist(base::cell_t c, base::cells_t &) {
         return fxValidateCreate("create-playlist", c, [c, this]() -> auto {
                 const auto &name = c + 1;
-                auto &p = components[name->s] = std::make_unique<playlist>(gl, name->s);
+                const auto &height = c + 2;
+                auto &p = components[name->s] = std::make_unique<playlist>(gl, name->s, height->f);
                 p->setName("playlist");
                 return name;
-            }, components, base::cell::list(1), base::cell::typeIdentifier);
+            }, components, base::cell::list(2), base::cell::typeIdentifier, base::cell::typeFloat);
     }
 
     // (create-filtered-playlist (id)base-playlist (id)new-playlist (string)filter) -> name/nil
@@ -294,6 +295,23 @@ public:
                 else return gl.nil();
                 return ret.end();
             }, components, cell::list(3), cell::typeIdentifier, cell::typeInt, cell::typeIdentifier);
+    }
+
+    // playlist-set (id)playlist-id (id)colour-to-change (vec)color
+    base::cell_t playlist_set_color(base::cell_t c, base::cells_t &ret) {
+        using namespace base;
+        return fxValidateAccess("playlist-set", c, [this, c](Component *e) -> auto {
+                const auto &id = c + 2;
+                const auto &color = c + 3;
+                auto p = reinterpret_cast<playlist*>(e);
+                if (p->setColor(id->s, Colour::fromFloatRGBA(color->v4[0],
+                                                             color->v4[1],
+                                                             color->v4[2],
+                                                             color->v4[3])))
+                    return gl.t();
+                return gl.nil();
+            },
+            components, cell::list(3), cell::typeIdentifier, cell::typeIdentifier, cell::typeVector);
     }
 
     base::cell_t playlist_load(base::cell_t c, base::cells_t &ret) {
