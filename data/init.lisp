@@ -21,7 +21,7 @@
 ;; for given id returns new playlist
 (defun init-playlist (id)
   ;;(message-box (strs "creating playlist: " id) "asdf")
-  (create-playlist id)
+  (create-playlist id 18.0)
   (playlist-add-column id "track" 'track nil 50 20 1000)
   (playlist-add-column id "album" 'album 'album 200 150 1000)
   (playlist-add-column id "artist" 'artist nil 200 150 1000)

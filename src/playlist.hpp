@@ -15,7 +15,7 @@ class playlist : public Component, public FileDragAndDropTarget {
         box.setModel(&model);
         box.setMultipleSelectionEnabled(true);
         box.getHeader().setStretchToFitActive(true);
-        box.setMultipleSelectionEnabled(true);
+        box.setHeaderHeight(0.0f); // hide header for now
         box.setRowHeight(height);
         addAndMakeVisible(box);
     }
