@@ -731,6 +731,26 @@ public:
             }, components, cell::list(2), cell::typeIdentifier, cell::typeIdentifier);
     }
 
+    // (tabs-get-selected (id)tabs (id)expected-type)
+    base::cell_t tabs_get_selected(base::cell_t c, base::cells_t &ret) {
+        using namespace base;
+        return fxValidateAccess("tabs-get-selected", c, [c, &ret, this](Component *e) -> auto {
+                const auto &type = c + 2;
+                tabs *t = reinterpret_cast<tabs*>(e);
+                auto currentTabContent = t->getTabContentComponent(t->getCurrentTabIndex());
+
+                // if type match -> return
+                if (currentTabContent->getChildComponent(0)->getName() == type->s) {
+                    ret.push_back(cell(cell::typeIdentifier,
+                                       currentTabContent->getChildComponent(0)->
+                                       getComponentID().toStdString()));
+                    return ret.end();
+                }
+
+                return gl.nil();
+            }, components, cell::list(2), cell::typeIdentifier, cell::typeIdentifier);
+    }
+
     // (tabs-remove (id)tabs (int|string)index)
     base::cell_t tabs_remove(base::cell_t c, base::cells_t &) {
         using namespace base;

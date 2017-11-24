@@ -33,7 +33,7 @@ public:
 
     MainWindow(String name) : DocumentWindow(name, Colours::lightgrey, DocumentWindow::allButtons),
                               itf(gl) {
-        setUsingNativeTitleBar(true);
+        setUsingNativeTitleBar(false);
         setContentOwned(&itf, false);
         setSize(800, 600);
         setTopLeftPosition(200, 200);
@@ -130,6 +130,7 @@ public:
         gl.addProcedure("tabs-add-component", std::bind(&user_interface::tabs_add_component, &itf, _1, _2));
         gl.addProcedure("tabs-count", std::bind(&user_interface::tabs_count, &itf, _1, _2));
         gl.addProcedure("tabs-get-components", std::bind(&user_interface::tabs_get_components, &itf, _1, _2));
+        gl.addProcedure("tabs-get-selected", std::bind(&user_interface::tabs_get_selected, &itf, _1, _2));
         gl.addProcedure("tabs-remove", std::bind(&user_interface::tabs_remove, &itf, _1, _2));
         gl.addProcedure("tabs-index", std::bind(&user_interface::tabs_index, &itf, _1, _2));
         gl.addProcedure("tabs-index-component", std::bind(&user_interface::tabs_index_component, &itf, _1, _2));
@@ -378,6 +379,7 @@ public:
     }
 
     void cleanup() {
+        // TODO: graphics disable
         itf.cleanup();
         hotkeyProcess.stopTimer();
         system::hotkey::shutdown();

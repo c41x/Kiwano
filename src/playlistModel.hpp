@@ -49,8 +49,8 @@ struct playlistModel : public TableListBoxModel {
             playlistId(_playlistId),
             clBackground(Colour((uint8)33, 33, 33, (uint8)255)),
             clBackgroundSelected(Colour((uint8)66, 66, 66, (uint8)255)),
-            clBackgroundFilter(Colour((uint8)255, 0, 0, (uint8)255)),
-            clBackgroundFilterSelected(Colour((uint8)255, 255, 0, (uint8)255)),
+            clBackgroundFilter(Colour((uint8)51, 102, 0, (uint8)255)),
+            clBackgroundFilterSelected(Colour((uint8)102, 102, 0, (uint8)255)),
             clBackgroundGroup(Colour((uint8)11, 11, 11, (uint8)255)),
             clText(Colour((uint8)170, 170, 170, (uint8)255)),
             clTextGroup(Colour((uint8)170, 170, 170, (uint8)255)) {
@@ -85,8 +85,8 @@ struct playlistModel : public TableListBoxModel {
             playlistId(_playlistId),
             clBackground(Colour((uint8)33, 33, 33, (uint8)255)),
             clBackgroundSelected(Colour((uint8)66, 66, 66, (uint8)255)),
-            clBackgroundFilter(Colour((uint8)255, 0, 0, (uint8)255)),
-            clBackgroundFilterSelected(Colour((uint8)255, 255, 0, (uint8)255)),
+            clBackgroundFilter(Colour((uint8)51, 102, 0, (uint8)255)),
+            clBackgroundFilterSelected(Colour((uint8)102, 102, 0, (uint8)255)),
             clBackgroundGroup(Colour((uint8)11, 11, 11, (uint8)255)),
             clText(Colour((uint8)170, 170, 170, (uint8)255)),
             clTextGroup(Colour((uint8)170, 170, 170, (uint8)255)) {}
@@ -397,6 +397,12 @@ struct playlistModel : public TableListBoxModel {
 
     // checks if given query match item at index
     bool filterMatch(size_t index, const base::string &query) const {
+        if ((int)index >= getItemsCount())
+            return false;
+
+        if (!isTrack(index))
+            return false;
+
         base::string f = base::lowerCase(query);
         return base::string::npos != base::lowerCase(getItemArtist(index)).find(f)
             || base::string::npos != base::lowerCase(getItemAlbum(index)).find(f)
@@ -406,7 +412,17 @@ struct playlistModel : public TableListBoxModel {
     // returns next filtered item index
     int filterNextIndex(int currentPosition, bool wrap) const {
         const int items = getItemsCount();
-        for (int i = currentPosition + 1; i < items; ++i) {
+
+        // ommit consecutive matches
+        int i = currentPosition;
+        for (; i < items; ++i) {
+            if (!filterMatch(i, filterQuery))
+                break;
+        }
+
+        // find next
+        i += 1;
+        for (; i < items; ++i) {
             if (filterMatch(i, filterQuery))
                 return i;
         }
@@ -616,7 +632,7 @@ struct playlistModel : public TableListBoxModel {
             }
         }
 
-        g.setColour(Colours::black.withAlpha(0.2f));
-        g.fillRect(width - 1, 0, 1, height);
+        // g.setColour(Colours::black.withAlpha(0.2f));
+        // g.fillRect(width - 1, 0, 1, height);
     }
 };

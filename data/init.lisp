@@ -286,41 +286,52 @@
 ;; bind hotkeys
 (bind-hotkey "Pause" "" 'toggle-playback)
 
-;; filtered playlist test
-(defun search (query)
-  (create-filtered-playlist current-playlist 'ppp query)
-  (playlist-add-column 'ppp "track" 'track nil 50 20 1000)
-  (playlist-add-column 'ppp "album" 'album nil 200 150 1000)
-  (playlist-add-column 'ppp "artist" 'artist nil 200 150 1000)
-  (playlist-add-column 'ppp "title" 'title nil 200 150 1000)
-  (playlist-add-column 'ppp "year" 'year nil 70 50 1000)
-  ;;(playlist-add-column 'ppp "count" "0" 50 20 1000)
-  ;;(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
-  ;;(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
-  ;;(window-set-main-component 'search-window 'ppp)
-  (tabs-set-component 'playlist-tabs 'ppp 0)
-  )
+;; ;; filtered playlist test
+;; (defun search (query)
+;;   (create-filtered-playlist current-playlist 'ppp query)
+;;   (playlist-add-column 'ppp "track" 'track nil 50 20 1000)
+;;   (playlist-add-column 'ppp "album" 'album nil 200 150 1000)
+;;   (playlist-add-column 'ppp "artist" 'artist nil 200 150 1000)
+;;   (playlist-add-column 'ppp "title" 'title nil 200 150 1000)
+;;   (playlist-add-column 'ppp "year" 'year nil 70 50 1000)
+;;   ;;(playlist-add-column 'ppp "count" "0" 50 20 1000)
+;;   ;;(playlist-add-column 'ppp "count" 'aaaaaaaaaaaaa 50 20 1000)
+;;   ;;(create-window 'search-window "Search Results" |100.0 100.0 400.0 400.0| |1.0 1.0 1.0 1.0|)
+;;   ;;(window-set-main-component 'search-window 'ppp)
+;;   (tabs-set-component 'playlist-tabs 'ppp 0)
+;;   )
 
-(defun qqq ()
-  (input-box "Search for:" "Enter query: " "" 'search))
+;; (defun qqq ()
+;;   (input-box "Search for:" "Enter query: " "" 'search))
 
-(bind-key "F4" 'qqq)
+;; (bind-key "F4" 'qqq)
 
-;; TODO: replace current-playlist
+;; gets current playst component id
+(defun get-selected-playlist ()
+  (tabs-get-selected 'playlist-tabs 'playlist))
+
 (defun enable-filter (query)
-  (playlist-enable-filter current-playlist query))
+  (defvar sp (get-selected-playlist))
+  (and sp (playlist-enable-filter sp query) (filter-next sp)))
+
+(defun filter-next (sp)
+  (if (playlist-filter-enabled sp)
+      (playlist-filter-next sp)))
 
 (defun on-f3 ()
-  (if (playlist-filter-enabled current-playlist)
-      (playlist-disable-filter current-playlist)
-    (input-box "Quick search" "Query: " "" 'enable-filter)))
+  (defvar sp (get-selected-playlist))
+  (and sp
+       (if (playlist-filter-enabled sp)
+           (filter-next sp)
+         (input-box "Quick search" "Query: " "" 'enable-filter))))
 
-(defun on-n ()
-  (if (playlist-filter-enabled current-playlist)
-      (playlist-filter-next current-playlist)))
+(defun on-disable-filter ()
+  (defvar sp (get-selected-playlist))
+  (and sp (playlist-filter-enabled sp)
+       (playlist-disable-filter sp)))
 
-;; (bind-key "F3" 'on-f3)
-;; (bind-key "F4" 'on-n)
+(bind-key "F3" 'on-f3)
+(bind-key "escape" 'on-disable-filter)
 
 ;; make things visible
 (set-main-component 'l-main)
