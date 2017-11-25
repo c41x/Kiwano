@@ -5,6 +5,7 @@
 namespace graphics {
 
 Graphics *g = nullptr;
+bool gEnableCustomDrawing = true;
 
 Colour glispVecToColour(base::cell_t c) {
     return Colour((uint8)(c->v4[0] * 255.0f),

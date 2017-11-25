@@ -12,8 +12,10 @@ public:
             paintFunction(paintFn) {}
 
     void paint(Graphics &g) override {
-        graphics::g = &g;
-        glisp.eval(base::strs("(", paintFunction, ")"));
-        graphics::g = nullptr;
+        if (graphics::gEnableCustomDrawing) {
+            graphics::g = &g;
+            glisp.eval(base::strs("(", paintFunction, ")"));
+            graphics::g = nullptr;
+        }
     }
 };

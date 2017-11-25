@@ -379,7 +379,7 @@ public:
     }
 
     void cleanup() {
-        // TODO: graphics disable
+        graphics::gEnableCustomDrawing = false;
         itf.cleanup();
         hotkeyProcess.stopTimer();
         system::hotkey::shutdown();

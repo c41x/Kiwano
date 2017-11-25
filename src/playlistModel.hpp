@@ -597,9 +597,11 @@ struct playlistModel : public TableListBoxModel {
                     g.drawText(getItemAlbum(rowNumber), 0, 0, width, height, Justification::centred, true);
                 }
                 else if (!cg.empty()) {
-                    graphics::g = &g;
-                    gl.eval(base::strs("(", cg, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
-                    graphics::g = nullptr;
+                    if (graphics::gEnableCustomDrawing) {
+                        graphics::g = &g;
+                        gl.eval(base::strs("(", cg, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
+                        graphics::g = nullptr;
+                    }
                 }
                 return;
             }
@@ -621,13 +623,15 @@ struct playlistModel : public TableListBoxModel {
                 else if (c == "length")
                     g.drawText(formatTime(getItemLength(rowNumber)), 0, 0, width - 5, height, Justification::centredRight, true);
                 else {
-                    // bind graphics
-                    graphics::g = &g;
+                    if (graphics::gEnableCustomDrawing) {
+                        // bind graphics
+                        graphics::g = &g;
 
-                    // custom code
-                    gl.eval(base::strs("(", c, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
+                        // custom code
+                        gl.eval(base::strs("(", c, " '", playlistId, " ", rowNumber, " ", width, " ", height, ")"));
 
-                    graphics::g = nullptr;
+                        graphics::g = nullptr;
+                    }
                 }
             }
         }
