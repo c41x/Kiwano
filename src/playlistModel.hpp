@@ -341,8 +341,8 @@ struct playlistModel : public TableListBoxModel {
             for (TagLib::PropertyMap::ConstIterator i = tags.begin(); i != tags.end(); ++i) {
                 for (TagLib::StringList::ConstIterator j = i->second.begin(); j != i->second.end(); ++j) {
                     if (base::lowerCase(i->first.to8Bit()) == "cuesheet") {
-                        // processCue(j->toCString(), basePath, gpath);
-                        //cueLoaded = true;
+                        processCue(j->toCString(), basePath, gpath);
+                        cueLoaded = true;
                     }
                 }
             }
