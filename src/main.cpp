@@ -177,6 +177,7 @@ public:
         gl.addProcedure("copy-file", std::bind(&MainWindow::copy_file, this, _1, _2));
         gl.addProcedure("show-directory-in-explorer", std::bind(&MainWindow::show_directory_in_explorer, this, _1, _2));
         gl.addProcedure("extract-file-path", std::bind(&MainWindow::extract_file_path, this, _1, _2));
+        gl.addProcedure("get-files", std::bind(&MainWindow::get_files, this, _1, _2));
 
         // widgets
         gl.addProcedure("create-image", std::bind(&user_interface::create_image, &itf, _1, _2));
@@ -371,11 +372,41 @@ public:
 
     // (extract-file-path (string)dir)
     base::cell_t extract_file_path(base::cell_t c, base::cells_t &ret) {
-        return fxValidateSkeleton(gl, "extract-file-path", c, [this, c, &ret]() -> auto {
+        return fxValidateSkeleton(gl, "extract-file-path", c, [c, &ret]() -> auto {
                 const auto &path = c + 1;
                 ret.push_back(base::cell(base::extractFilePath(path->s)));
                 return ret.end();
             }, base::cell::list(1), base::cell::typeString);
+    }
+
+    // (get-files (string)dir (string)filter (nil/t)recursive (int)max-limit)
+    base::cell_t get_files(base::cell_t c, base::cells_t &ret) {
+        return fxValidateSkeleton(gl, "get-files", c, [c, &ret]() -> auto {
+                const auto &path = c + 1;
+                const auto &filter = c + 2;
+                const auto &recursive = c + 3;
+                const auto &limit = c + 4;
+                auto file = File(path->s);
+
+                if (file.isDirectory()) {
+                    DirectoryIterator fi(file, !recursive->isNil(), filter->s, File::findFiles);
+                    ret.push_back(base::cell::list(0));
+                    base::cell &head = ret.back();
+                    int elsAdded = 0;
+
+                    while (fi.next() && elsAdded < limit->i) {
+                        ret.push_back(base::cell(fi.getFile().getFullPathName().toStdString()));
+                        ++elsAdded;
+                    }
+
+                    head.i = elsAdded;
+                }
+                else {
+                    ret.push_back(base::cell::list(0));
+                }
+
+                return ret.end();
+            }, base::cell::list(4), base::cell::typeString, base::cell::typeString, base::cell::typeIdentifier, base::cell::typeInt);
     }
 
     void cleanup() {
