@@ -1,6 +1,8 @@
 (defvar current-id "") ;; item unique ID (you may wish to use it to tracks unique ID key)
 (defvar current-index 0)
 (defvar current-playlist nil)
+(defvar selected-playlist nil)
+(defvar selected-index -1)
 
 (defun playlist-column-count-group (playlist-name row width height)
   (g-set-color |0.0 0.9 0.1 1.0|)
@@ -33,6 +35,8 @@
                                                    selected-row-id
                                                    selected-row-index
                                                    component-name))
+  (bind-mouse-click id 'on-playlist-select '(selected-row-index
+                                             component-name))
   id)
 
 (defun create-playlist-tabs ()
@@ -200,7 +204,9 @@
   (component-enabled 'sl-seek t)
   (playback-start))
 
-;; show explorer test (show-directory-in-explorer (extract-file-path "/home/calx/Downloads/somefile.png"))
+(defun on-playlist-select (item-index playlist-name)
+  (setq selected-playlist playlist-name)
+  (setq selected-index item-index))
 
 (defun playback-changed ()
   (repaint-component 'pan)
@@ -332,6 +338,15 @@
 
 (bind-key "F3" 'on-f3)
 (bind-key "escape" 'on-disable-filter)
+
+;; opens directory of selected item
+(defun explore-selected()
+  (and selected-playlist (>= selected-index 0)
+       (show-directory-in-explorer
+        (extract-file-path
+         (playlist-get selected-playlist selected-index 'path-raw)))))
+
+(bind-key "F12" 'explore-selected)
 
 ;; make things visible
 (set-main-component 'l-main)
