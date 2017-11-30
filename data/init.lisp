@@ -176,6 +176,7 @@
   (slider-range 'sl-seek 0.0 (playback-length)) ;; TODO: DRY
   (component-enabled 'sl-seek t) ;; TODO: playlist-select
   (playlist-select current-playlist current-index)
+  (update-cover-art)
   (playback-start))
 
 (defun on-next ()
@@ -202,6 +203,7 @@
   (setq current-playlist playlist-name)
   (slider-range 'sl-seek 0.0 (playback-length))
   (component-enabled 'sl-seek t)
+  (update-cover-art)
   (playback-start))
 
 (defun on-playlist-select (item-index playlist-name)
@@ -347,6 +349,23 @@
          (playlist-get selected-playlist selected-index 'path-raw)))))
 
 (bind-key "F12" 'explore-selected)
+
+;; search and set album cover
+(defun update-cover-art ()
+  (and current-playlist (>= current-index 0)
+       (defvar files (get-files (extract-file-path (playlist-get current-playlist current-index 'path-raw))
+                                "*cover*.jpg;*Cover*.jpg;*front*.jpg;*Front*.jpg;*folder*.jpg"
+                                t
+                                500))
+       (if (> (length files) 0)
+           (image-set-file 'imm (nth 0 files))
+         (defvar alternative-files (get-files (extract-file-path (playlist-get current-playlist current-index 'path-raw))
+                                              "*.jpg;*.png;*.bmp"
+                                              t
+                                              500))
+         (if (> (length alternative-files) 0)
+             (image-set-file 'imm (nth 0 alternative-files))
+           (image-set-file 'imm "~/.kiwano/default-cover.jpg")))))
 
 ;; make things visible
 (set-main-component 'l-main)
