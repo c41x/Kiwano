@@ -194,7 +194,7 @@ public:
         a reference to the original image, and won't actually create a duplicate.
     */
     Image rescaled (int newWidth, int newHeight,
-                    Graphics::ResamplingQuality quality = Graphics::mediumResamplingQuality) const;
+                    Graphics::ResamplingQuality quality = Graphics::highResamplingQuality) const;
 
     /** Creates a copy of this image.
         Note that it's usually more efficient to use duplicateIfShared(), because it may not be necessary

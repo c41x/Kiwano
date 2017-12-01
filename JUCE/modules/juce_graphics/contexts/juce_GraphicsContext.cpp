@@ -69,7 +69,7 @@ void Graphics::resetToDefaultState()
     saveStateIfPending();
     context.setFill (FillType());
     context.setFont (Font());
-    context.setInterpolationQuality (Graphics::mediumResamplingQuality);
+    context.setInterpolationQuality (Graphics::highResamplingQuality);
 }
 
 bool Graphics::isVectorDevice() const

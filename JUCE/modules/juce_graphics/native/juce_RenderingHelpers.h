@@ -2007,13 +2007,13 @@ public:
 
     SavedStateBase (const Rectangle<int>& initialClip)
         : clip (new RectangleListRegionType (initialClip)), transform (Point<int>()),
-          interpolationQuality (Graphics::mediumResamplingQuality), transparencyLayerAlpha (1.0f)
+          interpolationQuality (Graphics::highResamplingQuality), transparencyLayerAlpha (1.0f)
     {
     }
 
     SavedStateBase (const RectangleList<int>& clipList, Point<int> origin)
         : clip (new RectangleListRegionType (clipList)), transform (origin),
-          interpolationQuality (Graphics::mediumResamplingQuality), transparencyLayerAlpha (1.0f)
+          interpolationQuality (Graphics::highResamplingQuality), transparencyLayerAlpha (1.0f)
     {
     }
 
